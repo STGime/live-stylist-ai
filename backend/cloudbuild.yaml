@@ -1,0 +1,35 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/livestylist/backend'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/livestylist/backend'
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'livestylist-backend'
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/livestylist/backend'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--timeout=360'
+      - '--session-affinity'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--concurrency=100'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--set-secrets=GEMINI_API_KEY=gemini-api-key:latest,REVENUECAT_API_KEY=revenuecat-api-key:latest'
+      - '--set-env-vars=NODE_ENV=production,FIREBASE_PROJECT_ID=$PROJECT_ID,FREE_SESSIONS_PER_DAY=100,GEMINI_MODEL=gemini-2.5-flash-native-audio-latest'
+      - '--allow-unauthenticated'
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/livestylist/backend'

@@ -1,0 +1,67 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts
+dist/
+build/
+
+# Backend
+backend/node_modules/
+backend/dist/
+
+# App (React Native)
+app/node_modules/
+app/build/
+app/.gradle/
+app/.idea/
+app/android/.gradle/
+app/android/build/
+app/android/app/build/
+app/android/.idea/
+app/android/local.properties
+app/android/*.iml
+app/android/.cxx/
+app/android/.kotlin/
+app/ios/Pods/
+app/ios/build/
+app/ios/DerivedData/
+app/vendor/
+*.jsbundle
+*.hprof
+*.keystore
+!app/android/app/debug.keystore
+**/.xcode.env.local
+.metro-health-check*
+app/coverage/
+
+# Ruby
+*.gem
+.bundle/
+
+# Temporary
+*.log
+tmp/
+
+# Service account keys (SECRETS)
+**/service-account.json
+**/serviceAccountKey.json
+
+# Claude
+.claude/
