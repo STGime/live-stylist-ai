@@ -4,7 +4,6 @@ import { deviceIdMiddleware } from '../middleware/device-id.middleware';
 import { sessionStartRateLimiter } from '../middleware/rate-limiter.middleware';
 import * as firebaseService from '../services/firebase.service';
 import * as revenuecatService from '../services/revenuecat.service';
-import * as geminiService from '../services/gemini.service';
 import * as sessionManager from '../services/session-manager.service';
 import { logger } from '../utils/logger';
 
@@ -50,28 +49,24 @@ router.post('/start-session', sessionStartRateLimiter, async (req: Request, res:
       return;
     }
 
-    // 5. Generate Gemini ephemeral token
-    const { token, wsUrl } = await geminiService.generateEphemeralToken();
-
-    // 6. Build personalized system prompt
-    const systemPrompt = geminiService.buildSystemPrompt(user);
-
-    // 7. Create in-memory session with timers
+    // 5. Create in-memory session with timers
     const session = sessionManager.startSession(deviceId, tier);
 
-    // 8. Persist session record to Firestore
+    // 6. Persist session record to Firestore
     await firebaseService.createSessionRecord(session.session_id, deviceId, tier);
+
+    // 7. Build backend WebSocket URL for ADK session
+    const protocol = req.protocol === 'https' ? 'wss' : 'ws';
+    const host = req.get('host') || 'localhost:8080';
+    const wsUrl = `${protocol}://${host}/ws/adk?session_id=${session.session_id}&device_id=${deviceId}`;
 
     logger.info({ deviceId, sessionId: session.session_id, tier }, 'Session started successfully');
 
     res.status(201).json({
       session_id: session.session_id,
-      ephemeral_token: token,
-      system_prompt: systemPrompt,
       session_expiry_time: session.expires_at,
       remaining_sessions_today: sessionCheck.remaining,
-      gemini_model: geminiService.getGeminiModel(),
-      gemini_ws_url: wsUrl,
+      ws_url: wsUrl,
     });
   } catch (error) {
     next(error);

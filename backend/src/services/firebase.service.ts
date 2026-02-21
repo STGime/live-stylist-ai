@@ -13,7 +13,7 @@ function todayDateString(): string {
 
 // --- Users ---
 
-export async function createUser(deviceId: string, name: string, favoriteColor: string): Promise<UserProfile> {
+export async function createUser(deviceId: string, name: string, favoriteColor: string, stylistName?: string): Promise<UserProfile> {
   const db = getDb();
   const ref = db.collection(USERS_COLLECTION).doc(deviceId);
 
@@ -25,6 +25,7 @@ export async function createUser(deviceId: string, name: string, favoriteColor: 
   const user: UserProfile = {
     name,
     favorite_color: favoriteColor,
+    ...(stylistName && { stylist_name: stylistName }),
     created_at: admin.firestore.Timestamp.now(),
     sessions_used_today: 0,
     last_session_date: todayDateString(),
@@ -41,7 +42,7 @@ export async function getUser(deviceId: string): Promise<UserProfile | null> {
   return doc.exists ? (doc.data() as UserProfile) : null;
 }
 
-export async function updateUser(deviceId: string, updates: Partial<Pick<UserProfile, 'name' | 'favorite_color'>>): Promise<UserProfile> {
+export async function updateUser(deviceId: string, updates: Partial<Pick<UserProfile, 'name' | 'favorite_color' | 'stylist_name'>>): Promise<UserProfile> {
   const db = getDb();
   const ref = db.collection(USERS_COLLECTION).doc(deviceId);
 

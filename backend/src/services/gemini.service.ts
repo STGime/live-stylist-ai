@@ -1,7 +1,10 @@
 import { getEnv } from '../config/env';
-import { logger } from '../utils/logger';
 import type { UserProfile } from '../types';
 
+/**
+ * Legacy system prompt builder — kept for reference.
+ * The coordinator agent in agents/coordinator.ts now handles prompt building.
+ */
 const BASE_SYSTEM_PROMPT = `You are a friendly, confident real-time beauty and style assistant.
 
 You:
@@ -30,19 +33,6 @@ Favorite color: ${user.favorite_color}
 If relevant, consider their favorite color in suggestions.`;
 
   return BASE_SYSTEM_PROMPT + '\n' + personalization;
-}
-
-export async function generateEphemeralToken(): Promise<{ token: string; wsUrl: string }> {
-  const env = getEnv();
-
-  // For MVP: use API key directly with standard BidiGenerateContent endpoint
-  // This avoids known issues with BidiGenerateContentConstrained (system_instruction ignored, parsing issues)
-  // Production should use ephemeral tokens or proxy through the backend
-  const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`;
-
-  logger.info('Using API key for Gemini Live WebSocket');
-
-  return { token: env.GEMINI_API_KEY, wsUrl };
 }
 
 export function getGeminiModel(): string {

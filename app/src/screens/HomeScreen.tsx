@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
+import FloatingBubbles from '../components/FloatingBubbles';
 import * as api from '../services/api';
 import type { RootStackParamList } from '../types';
 
@@ -70,11 +71,8 @@ export default function HomeScreen({ navigation }: Props) {
       const session = await api.startSession();
       navigation.navigate('LiveSession', {
         sessionId: session.session_id,
-        ephemeralToken: session.ephemeral_token,
-        systemPrompt: session.system_prompt,
         expiryTime: session.session_expiry_time,
-        geminiWsUrl: session.gemini_ws_url,
-        geminiModel: session.gemini_model,
+        wsUrl: session.ws_url,
       });
     } catch (err: any) {
       if (err.code === 'session_limit_exceeded') {
@@ -93,6 +91,7 @@ export default function HomeScreen({ navigation }: Props) {
       colors={[COLORS.cream, COLORS.pinkPale, COLORS.offWhite]}
       locations={[0, 0.6, 1]}
       style={styles.container}>
+      <FloatingBubbles count={18} />
       {/* Header */}
       <View style={styles.header}>
         <View
@@ -198,6 +197,13 @@ export default function HomeScreen({ navigation }: Props) {
               </BubbleButton>
             </View>
 
+            {/* Tip */}
+            <View style={styles.tip}>
+              <Text style={styles.tipText}>
+                Good lighting = better advice! Sit near a window for the best results.
+              </Text>
+            </View>
+
             {/* Upgrade Banner */}
             {!isPremium && (
               <TouchableOpacity activeOpacity={0.85} style={styles.upgradeBanner}>
@@ -216,16 +222,12 @@ export default function HomeScreen({ navigation }: Props) {
                 </LinearGradient>
               </TouchableOpacity>
             )}
-
-            {/* Tip */}
-            <View style={styles.tip}>
-              <Text style={styles.tipText}>
-                Good lighting = better advice! Sit near a window for the best results.
-              </Text>
-            </View>
           </>
         )}
       </Animated.View>
+
+      {/* Version info */}
+      <Text style={styles.version}>v1.0 (build 1)</Text>
     </LinearGradient>
   );
 }
@@ -404,5 +406,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textMid,
     lineHeight: 20,
+  },
+  version: {
+    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    paddingBottom: 28,
   },
 });

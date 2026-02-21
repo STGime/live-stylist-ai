@@ -29,7 +29,7 @@ class PcmPlayerModule(reactContext: ReactApplicationContext) :
         audioTrack = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                     .build()
             )
@@ -40,7 +40,7 @@ class PcmPlayerModule(reactContext: ReactApplicationContext) :
                     .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                     .build()
             )
-            .setBufferSizeInBytes(bufferSize * 2)
+            .setBufferSizeInBytes(bufferSize * 6)
             .setTransferMode(AudioTrack.MODE_STREAM)
             .build()
 

@@ -14,6 +14,7 @@ import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
+import FloatingBubbles from '../components/FloatingBubbles';
 import ColorSwatchPicker from '../components/ColorSwatchPicker';
 import * as api from '../services/api';
 import type { RootStackParamList } from '../types';
@@ -22,6 +23,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
 export default function OnboardingScreen({ navigation }: Props) {
   const [name, setName] = useState('');
+  const [stylistName, setStylistName] = useState('');
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,7 +51,7 @@ export default function OnboardingScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
-      await api.register(name.trim(), selectedColor);
+      await api.register(name.trim(), selectedColor, stylistName.trim() || undefined);
       navigation.replace('Home');
     } catch (err: any) {
       if (err.status === 409) {
@@ -68,11 +70,16 @@ export default function OnboardingScreen({ navigation }: Props) {
     setError('');
   };
 
+  const handleStylistNameChange = (text: string) => {
+    setStylistName(text.replace(/[^a-zA-Z\s'-]/g, ''));
+  };
+
   return (
     <LinearGradient
       colors={[COLORS.cream, COLORS.pinkPale, COLORS.lavenderSoft, COLORS.pinkSoft]}
       locations={[0, 0.35, 0.7, 1]}
       style={styles.container}>
+      <FloatingBubbles count={20} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}>
@@ -110,6 +117,16 @@ export default function OnboardingScreen({ navigation }: Props) {
                 styles.input,
                 error && !name ? styles.inputError : null,
               ]}
+            />
+
+            <Text style={[styles.label, { marginTop: 22 }]}>Name your stylist</Text>
+            <TextInput
+              value={stylistName}
+              onChangeText={handleStylistNameChange}
+              placeholder="e.g. Luna, Aria, Chloe"
+              placeholderTextColor={COLORS.textMuted}
+              maxLength={50}
+              style={styles.input}
             />
 
             <Text style={[styles.label, { marginTop: 22 }]}>Fave color?</Text>

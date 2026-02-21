@@ -16,11 +16,14 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
+import FloatingBubbles from '../components/FloatingBubbles';
 import MangaAvatar from '../components/MangaAvatar';
 import AiOrb from '../components/AiOrb';
-import { SessionControlSocket } from '../services/websocket';
+import AgentMaskOverlay from '../components/AgentMaskOverlay';
+import SuggestionBubbles from '../components/SuggestionBubbles';
 import * as api from '../services/api';
-import { useGeminiSession } from '../hooks/useGeminiSession';
+import { useAdkSession } from '../hooks/useAdkSession';
+import type { SessionEvent } from '../services/adk-client';
 import type { RootStackParamList } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LiveSession'>;
@@ -29,10 +32,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   const {
     sessionId,
     expiryTime,
-    ephemeralToken,
-    systemPrompt,
-    geminiWsUrl,
-    geminiModel,
+    wsUrl,
   } = route.params;
 
   const [timeLeft, setTimeLeft] = useState(() => {
@@ -42,7 +42,6 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const controlSocket = useRef<SessionControlSocket | null>(null);
   const sessionStartTime = useRef(Date.now());
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -50,14 +49,27 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('front');
 
-  // Gemini Live session
-  const { aiState, cameraRef, isConnected, error, injectText } =
-    useGeminiSession({
-      ephemeralToken,
-      systemPrompt,
-      geminiWsUrl,
-      geminiModel,
+  // Handle session events from the backend
+  const handleSessionEvent = useCallback((event: SessionEvent) => {
+    switch (event.type) {
+      case 'session_ending_soon':
+        // Backend handles injecting the wrap-up prompt to the coordinator
+        break;
+      case 'session_expired':
+        handleEndSession('time');
+        break;
+      case 'session_ended':
+        break;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ADK session (replaces useGeminiSession)
+  const { aiState, cameraRef, isConnected, error, visionActive } =
+    useAdkSession({
+      wsUrl,
       muted,
+      onSessionEvent: handleSessionEvent,
     });
 
   // Request camera permission on mount
@@ -66,41 +78,6 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
       requestPermission();
     }
   }, [hasPermission, requestPermission]);
-
-  // Connect to backend control WebSocket
-  useEffect(() => {
-    const socket = new SessionControlSocket((event) => {
-      switch (event.type) {
-        case 'session_started':
-          break;
-        case 'session_ending_soon':
-          // Forward the backend's inject text into the Gemini conversation
-          if (event.gemini_inject) {
-            injectText(event.gemini_inject);
-          }
-          break;
-        case 'session_expired':
-          handleEndSession('time');
-          break;
-        case 'session_ended':
-          break;
-      }
-    });
-
-    socket
-      .connect(sessionId)
-      .then(() => {
-        controlSocket.current = socket;
-      })
-      .catch(() => {
-        // Fallback: rely on local timer
-      });
-
-    return () => {
-      socket.disconnect();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
 
   // Mount animation
   useEffect(() => {
@@ -129,21 +106,19 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Log Gemini errors but don't auto-end (let the session continue with timer)
+  // Log errors but don't auto-end
   useEffect(() => {
     if (error) {
-      console.warn('[LiveSession] Gemini error:', error);
+      console.warn('[LiveSession] ADK error:', error);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error]);
 
-  // Auto-end when Gemini socket closes after being connected (e.g. 2-min video limit)
+  // Auto-end when WebSocket closes after being connected
   const wasConnectedRef = useRef(false);
   useEffect(() => {
     if (isConnected) {
       wasConnectedRef.current = true;
     } else if (wasConnectedRef.current) {
-      // Was connected, now disconnected — Gemini session ended
       const timeout = setTimeout(() => {
         handleEndSession('time');
       }, 2000);
@@ -159,11 +134,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
       );
 
       try {
-        if (controlSocket.current) {
-          controlSocket.current.sendEndSession(sessionId);
-        } else {
-          await api.endSession(sessionId);
-        }
+        await api.endSession(sessionId);
       } catch {
         // Best-effort
       }
@@ -199,6 +170,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
           device={device}
           isActive={true}
           photo={true}
+          video={true}
         />
       ) : (
         <Animated.View
@@ -206,8 +178,13 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
         />
       )}
 
-      {/* Face guide */}
-      {mounted && <View style={styles.faceGuide} />}
+      <FloatingBubbles count={14} dark />
+
+      {/* Agent mask overlay (replaces old faceGuide) */}
+      {mounted && <AgentMaskOverlay visionActive={visionActive} />}
+
+      {/* Playful suggestion bubbles outside the face oval */}
+      {mounted && <SuggestionBubbles active={isConnected} />}
 
       {/* Camera placeholder when no permission */}
       {!showCamera && (
@@ -354,17 +331,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#1A1218',
   },
-  faceGuide: {
-    position: 'absolute',
-    top: '12%',
-    alignSelf: 'center',
-    width: 180,
-    height: 230,
-    borderRadius: 115,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderStyle: 'dashed',
-  },
   cameraPlaceholder: {
     position: 'absolute',
     top: '22%',
@@ -426,7 +392,7 @@ const styles = StyleSheet.create({
   },
   avatarArea: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 120,
     alignSelf: 'center',
     alignItems: 'center',
     gap: 8,
@@ -452,7 +418,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingVertical: 20,
     paddingHorizontal: 22,
-    paddingBottom: 36,
+    paddingBottom: 56,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',

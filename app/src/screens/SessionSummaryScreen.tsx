@@ -4,6 +4,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
+import FloatingBubbles from '../components/FloatingBubbles';
+import Confetti from '../components/Confetti';
 import type { RootStackParamList } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SessionSummary'>;
@@ -34,6 +36,8 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
       colors={[COLORS.cream, COLORS.pinkPale, COLORS.lavenderSoft]}
       locations={[0, 0.5, 1]}
       style={styles.container}>
+      <Confetti />
+      <FloatingBubbles count={16} />
       <Animated.View
         style={[
           styles.content,

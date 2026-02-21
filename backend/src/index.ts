@@ -12,6 +12,7 @@ import healthRoutes from './routes/health.routes';
 import userRoutes from './routes/user.routes';
 import sessionRoutes from './routes/session.routes';
 import { setupWebSocket } from './ws/session-control.ws';
+import { setupAdkWebSocket, shutdownAdkSessions } from './ws/adk-session.ws';
 import { shutdownAllSessions } from './services/session-manager.service';
 
 // Load and validate env vars (fail-fast)
@@ -24,12 +25,29 @@ initFirebase();
 const app = express();
 const server = createServer(app);
 
-// WebSocket server on /ws/session path
-const wss = new WebSocketServer({
-  server,
-  path: '/ws/session',
-});
+// WebSocket servers (noServer mode to avoid upgrade conflicts)
+const wss = new WebSocketServer({ noServer: true });
 setupWebSocket(wss);
+
+const adkWss = new WebSocketServer({ noServer: true });
+setupAdkWebSocket(adkWss);
+
+// Route upgrade requests to the correct WebSocket server
+server.on('upgrade', (request, socket, head) => {
+  const pathname = new URL(request.url || '', `http://${request.headers.host}`).pathname;
+
+  if (pathname === '/ws/session') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } else if (pathname === '/ws/adk') {
+    adkWss.handleUpgrade(request, socket, head, (ws) => {
+      adkWss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
 
 // Middleware
 app.use(express.json());
@@ -57,9 +75,13 @@ async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'Shutdown signal received');
 
   // End all active sessions
+  shutdownAdkSessions();
   await shutdownAllSessions();
 
-  // Close WebSocket server
+  // Close WebSocket servers
+  adkWss.close(() => {
+    logger.info('ADK WebSocket server closed');
+  });
   wss.close(() => {
     logger.info('WebSocket server closed');
   });

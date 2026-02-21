@@ -11,6 +11,7 @@ const COLOR_MAP: Record<AiState, string> = {
   listening: COLORS.pink,
   thinking: COLORS.lavender,
   speaking: COLORS.magenta,
+  analyzing: COLORS.mint,
   idle: COLORS.grayMid,
 };
 
@@ -18,6 +19,7 @@ const LABEL_MAP: Record<AiState, string> = {
   listening: 'Listening...',
   thinking: 'Thinking...',
   speaking: 'Speaking...',
+  analyzing: 'Analyzing...',
   idle: 'Connecting...',
 };
 
