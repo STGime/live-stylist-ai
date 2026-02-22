@@ -3,6 +3,7 @@ export interface UserProfile {
   name: string;
   favorite_color: string;
   stylist_name?: string;
+  language?: string;
   sessions_used_today: number;
   last_session_date: string;
   created_at: string;

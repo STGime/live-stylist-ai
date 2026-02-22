@@ -6,6 +6,7 @@ export const RegisterBodySchema = z.object({
   name: z.string().min(1).max(50).regex(/^[a-zA-Z\s'-]+$/, 'Name contains invalid characters'),
   favorite_color: z.string().min(1).max(30).regex(/^[a-zA-Z\s]+$/, 'Color contains invalid characters'),
   stylist_name: z.string().min(1).max(50).regex(/^[a-zA-Z\s'-]+$/, 'Stylist name contains invalid characters').optional(),
+  language: z.string().regex(/^[a-z]{2}$/, 'Language must be a 2-letter code').optional(),
 });
 
 export type RegisterBody = z.infer<typeof RegisterBodySchema>;
@@ -14,7 +15,8 @@ export const UpdateProfileBodySchema = z.object({
   name: z.string().min(1).max(50).regex(/^[a-zA-Z\s'-]+$/, 'Name contains invalid characters').optional(),
   favorite_color: z.string().min(1).max(30).regex(/^[a-zA-Z\s]+$/, 'Color contains invalid characters').optional(),
   stylist_name: z.string().min(1).max(50).regex(/^[a-zA-Z\s'-]+$/, 'Stylist name contains invalid characters').optional(),
-}).refine(data => data.name || data.favorite_color || data.stylist_name, {
+  language: z.string().regex(/^[a-z]{2}$/, 'Language must be a 2-letter code').optional(),
+}).refine(data => data.name || data.favorite_color || data.stylist_name || data.language, {
   message: 'At least one field must be provided',
 });
 
@@ -24,6 +26,7 @@ export interface UserProfile {
   name: string;
   favorite_color: string;
   stylist_name?: string;
+  language?: string;
   created_at: FirebaseFirestore.Timestamp;
   sessions_used_today: number;
   last_session_date: string; // YYYY-MM-DD
@@ -96,6 +99,14 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('end_session'), session_id: z.string().uuid() }),
   z.object({ type: z.literal('ping') }),
 ]);
+
+// --- Session Memory ---
+
+export interface SessionMemory {
+  session_id: string;
+  summary: string;
+  created_at: FirebaseFirestore.Timestamp;
+}
 
 // --- Subscription ---
 

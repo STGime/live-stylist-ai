@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
@@ -25,6 +26,7 @@ export default function OnboardingScreen({ navigation }: Props) {
   const [name, setName] = useState('');
   const [stylistName, setStylistName] = useState('');
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [language, setLanguage] = useState<'en' | 'de'>('en');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -51,7 +53,7 @@ export default function OnboardingScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
-      await api.register(name.trim(), selectedColor, stylistName.trim() || undefined);
+      await api.register(name.trim(), selectedColor, stylistName.trim() || undefined, language);
       navigation.replace('Home');
     } catch (err: any) {
       if (err.status === 409) {
@@ -128,6 +130,27 @@ export default function OnboardingScreen({ navigation }: Props) {
               maxLength={50}
               style={styles.input}
             />
+
+            <Text style={[styles.label, { marginTop: 22 }]}>Agent Language</Text>
+            <View style={styles.languageRow}>
+              {(['en', 'de'] as const).map((code) => (
+                <TouchableOpacity
+                  key={code}
+                  onPress={() => setLanguage(code)}
+                  style={[
+                    styles.languageButton,
+                    language === code && styles.languageButtonActive,
+                  ]}>
+                  <Text
+                    style={[
+                      styles.languageText,
+                      language === code && styles.languageTextActive,
+                    ]}>
+                    {code === 'en' ? 'English' : 'Deutsch'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             <Text style={[styles.label, { marginTop: 22 }]}>Fave color?</Text>
             <ColorSwatchPicker
@@ -222,4 +245,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   buttonArea: { marginTop: 32 },
+  languageRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  languageButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: COLORS.pinkLight,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    shadowColor: COLORS.grayLight,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 2,
+  },
+  languageButtonActive: {
+    borderColor: COLORS.pink,
+    backgroundColor: COLORS.pinkPale,
+  },
+  languageText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textMid,
+  },
+  languageTextActive: {
+    color: COLORS.pink,
+  },
 });

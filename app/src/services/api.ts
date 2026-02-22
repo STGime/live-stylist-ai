@@ -56,11 +56,12 @@ async function apiRequest<T>(
 }
 
 // User
-export function register(name: string, favoriteColor: string, stylistName?: string) {
+export function register(name: string, favoriteColor: string, stylistName?: string, language?: string) {
   return apiRequest<UserProfile>('POST', '/register', {
     name,
     favorite_color: favoriteColor,
     ...(stylistName && { stylist_name: stylistName }),
+    ...(language && { language }),
   });
 }
 
@@ -68,7 +69,7 @@ export function getProfile() {
   return apiRequest<UserProfile>('GET', '/profile');
 }
 
-export function updateProfile(updates: { name?: string; favorite_color?: string; stylist_name?: string }) {
+export function updateProfile(updates: { name?: string; favorite_color?: string; stylist_name?: string; language?: string }) {
   return apiRequest<UserProfile>('PUT', '/profile', updates);
 }
 

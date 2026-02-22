@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
 import { URL } from 'url';
 import { GoogleGenAI, Modality, Session as GeminiSession, LiveServerMessage } from '@google/genai';
+import * as admin from 'firebase-admin';
 import { buildCoordinatorInstruction } from '../agents/coordinator';
 import { runVisionPipeline, formatVisionResults } from '../agents/visionPipeline';
 import { logger } from '../utils/logger';
@@ -73,8 +74,19 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
       return;
     }
 
+    // Load past session memories for continuity
+    let memories: import('../types').SessionMemory[] = [];
+    try {
+      memories = await firebaseService.getRecentMemories(deviceId, 3);
+      if (memories.length > 0) {
+        logger.info({ sessionId, deviceId, memoryCount: memories.length }, 'Loaded past session memories');
+      }
+    } catch (error) {
+      logger.warn({ error, deviceId }, 'Failed to load session memories, continuing without');
+    }
+
     // Build system instruction for this user
-    const systemInstruction = buildCoordinatorInstruction(userProfile);
+    const systemInstruction = buildCoordinatorInstruction(userProfile, memories);
 
     // Connect to Gemini Live API
     const env = getEnv();
@@ -89,7 +101,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
             logger.info({ sessionId }, 'Gemini Live session opened');
           },
           onmessage: (msg: LiveServerMessage) => {
-            processGeminiMessage(msg, ws, sessionId);
+            processGeminiMessage(msg, ws, sessionId, sessionLog);
           },
           onerror: (e: any) => {
             logger.error({ sessionId, error: e?.message || e }, 'Gemini Live error');
@@ -128,6 +140,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
     let visionInProgress = false;
     let muted = false;
     let visionUpdateCount = 0;
+    const sessionLog: string[] = [];
 
     // Send session started
     sendToClient(ws, { type: 'session_started', session_id: sessionId });
@@ -230,6 +243,8 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
           turnComplete: isFirstVision,
         });
 
+        sessionLog.push(`[Vision]: ${resultText}`);
+
         sendToClient(ws, { type: 'vision_active', agents: [] });
         logger.info({ sessionId }, 'Vision results injected into coordinator');
       } catch (error) {
@@ -259,6 +274,13 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
         geminiSession.close();
       } catch (_) { /* ignore close errors */ }
       activeSessions.delete(sessionId);
+
+      // Generate and save session summary (fire-and-forget)
+      if (sessionLog.length > 0) {
+        generateSessionSummary(sessionLog, sessionId, deviceId, genai).catch(err => {
+          logger.warn({ sessionId, error: err }, 'Failed to generate session summary');
+        });
+      }
     }
   });
 }
@@ -266,7 +288,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
 /**
  * Process a Gemini Live server message and forward relevant data to the client.
  */
-function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: string): void {
+function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: string, sessionLog: string[]): void {
   // Handle server content (audio, text, transcriptions)
   if (msg.serverContent) {
     const content = msg.serverContent;
@@ -301,6 +323,7 @@ function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: 
         text: content.inputTranscription.text,
         finished: false,
       });
+      sessionLog.push(`[User]: ${content.inputTranscription.text}`);
     }
 
     // Output transcription
@@ -311,6 +334,7 @@ function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: 
         text: content.outputTranscription.text,
         finished: false,
       });
+      sessionLog.push(`[Stylist]: ${content.outputTranscription.text}`);
     }
 
     // Turn complete
@@ -333,6 +357,43 @@ function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: 
   // Setup complete
   if (msg.setupComplete) {
     logger.info({ sessionId }, 'Gemini Live setup complete');
+  }
+}
+
+/**
+ * Generate a summary of the session and save it to Firestore.
+ */
+async function generateSessionSummary(
+  sessionLog: string[],
+  sessionId: string,
+  deviceId: string,
+  genai: GoogleGenAI,
+): Promise<void> {
+  try {
+    const transcript = sessionLog.join('\n');
+    const response = await genai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: [{
+        role: 'user',
+        parts: [{
+          text: `Summarize this beauty/style consultation session. Include ONLY new information from THIS session — do NOT repeat or rephrase anything the stylist recalled from previous sessions. Focus on: what the user was wearing, new observations about their appearance, new recommendations given, and any new preferences or requests the user expressed. If the stylist referenced past advice, ignore those parts — they are already stored separately. Keep it concise (150-200 words). Write in past tense, third person.\n\nSession transcript:\n${transcript}`,
+        }],
+      }],
+    });
+
+    const summary = response.text?.trim();
+    if (!summary) {
+      logger.warn({ sessionId }, 'Empty summary generated, skipping save');
+      return;
+    }
+
+    await firebaseService.saveSessionMemory(deviceId, {
+      session_id: sessionId,
+      summary,
+      created_at: admin.firestore.Timestamp.now(),
+    });
+  } catch (error) {
+    logger.warn({ sessionId, error }, 'Session summary generation failed');
   }
 }
 

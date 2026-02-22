@@ -15,29 +15,31 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import FloatingBubbles from '../components/FloatingBubbles';
+import ProfileModal from '../components/ProfileModal';
 import * as api from '../services/api';
-import type { RootStackParamList } from '../types';
+import type { RootStackParamList, UserProfile } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
-  const [name, setName] = useState('');
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [sessionsRemaining, setSessionsRemaining] = useState(0);
   const [totalSessions, setTotalSessions] = useState(1);
   const [isPremium] = useState(false);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(16)).current;
 
   const loadProfile = useCallback(async () => {
     try {
       setLoading(true);
-      const profile = await api.getProfile();
-      setName(profile.name);
+      const p = await api.getProfile();
+      setProfile(p);
       const limit = isPremium ? 5 : 100;
       setTotalSessions(limit);
-      setSessionsRemaining(Math.max(0, limit - profile.sessions_used_today));
+      setSessionsRemaining(Math.max(0, limit - p.sessions_used_today));
     } catch (err: any) {
       if (err.status === 404) {
         navigation.replace('Onboarding');
@@ -108,9 +110,7 @@ export default function HomeScreen({ navigation }: Props) {
           </Text>
         </View>
         <TouchableOpacity
-          onPress={() => {
-            // TODO: open profile sheet
-          }}
+          onPress={() => setProfileModalVisible(true)}
           style={styles.profileButton}>
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
             <Circle cx={12} cy={8} r={4} stroke={COLORS.pink} strokeWidth={2.5} />
@@ -137,7 +137,7 @@ export default function HomeScreen({ navigation }: Props) {
             {/* Greeting */}
             <View style={styles.greeting}>
               <Text style={styles.greetingText}>
-                {greeting},{'\n'}{name}!
+                {greeting},{'\n'}{profile?.name}!
               </Text>
               <Text style={styles.greetingSub}>Ready for your style sesh?</Text>
             </View>
@@ -228,6 +228,21 @@ export default function HomeScreen({ navigation }: Props) {
 
       {/* Version info */}
       <Text style={styles.version}>v1.0 (build 1)</Text>
+
+      {profile && (
+        <ProfileModal
+          visible={profileModalVisible}
+          onClose={() => setProfileModalVisible(false)}
+          onSaved={() => {
+            setProfileModalVisible(false);
+            loadProfile();
+          }}
+          currentName={profile.name}
+          currentStylistName={profile.stylist_name ?? ''}
+          currentColor={profile.favorite_color}
+          currentLanguage={profile.language ?? 'en'}
+        />
+      )}
     </LinearGradient>
   );
 }

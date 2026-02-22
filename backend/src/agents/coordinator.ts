@@ -1,5 +1,10 @@
 import { LlmAgent } from '@google/adk';
-import type { UserProfile } from '../types';
+import type { UserProfile, SessionMemory } from '../types';
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  de: 'German (Deutsch)',
+};
 
 const BASE_COORDINATOR_INSTRUCTION = `You are a friendly, confident real-time beauty and style assistant having a live video conversation with the user.
 
@@ -36,9 +41,9 @@ SAFETY:
 
 When the session is ending soon, gently ask if they have any final questions.`;
 
-export function buildCoordinatorInstruction(user: UserProfile): string {
+export function buildCoordinatorInstruction(user: UserProfile, memories?: SessionMemory[]): string {
   const stylistName = user.stylist_name || 'your stylist';
-  return `${BASE_COORDINATOR_INSTRUCTION}
+  let instruction = `${BASE_COORDINATOR_INSTRUCTION}
 
 YOUR IDENTITY:
 - Your name is "${stylistName}". When the user calls you by this name, respond naturally.
@@ -53,6 +58,33 @@ USER INFO:
 - Name: ${user.name}
 - Favorite color: ${user.favorite_color}
 Consider their favorite color in suggestions when relevant.`;
+
+  const lang = user.language || 'en';
+  if (lang !== 'en') {
+    const langName = LANGUAGE_NAMES[lang] || lang;
+    instruction += `
+
+LANGUAGE:
+- You MUST speak entirely in ${langName}.
+- All your responses, greetings, suggestions, and conversation must be in ${langName}.
+- Only use English if the user explicitly switches to English.`;
+  }
+
+  if (memories && memories.length > 0) {
+    const memoriesBlock = memories.map(m => {
+      const date = m.created_at.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return `[Session from ${date}]:\n${m.summary}`;
+    }).join('\n\n');
+
+    instruction += `
+
+PAST SESSIONS (most recent first):
+You remember these details from previous sessions with this user. Reference them naturally when relevant — e.g. "Last time I noticed..." or "You mentioned wanting to try...". Don't force references; use them when they add value.
+
+${memoriesBlock}`;
+  }
+
+  return instruction;
 }
 
 export function createCoordinatorAgent(user: UserProfile): LlmAgent {

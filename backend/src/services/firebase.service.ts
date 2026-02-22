@@ -2,7 +2,7 @@ import * as admin from 'firebase-admin';
 import { getDb } from '../config/firebase';
 import { getEnv } from '../config/env';
 import { logger } from '../utils/logger';
-import type { UserProfile, SessionRecord, SubscriptionTier } from '../types';
+import type { UserProfile, SessionRecord, SessionMemory, SubscriptionTier } from '../types';
 
 const USERS_COLLECTION = 'users';
 const SESSIONS_COLLECTION = 'sessions';
@@ -13,7 +13,7 @@ function todayDateString(): string {
 
 // --- Users ---
 
-export async function createUser(deviceId: string, name: string, favoriteColor: string, stylistName?: string): Promise<UserProfile> {
+export async function createUser(deviceId: string, name: string, favoriteColor: string, stylistName?: string, language?: string): Promise<UserProfile> {
   const db = getDb();
   const ref = db.collection(USERS_COLLECTION).doc(deviceId);
 
@@ -26,6 +26,7 @@ export async function createUser(deviceId: string, name: string, favoriteColor: 
     name,
     favorite_color: favoriteColor,
     ...(stylistName && { stylist_name: stylistName }),
+    ...(language && { language }),
     created_at: admin.firestore.Timestamp.now(),
     sessions_used_today: 0,
     last_session_date: todayDateString(),
@@ -42,7 +43,7 @@ export async function getUser(deviceId: string): Promise<UserProfile | null> {
   return doc.exists ? (doc.data() as UserProfile) : null;
 }
 
-export async function updateUser(deviceId: string, updates: Partial<Pick<UserProfile, 'name' | 'favorite_color' | 'stylist_name'>>): Promise<UserProfile> {
+export async function updateUser(deviceId: string, updates: Partial<Pick<UserProfile, 'name' | 'favorite_color' | 'stylist_name' | 'language'>>): Promise<UserProfile> {
   const db = getDb();
   const ref = db.collection(USERS_COLLECTION).doc(deviceId);
 
@@ -110,6 +111,32 @@ export async function completeSessionRecord(sessionId: string, durationSeconds: 
     duration_seconds: durationSeconds,
     status,
   });
+}
+
+// --- Session Memories ---
+
+export async function saveSessionMemory(deviceId: string, memory: SessionMemory): Promise<void> {
+  const db = getDb();
+  await db
+    .collection(USERS_COLLECTION)
+    .doc(deviceId)
+    .collection('session_memories')
+    .doc(memory.session_id)
+    .set(memory);
+  logger.info({ deviceId, sessionId: memory.session_id }, 'Session memory saved');
+}
+
+export async function getRecentMemories(deviceId: string, limit = 3): Promise<SessionMemory[]> {
+  const db = getDb();
+  const snapshot = await db
+    .collection(USERS_COLLECTION)
+    .doc(deviceId)
+    .collection('session_memories')
+    .orderBy('created_at', 'desc')
+    .limit(limit)
+    .get();
+
+  return snapshot.docs.map(doc => doc.data() as SessionMemory);
 }
 
 // --- Custom Errors ---

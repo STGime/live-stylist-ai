@@ -11,12 +11,13 @@ router.use(deviceIdMiddleware);
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = RegisterBodySchema.parse(req.body);
-    const user = await firebaseService.createUser(req.deviceId!, body.name, body.favorite_color, body.stylist_name);
+    const user = await firebaseService.createUser(req.deviceId!, body.name, body.favorite_color, body.stylist_name, body.language);
     res.status(201).json({
       device_id: req.deviceId,
       name: user.name,
       favorite_color: user.favorite_color,
       stylist_name: user.stylist_name,
+      language: user.language,
       created_at: user.created_at.toDate().toISOString(),
     });
   } catch (error) {
@@ -37,6 +38,7 @@ router.get('/profile', async (req: Request, res: Response, next: NextFunction) =
       name: user.name,
       favorite_color: user.favorite_color,
       stylist_name: user.stylist_name,
+      language: user.language,
       sessions_used_today: user.sessions_used_today,
       last_session_date: user.last_session_date,
       created_at: user.created_at.toDate().toISOString(),
@@ -56,6 +58,7 @@ router.put('/profile', async (req: Request, res: Response, next: NextFunction) =
       name: user.name,
       favorite_color: user.favorite_color,
       stylist_name: user.stylist_name,
+      language: user.language,
     });
   } catch (error) {
     next(error);
