@@ -98,14 +98,26 @@ interface BubbleData {
   rotation: Animated.Value;
 }
 
+// Avatar exclusion zone (bottom-center circle, must match LiveSessionScreen avatarArea)
+const AVATAR_SIZE = 220;
+const AVATAR_BOTTOM = 120; // matches styles.avatarArea.bottom
+const AVATAR_CX = SW / 2;
+const AVATAR_CY = SH - AVATAR_BOTTOM - AVATAR_SIZE / 2;
+const AVATAR_R = AVATAR_SIZE / 2 + 20; // padding
+
 function isInsideOval(x: number, y: number, bw: number, bh: number): boolean {
   const points = [
     [x, y], [x + bw, y], [x, y + bh], [x + bw, y + bh], [x + bw / 2, y + bh / 2],
   ];
   for (const [cx, cy] of points) {
+    // Face oval exclusion
     const dx = (cx - OVAL_CX) / OVAL_RX;
     const dy = (cy - OVAL_CY) / OVAL_RY;
     if (dx * dx + dy * dy < 1) return true;
+    // Avatar circle exclusion
+    const adx = cx - AVATAR_CX;
+    const ady = cy - AVATAR_CY;
+    if (adx * adx + ady * ady < AVATAR_R * AVATAR_R) return true;
   }
   return false;
 }

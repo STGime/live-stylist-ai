@@ -17,7 +17,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import FloatingBubbles from '../components/FloatingBubbles';
-import MangaAvatar from '../components/MangaAvatar';
+import Avatar3DWebView from '../components/Avatar3DWebView';
 import AiOrb from '../components/AiOrb';
 import AgentMaskOverlay from '../components/AgentMaskOverlay';
 import SuggestionBubbles from '../components/SuggestionBubbles';
@@ -69,6 +69,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   const {
     aiState, cameraRef, isConnected, error, visionActive,
     previewImage, previewMimeType, previewPrompt, previewLoading, previewTrigger,
+    amplitudeRef,
     requestPreview, dismissPreview,
   } = useAdkSession({
       wsUrl,
@@ -227,7 +228,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
       {/* Avatar area */}
       {mounted && (
         <View style={styles.avatarArea}>
-          <MangaAvatar speaking={aiState === 'speaking'} size={110} />
+          <Avatar3DWebView aiState={aiState} amplitudeRef={amplitudeRef} size={220} />
           <View style={styles.avatarLabel}>
             <Text style={styles.avatarLabelText}>Stylist AI</Text>
           </View>
