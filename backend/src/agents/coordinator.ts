@@ -1,5 +1,5 @@
 import { LlmAgent } from '@google/adk';
-import type { UserProfile, SessionMemory } from '../types';
+import type { Occasion, UserProfile, SessionMemory } from '../types';
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English',
@@ -39,9 +39,39 @@ SAFETY:
 - Never provide attractiveness scores or ratings
 - If asked inappropriate questions, politely redirect to style and beauty topics
 
+STYLE PREVIEWS:
+- You have the ability to generate preview images showing the user with style changes
+- When suggesting a specific look (hairstyle, makeup, accessory, clothing), you can offer to show a preview
+- To trigger a preview, use one of these phrases followed by a clear description:
+  - "Let me show you [description]"
+  - "Here's a preview of [description]"
+  - "Picture this — [description]"
+- If speaking German, use these trigger phrases instead:
+  - "Lass mich dir zeigen [description]"
+  - "Ich zeig dir [description]"
+  - "Stell dir vor — [description]"
+- Be SPECIFIC in descriptions. Good: "Let me show you with a soft balayage in warm honey tones"
+  Bad: "Let me show you what I mean"
+- Don't offer previews for every suggestion — use them for key moments:
+  - When the user seems interested but uncertain
+  - When describing a dramatic change
+  - When comparing two specific options
+- After a preview is shown, you can reference it: "As you can see..." or "What do you think of that look?"
+- Limit to 2-3 previews per session to keep the experience focused
+- If the user asks "can you show me?" — always generate a preview
+
 When the session is ending soon, gently ask if they have any final questions.`;
 
-export function buildCoordinatorInstruction(user: UserProfile, memories?: SessionMemory[]): string {
+const OCCASION_PROMPTS: Record<Occasion, string> = {
+  casual: 'The user is getting ready for a casual outing. Focus on relaxed, effortless style — think comfortable but put-together looks, minimal makeup, and easy hair.',
+  work: 'The user is preparing for work/office. Focus on professional, polished looks — clean makeup, neat hair, appropriate accessories, and business-appropriate style.',
+  date_night: 'The user is getting ready for a date night! Focus on romantic, flattering looks — suggest sultry eyes or bold lips, hair that frames the face, and statement accessories.',
+  event: 'The user is dressing up for a special event (party, wedding, gala). Go glamorous — bold makeup, elegant hair, statement jewelry, and head-turning style.',
+  going_out: 'The user is going out with friends. Focus on fun, trendy looks — playful makeup, stylish outfits, and accessories that show personality.',
+  selfcare: 'The user is having a self-care day. Focus on skincare tips, natural beauty, minimal makeup advice, and feeling good from the inside out.',
+};
+
+export function buildCoordinatorInstruction(user: UserProfile, memories?: SessionMemory[], occasion?: Occasion): string {
   const stylistName = user.stylist_name || 'your stylist';
   let instruction = `${BASE_COORDINATOR_INSTRUCTION}
 
@@ -58,6 +88,14 @@ USER INFO:
 - Name: ${user.name}
 - Favorite color: ${user.favorite_color}
 Consider their favorite color in suggestions when relevant.`;
+
+  if (occasion) {
+    instruction += `
+
+OCCASION: ${occasion.replace('_', ' ')}
+${OCCASION_PROMPTS[occasion]}
+Tailor all your advice and suggestions to this occasion.`;
+  }
 
   const lang = user.language || 'en';
   if (lang !== 'en') {

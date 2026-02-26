@@ -7,6 +7,7 @@ import {
   Animated,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -16,8 +17,9 @@ import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import FloatingBubbles from '../components/FloatingBubbles';
 import ProfileModal from '../components/ProfileModal';
+import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
-import type { RootStackParamList, UserProfile } from '../types';
+import type { RootStackParamList, UserProfile, Occasion } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -28,6 +30,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [isPremium] = useState(false);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+  const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(16)).current;
@@ -70,7 +73,7 @@ export default function HomeScreen({ navigation }: Props) {
   const handleStartSession = async () => {
     setStarting(true);
     try {
-      const session = await api.startSession();
+      const session = await api.startSession(selectedOccasion ?? undefined);
       navigation.navigate('LiveSession', {
         sessionId: session.session_id,
         expiryTime: session.session_expiry_time,
@@ -133,7 +136,7 @@ export default function HomeScreen({ navigation }: Props) {
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.pink} style={{ marginTop: 40 }} />
         ) : (
-          <>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             {/* Greeting */}
             <View style={styles.greeting}>
               <Text style={styles.greetingText}>
@@ -190,12 +193,25 @@ export default function HomeScreen({ navigation }: Props) {
                 </Text>
               </View>
 
+              <OccasionPicker
+                selected={selectedOccasion}
+                onSelect={setSelectedOccasion}
+              />
+
               <BubbleButton
                 onPress={handleStartSession}
                 disabled={starting}>
                 {starting ? 'Starting...' : 'Start Session!'}
               </BubbleButton>
             </View>
+
+            {/* Past Sessions */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('SessionHistory')}
+              style={styles.pastSessionsButton}
+              activeOpacity={0.7}>
+              <Text style={styles.pastSessionsText}>Past Sessions</Text>
+            </TouchableOpacity>
 
             {/* Tip */}
             <View style={styles.tip}>
@@ -222,7 +238,7 @@ export default function HomeScreen({ navigation }: Props) {
                 </LinearGradient>
               </TouchableOpacity>
             )}
-          </>
+          </ScrollView>
         )}
       </Animated.View>
 
@@ -297,6 +313,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 22,
     paddingTop: 24,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   greeting: { marginBottom: 28 },
   greetingText: {
@@ -403,8 +422,27 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.white,
   },
+  pastSessionsButton: {
+    marginTop: 14,
+    paddingVertical: 12,
+    borderRadius: 50,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: COLORS.pinkLight + '40',
+    alignItems: 'center',
+    shadowColor: COLORS.grayLight,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 1,
+  },
+  pastSessionsText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.pink,
+  },
   tip: {
-    marginTop: 16,
+    marginTop: 14,
     padding: 14,
     borderRadius: 20,
     backgroundColor: COLORS.white,

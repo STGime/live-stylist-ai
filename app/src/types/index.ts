@@ -22,6 +22,8 @@ export interface EndSessionResponse {
   reason: string;
 }
 
+export type Occasion = 'casual' | 'work' | 'date_night' | 'event' | 'going_out' | 'selfcare';
+
 export type AiState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'analyzing';
 export type SessionEndReason = 'time' | 'manual' | 'error';
 
@@ -37,6 +39,15 @@ export interface AgentMaskState {
   body: boolean;
 }
 
+export interface SessionHistoryItem {
+  session_id: string;
+  summary: string;
+  tips?: string[];
+  duration_seconds?: number;
+  occasion?: Occasion;
+  created_at: string;
+}
+
 export type RootStackParamList = {
   Onboarding: undefined;
   Home: undefined;
@@ -49,5 +60,7 @@ export type RootStackParamList = {
     duration: number;
     reason: SessionEndReason;
     sessionsLeft: number;
+    sessionId?: string;
   };
+  SessionHistory: undefined;
 };

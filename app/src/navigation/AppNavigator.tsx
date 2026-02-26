@@ -7,6 +7,7 @@ import OnboardingScreen from '../screens/OnboardingScreen';
 import HomeScreen from '../screens/HomeScreen';
 import LiveSessionScreen from '../screens/LiveSessionScreen';
 import SessionSummaryScreen from '../screens/SessionSummaryScreen';
+import SessionHistoryScreen from '../screens/SessionHistoryScreen';
 import type { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -44,6 +45,7 @@ export default function AppNavigator() {
         options={{ gestureEnabled: false }}
       />
       <Stack.Screen name="SessionSummary" component={SessionSummaryScreen} />
+      <Stack.Screen name="SessionHistory" component={SessionHistoryScreen} />
     </Stack.Navigator>
   );
 }

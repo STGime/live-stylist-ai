@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
-import type { UserProfile, StartSessionResponse, EndSessionResponse } from '../types';
+import type { UserProfile, StartSessionResponse, EndSessionResponse, Occasion, SessionHistoryItem } from '../types';
 
 const BASE_URL = 'https://livestylist-backend-833955805931.us-central1.run.app';
 const DEVICE_ID_KEY = '@livestylist_device_id';
@@ -74,12 +74,21 @@ export function updateProfile(updates: { name?: string; favorite_color?: string;
 }
 
 // Sessions
-export function startSession() {
-  return apiRequest<StartSessionResponse>('POST', '/start-session');
+export function startSession(occasion?: Occasion) {
+  return apiRequest<StartSessionResponse>('POST', '/start-session', occasion ? { occasion } : undefined);
 }
 
 export function endSession(sessionId: string) {
   return apiRequest<EndSessionResponse>('POST', '/end-session', {
     session_id: sessionId,
   });
+}
+
+// Session History
+export function getSessionHistory() {
+  return apiRequest<SessionHistoryItem[]>('GET', '/session-history');
+}
+
+export function getSessionSummary(sessionId: string) {
+  return apiRequest<SessionHistoryItem>('GET', `/session-summary/${sessionId}`);
 }

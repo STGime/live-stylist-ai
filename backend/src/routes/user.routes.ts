@@ -65,4 +65,44 @@ router.put('/profile', async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+// GET /session-history
+router.get('/session-history', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const memories = await firebaseService.getSessionHistory(req.deviceId!);
+    const items = memories.map(m => ({
+      session_id: m.session_id,
+      summary: m.summary,
+      tips: m.tips || [],
+      duration_seconds: m.duration_seconds,
+      occasion: m.occasion,
+      created_at: m.created_at.toDate().toISOString(),
+    }));
+    res.json(items);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /session-summary/:sessionId
+router.get('/session-summary/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sessionId = req.params.sessionId as string;
+    const memory = await firebaseService.getSessionMemory(req.deviceId!, sessionId);
+    if (!memory) {
+      res.status(404).json({ error: 'not_found', message: 'Session summary not found' });
+      return;
+    }
+    res.json({
+      session_id: memory.session_id,
+      summary: memory.summary,
+      tips: memory.tips || [],
+      duration_seconds: memory.duration_seconds,
+      occasion: memory.occasion,
+      created_at: memory.created_at.toDate().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

@@ -3,7 +3,7 @@ import type { WebSocket } from 'ws';
 import { getEnv } from '../config/env';
 import { logger } from '../utils/logger';
 import * as firebaseService from './firebase.service';
-import type { ActiveSession, ServerEvent, SubscriptionTier } from '../types';
+import type { ActiveSession, Occasion, ServerEvent, SubscriptionTier } from '../types';
 
 const activeSessions = new Map<string, ActiveSession>();
 // deviceId → sessionId mapping to prevent duplicate sessions
@@ -27,7 +27,7 @@ export function getSessionByDevice(deviceId: string): ActiveSession | undefined 
   return activeSessions.get(sessionId);
 }
 
-export function startSession(deviceId: string, tier: SubscriptionTier): ActiveSession {
+export function startSession(deviceId: string, tier: SubscriptionTier, occasion?: Occasion): ActiveSession {
   const env = getEnv();
 
   // Idempotent: return existing active session for this device
@@ -47,6 +47,7 @@ export function startSession(deviceId: string, tier: SubscriptionTier): ActiveSe
     subscription_tier: tier,
     started_at: now,
     expires_at: expiresAt,
+    ...(occasion && { occasion }),
   };
 
   // Warning timer (e.g. 4:30)

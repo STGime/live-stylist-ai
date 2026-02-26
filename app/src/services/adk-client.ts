@@ -6,6 +6,14 @@
 
 export type AdkAiState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'analyzing';
 
+export interface PreviewImageData {
+  image: string;
+  mimeType: string;
+  prompt: string;
+  description?: string;
+  trigger: 'agent' | 'client';
+}
+
 export interface AdkSessionCallbacks {
   onReady: () => void;
   onAudioChunk: (base64Pcm: string) => void;
@@ -13,6 +21,9 @@ export interface AdkSessionCallbacks {
   onVisionActive: (agents: string[]) => void;
   onTranscript: (direction: 'input' | 'output', text: string, finished: boolean) => void;
   onSessionEvent: (event: SessionEvent) => void;
+  onPreviewGenerating?: (prompt: string) => void;
+  onPreviewImage?: (data: PreviewImageData) => void;
+  onPreviewError?: (data: { message: string; prompt: string }) => void;
   onError: (error: string) => void;
   onClose: () => void;
 }
@@ -102,6 +113,27 @@ export class AdkSessionClient {
         this.config.callbacks.onSessionEvent(data);
         break;
 
+      case 'preview_generating':
+        this.config.callbacks.onPreviewGenerating?.(data.prompt);
+        break;
+
+      case 'preview_image':
+        this.config.callbacks.onPreviewImage?.({
+          image: data.image,
+          mimeType: data.mimeType,
+          prompt: data.prompt,
+          description: data.description,
+          trigger: data.trigger,
+        });
+        break;
+
+      case 'preview_error':
+        this.config.callbacks.onPreviewError?.({
+          message: data.message,
+          prompt: data.prompt,
+        });
+        break;
+
       case 'error':
         this.config.callbacks.onError(data.message || 'Unknown error');
         break;
@@ -110,7 +142,7 @@ export class AdkSessionClient {
         break;
 
       default:
-        console.log('[AdkClient] Unknown message type:', data.type);
+        console.log('[AdkClient] Unknown message type:', JSON.stringify(data.type), 'keys:', Object.keys(data));
     }
   }
 
@@ -139,6 +171,11 @@ export class AdkSessionClient {
 
   sendEndSession(): void {
     this.send({ type: 'end_session' });
+  }
+
+  sendGeneratePreview(prompt: string, category?: string): void {
+    if (!this.ready) return;
+    this.send({ type: 'generate_preview', prompt, ...(category && { category }) });
   }
 
   disconnect(): void {

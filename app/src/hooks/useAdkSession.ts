@@ -12,9 +12,10 @@ import LiveAudioStream from 'react-native-live-audio-stream';
 import RNFS from 'react-native-fs';
 import type { Camera } from 'react-native-vision-camera';
 import { AdkSessionClient } from '../services/adk-client';
-import type { AdkAiState, SessionEvent } from '../services/adk-client';
+import type { AdkAiState, SessionEvent, PreviewImageData } from '../services/adk-client';
 import { PcmAudioPlayer } from '../services/audio-player';
 import { cropFrame } from '../services/frame-cropper';
+import { computeRmsAmplitude } from '../utils/audio-amplitude';
 
 interface UseAdkSessionConfig {
   wsUrl: string;
@@ -22,12 +23,24 @@ interface UseAdkSessionConfig {
   onSessionEvent?: (event: SessionEvent) => void;
 }
 
+export type SubtitleDirection = 'input' | 'output';
+
 interface UseAdkSessionResult {
   aiState: AdkAiState;
   cameraRef: React.RefObject<Camera | null>;
   isConnected: boolean;
   error: string | null;
   visionActive: string[];
+  subtitleText: string;
+  subtitleDirection: SubtitleDirection;
+  previewImage: string | null;
+  previewMimeType: string;
+  previewPrompt: string;
+  previewLoading: boolean;
+  previewTrigger: 'agent' | 'client' | null;
+  amplitudeRef: React.RefObject<number>;
+  requestPreview: (prompt: string, category?: string) => void;
+  dismissPreview: () => void;
 }
 
 export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult {
@@ -37,13 +50,22 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visionActive, setVisionActive] = useState<string[]>([]);
+  const [subtitleText, setSubtitleText] = useState('');
+  const [subtitleDirection, setSubtitleDirection] = useState<SubtitleDirection>('output');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewMimeType, setPreviewMimeType] = useState('image/jpeg');
+  const [previewPrompt, setPreviewPrompt] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewTrigger, setPreviewTrigger] = useState<'agent' | 'client' | null>(null);
 
   const cameraRef = useRef<Camera | null>(null);
+  const amplitudeRef = useRef(0);
   const clientRef = useRef<AdkSessionClient | null>(null);
   const playerRef = useRef<PcmAudioPlayer | null>(null);
   const aiStateRef = useRef<AdkAiState>('idle');
   const mutedRef = useRef(muted);
   const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const subtitleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const micStartedRef = useRef(false);
   const greetingDoneRef = useRef(false);
   const onSessionEventRef = useRef(onSessionEvent);
@@ -80,12 +102,14 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
           startCameraFrames();
         },
         onAudioChunk: (base64Pcm: string) => {
+          amplitudeRef.current = computeRmsAmplitude(base64Pcm);
           player.enqueue(base64Pcm);
         },
         onStateChange: (state: AdkAiState) => {
           // Flush audio when interrupted (speaking → listening)
           if (aiStateRef.current === 'speaking' && state === 'listening') {
             playerRef.current?.flush();
+            amplitudeRef.current = 0;
             // Start mic after greeting finishes (first speaking → listening transition)
             if (!greetingDoneRef.current) {
               greetingDoneRef.current = true;
@@ -102,8 +126,38 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
         onVisionActive: (agents: string[]) => {
           setVisionActive(agents);
         },
-        onTranscript: (_direction, _text, _finished) => {
-          // Transcripts available for future UI (e.g. captions)
+        onTranscript: (direction, text, finished) => {
+          if (finished || !text) {
+            // Clear after 4s of silence
+            if (subtitleTimerRef.current) clearTimeout(subtitleTimerRef.current);
+            subtitleTimerRef.current = setTimeout(() => {
+              setSubtitleText('');
+            }, 4000);
+            return;
+          }
+          setSubtitleText(text);
+          setSubtitleDirection(direction);
+          // Reset auto-clear timer
+          if (subtitleTimerRef.current) clearTimeout(subtitleTimerRef.current);
+          subtitleTimerRef.current = setTimeout(() => {
+            setSubtitleText('');
+          }, 4000);
+        },
+        onPreviewGenerating: (prompt: string) => {
+          setPreviewLoading(true);
+          setPreviewPrompt(prompt);
+          setPreviewImage(null);
+        },
+        onPreviewImage: (data: PreviewImageData) => {
+          setPreviewLoading(false);
+          setPreviewImage(data.image);
+          setPreviewMimeType(data.mimeType);
+          setPreviewPrompt(data.prompt);
+          setPreviewTrigger(data.trigger);
+        },
+        onPreviewError: () => {
+          setPreviewLoading(false);
+          setPreviewImage(null);
         },
         onSessionEvent: (event: SessionEvent) => {
           onSessionEventRef.current?.(event);
@@ -127,6 +181,7 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
       player.stop();
       clientRef.current = null;
       playerRef.current = null;
+      if (subtitleTimerRef.current) clearTimeout(subtitleTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -220,11 +275,32 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     }
   }
 
+  const requestPreview = useCallback((prompt: string, category?: string) => {
+    clientRef.current?.sendGeneratePreview(prompt, category);
+  }, []);
+
+  const dismissPreview = useCallback(() => {
+    setPreviewImage(null);
+    setPreviewLoading(false);
+    setPreviewPrompt('');
+    setPreviewTrigger(null);
+  }, []);
+
   return {
     aiState,
     cameraRef,
     isConnected,
     error,
     visionActive,
+    subtitleText,
+    subtitleDirection,
+    previewImage,
+    previewMimeType,
+    previewPrompt,
+    previewLoading,
+    previewTrigger,
+    amplitudeRef,
+    requestPreview,
+    dismissPreview,
   };
 }

@@ -139,6 +139,31 @@ export async function getRecentMemories(deviceId: string, limit = 3): Promise<Se
   return snapshot.docs.map(doc => doc.data() as SessionMemory);
 }
 
+export async function getSessionHistory(deviceId: string, limit = 20): Promise<SessionMemory[]> {
+  const db = getDb();
+  const snapshot = await db
+    .collection(USERS_COLLECTION)
+    .doc(deviceId)
+    .collection('session_memories')
+    .orderBy('created_at', 'desc')
+    .limit(limit)
+    .get();
+
+  return snapshot.docs.map(doc => doc.data() as SessionMemory);
+}
+
+export async function getSessionMemory(deviceId: string, sessionId: string): Promise<SessionMemory | null> {
+  const db = getDb();
+  const doc = await db
+    .collection(USERS_COLLECTION)
+    .doc(deviceId)
+    .collection('session_memories')
+    .doc(sessionId)
+    .get();
+
+  return doc.exists ? (doc.data() as SessionMemory) : null;
+}
+
 // --- Custom Errors ---
 
 export class ConflictError extends Error {

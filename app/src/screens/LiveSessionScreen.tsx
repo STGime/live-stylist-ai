@@ -21,6 +21,8 @@ import MangaAvatar from '../components/MangaAvatar';
 import AiOrb from '../components/AiOrb';
 import AgentMaskOverlay from '../components/AgentMaskOverlay';
 import SuggestionBubbles from '../components/SuggestionBubbles';
+import PreviewSheet from '../components/PreviewSheet';
+import PreviewRequestButton from '../components/PreviewRequestButton';
 import * as api from '../services/api';
 import { useAdkSession } from '../hooks/useAdkSession';
 import type { SessionEvent } from '../services/adk-client';
@@ -41,7 +43,6 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   const [muted, setMuted] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
-
   const sessionStartTime = useRef(Date.now());
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -65,8 +66,11 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   }, []);
 
   // ADK session (replaces useGeminiSession)
-  const { aiState, cameraRef, isConnected, error, visionActive } =
-    useAdkSession({
+  const {
+    aiState, cameraRef, isConnected, error, visionActive,
+    previewImage, previewMimeType, previewPrompt, previewLoading, previewTrigger,
+    requestPreview, dismissPreview,
+  } = useAdkSession({
       wsUrl,
       muted,
       onSessionEvent: handleSessionEvent,
@@ -143,6 +147,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
         duration: Math.min(elapsed, 300),
         reason,
         sessionsLeft: 0,
+        sessionId,
       });
     },
     [navigation, sessionId],
@@ -156,8 +161,6 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
       : timeLeft <= 60
         ? COLORS.gold
         : 'rgba(255,255,255,0.85)';
-  const isSpeaking = aiState === 'speaking';
-
   const showCamera = hasPermission && device != null;
 
   return (
@@ -224,7 +227,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
       {/* Avatar area */}
       {mounted && (
         <View style={styles.avatarArea}>
-          <MangaAvatar speaking={isSpeaking} size={110} />
+          <MangaAvatar speaking={aiState === 'speaking'} size={110} />
           <View style={styles.avatarLabel}>
             <Text style={styles.avatarLabelText}>Stylist AI</Text>
           </View>
@@ -292,6 +295,26 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Preview request button */}
+      {mounted && (
+        <PreviewRequestButton
+          onPress={() =>
+            requestPreview(
+              "Show me an improved version of my current look based on the stylist's suggestions",
+            )
+          }
+          disabled={previewLoading || !isConnected}
+        />
+      )}
+
+      {/* Preview bottom sheet */}
+      <PreviewSheet
+        image={previewImage}
+        mimeType={previewMimeType}
+        loading={previewLoading}
+        onDismiss={dismissPreview}
+      />
 
       {/* End Confirmation Modal */}
       <Modal visible={showEndConfirm} transparent animationType="fade">

@@ -32,6 +32,10 @@ export interface UserProfile {
   last_session_date: string; // YYYY-MM-DD
 }
 
+// --- Occasion ---
+
+export type Occasion = 'casual' | 'work' | 'date_night' | 'event' | 'going_out' | 'selfcare';
+
 // --- Session ---
 
 export interface SessionRecord {
@@ -49,6 +53,7 @@ export interface ActiveSession {
   subscription_tier: 'free' | 'premium';
   started_at: number; // Unix ms
   expires_at: number; // Unix ms
+  occasion?: Occasion;
   warning_timer?: NodeJS.Timeout;
   expiry_timer?: NodeJS.Timeout;
   ws?: import('ws').WebSocket;
@@ -79,7 +84,10 @@ export type ServerEvent =
   | { type: 'vision_active'; agents: string[] }
   | { type: 'transcript'; direction: 'input' | 'output'; text: string; finished: boolean }
   | { type: 'error'; message: string }
-  | { type: 'pong' };
+  | { type: 'pong' }
+  | { type: 'preview_generating'; prompt: string }
+  | { type: 'preview_image'; image: string; mimeType: string; prompt: string; description?: string; trigger: 'agent' | 'client' }
+  | { type: 'preview_error'; message: string; prompt: string };
 
 export type AdkAiState = 'listening' | 'thinking' | 'speaking' | 'analyzing' | 'idle';
 
@@ -89,7 +97,8 @@ export type ClientEvent =
   | { type: 'mute' }
   | { type: 'unmute' }
   | { type: 'end_session'; session_id: string }
-  | { type: 'ping' };
+  | { type: 'ping' }
+  | { type: 'generate_preview'; prompt: string; category?: string };
 
 export const ClientEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('audio'), data: z.string() }),
@@ -98,6 +107,11 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('unmute') }),
   z.object({ type: z.literal('end_session'), session_id: z.string().uuid() }),
   z.object({ type: z.literal('ping') }),
+  z.object({
+    type: z.literal('generate_preview'),
+    prompt: z.string().min(1).max(500),
+    category: z.enum(['hairstyle', 'makeup', 'accessory', 'clothing', 'full_look']).optional(),
+  }),
 ]);
 
 // --- Session Memory ---
@@ -105,6 +119,9 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
 export interface SessionMemory {
   session_id: string;
   summary: string;
+  tips?: string[];
+  duration_seconds?: number;
+  occasion?: Occasion;
   created_at: FirebaseFirestore.Timestamp;
 }
 
