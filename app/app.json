@@ -1,4 +1,43 @@
 {
   "name": "LiveStylist",
-  "displayName": "LiveStylist"
+  "displayName": "LiveStylist",
+  "expo": {
+    "name": "LiveStylist",
+    "slug": "livestylist",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "livestylist",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.livestylist.ios",
+      "infoPlist": {
+        "NSCameraUsageDescription": "LiveStylist uses your camera to analyze your style and provide real-time fashion advice.",
+        "NSMicrophoneUsageDescription": "LiveStylist uses your microphone for voice conversations with your AI stylist."
+      }
+    },
+    "android": {
+      "package": "com.livestylist",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f0f23"
+      },
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      "react-native-vision-camera"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "78cc5a2d-12ee-4164-beee-d52e0715922d"
+      }
+    },
+    "owner": "stgim"
+  }
 }
