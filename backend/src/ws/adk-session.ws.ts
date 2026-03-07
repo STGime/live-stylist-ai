@@ -11,6 +11,8 @@ import * as sessionManager from '../services/session-manager.service';
 import * as firebaseService from '../services/firebase.service';
 import { generateStylePreview } from '../services/image-generation.service';
 import type { GenerationRequest } from '../services/image-generation.service';
+import { searchProducts, type ProductResult } from '../services/awin-product-search';
+import { ProductTriggerCooldown } from '../services/product-trigger';
 
 // Track active sessions for cleanup
 const activeSessions = new Map<string, {
@@ -111,7 +113,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
             logger.info({ sessionId }, 'Gemini Live session opened');
           },
           onmessage: (msg: LiveServerMessage) => {
-            processGeminiMessage(msg, ws, sessionId, sessionLog, checkForPreviewTrigger, checkBufferOnTurnComplete);
+            processGeminiMessage(msg, ws, sessionId, sessionLog, checkForPreviewTrigger, checkBufferOnTurnComplete, checkForProductTrigger);
           },
           onerror: (e: any) => {
             logger.error({ sessionId, error: e?.message || e }, 'Gemini Live error');
@@ -154,6 +156,11 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
     let latestBodyCrop: string | null = null;
     let previewInProgress = false;
     let transcriptBuffer = '';
+
+    // Product recommendation state
+    const productTrigger = new ProductTriggerCooldown(15000);
+    const shownProducts: ProductResult[] = [];
+    const sessionRegion = session.region || 'us';
 
     // Send session started
     sendToClient(ws, { type: 'session_started', session_id: sessionId });
@@ -463,6 +470,23 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
       return `Apply this style change to the person in the photo: ${description}. Keep the person's face and identity clearly recognizable. Make the change look natural and realistic.`;
     }
 
+    // --- PRODUCT RECOMMENDATIONS ---
+    async function checkForProductTrigger(text: string) {
+      const result = productTrigger.checkTranscript(text);
+      if (!result) return;
+
+      try {
+        const products = await searchProducts(result.query, sessionRegion, 6);
+        if (products.length === 0) return;
+
+        shownProducts.push(...products);
+        sendToClient(ws, { type: 'products', products });
+        logger.info({ sessionId, query: result.query, count: products.length }, 'Sent product recommendations');
+      } catch (error: any) {
+        logger.warn({ sessionId, error: error.message }, 'Product search failed during session');
+      }
+    }
+
     // --- CLEANUP ---
     ws.on('close', (code, reason) => {
       logger.info({ sessionId, code, reason: reason.toString() }, 'ADK WebSocket closed');
@@ -483,7 +507,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
       // Generate and save session summary (fire-and-forget)
       if (sessionLog.length > 0) {
         const durationSeconds = Math.round((Date.now() - sessionStartedAt) / 1000);
-        generateSessionSummary(sessionLog, sessionId, deviceId, genai, durationSeconds, sessionOccasion, userLanguage).catch(err => {
+        generateSessionSummary(sessionLog, sessionId, deviceId, genai, durationSeconds, sessionOccasion, userLanguage, shownProducts).catch(err => {
           logger.warn({ sessionId, error: err }, 'Failed to generate session summary');
         });
       }
@@ -494,7 +518,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
 /**
  * Process a Gemini Live server message and forward relevant data to the client.
  */
-function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: string, sessionLog: string[], onOutputText?: (text: string) => void, onTurnComplete?: () => void): void {
+function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: string, sessionLog: string[], onOutputText?: (text: string) => void, onTurnComplete?: () => void, onProductCheck?: (text: string) => void): void {
   // Handle server content (audio, text, transcriptions)
   if (msg.serverContent) {
     const content = msg.serverContent;
@@ -542,6 +566,7 @@ function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: 
       });
       sessionLog.push(`[Stylist]: ${content.outputTranscription.text}`);
       onOutputText?.(content.outputTranscription.text);
+      onProductCheck?.(content.outputTranscription.text);
     }
 
     // Turn complete
@@ -579,6 +604,7 @@ async function generateSessionSummary(
   durationSeconds?: number,
   occasion?: import('../types').Occasion,
   language?: string,
+  shownProducts?: ProductResult[],
 ): Promise<void> {
   try {
     const transcript = sessionLog.join('\n');
@@ -634,6 +660,7 @@ ${transcript}`,
       tips,
       ...(durationSeconds !== undefined && { duration_seconds: durationSeconds }),
       ...(occasion && { occasion }),
+      ...(shownProducts && shownProducts.length > 0 && { products: shownProducts }),
       created_at: admin.firestore.Timestamp.now(),
     });
   } catch (error) {

@@ -12,7 +12,7 @@ import LiveAudioStream from 'react-native-live-audio-stream';
 import RNFS from 'react-native-fs';
 import type { Camera } from 'react-native-vision-camera';
 import { AdkSessionClient } from '../services/adk-client';
-import type { AdkAiState, SessionEvent, PreviewImageData } from '../services/adk-client';
+import type { AdkAiState, SessionEvent, PreviewImageData, ProductResult } from '../services/adk-client';
 import { PcmAudioPlayer } from '../services/audio-player';
 import { cropFrame } from '../services/frame-cropper';
 import { computeRmsAmplitude } from '../utils/audio-amplitude';
@@ -38,9 +38,11 @@ interface UseAdkSessionResult {
   previewPrompt: string;
   previewLoading: boolean;
   previewTrigger: 'agent' | 'client' | null;
+  products: ProductResult[];
   amplitudeRef: React.RefObject<number>;
   requestPreview: (prompt: string, category?: string) => void;
   dismissPreview: () => void;
+  dismissProducts: () => void;
 }
 
 export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult {
@@ -57,6 +59,7 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
   const [previewPrompt, setPreviewPrompt] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewTrigger, setPreviewTrigger] = useState<'agent' | 'client' | null>(null);
+  const [products, setProducts] = useState<ProductResult[]>([]);
 
   const cameraRef = useRef<Camera | null>(null);
   const amplitudeRef = useRef(0);
@@ -158,6 +161,9 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
         onPreviewError: () => {
           setPreviewLoading(false);
           setPreviewImage(null);
+        },
+        onProducts: (productList: ProductResult[]) => {
+          setProducts(productList);
         },
         onSessionEvent: (event: SessionEvent) => {
           onSessionEventRef.current?.(event);
@@ -286,6 +292,10 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     setPreviewTrigger(null);
   }, []);
 
+  const dismissProducts = useCallback(() => {
+    setProducts([]);
+  }, []);
+
   return {
     aiState,
     cameraRef,
@@ -299,8 +309,10 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     previewPrompt,
     previewLoading,
     previewTrigger,
+    products,
     amplitudeRef,
     requestPreview,
     dismissPreview,
+    dismissProducts,
   };
 }

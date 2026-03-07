@@ -8,22 +8,29 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Linking,
+  Switch,
+  NativeModules,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import FloatingBubbles from '../components/FloatingBubbles';
 import ProfileModal from '../components/ProfileModal';
 import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
-import type { RootStackParamList, UserProfile, Occasion } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [sessionsRemaining, setSessionsRemaining] = useState(0);
   const [totalSessions, setTotalSessions] = useState(1);
@@ -32,6 +39,8 @@ export default function HomeScreen({ navigation }: Props) {
   const [starting, setStarting] = useState(false);
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [productRegion, setProductRegion] = useState<ProductRegion>('us');
+  const [showProducts, setShowProducts] = useState(true);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(16)).current;
 
@@ -43,6 +52,25 @@ export default function HomeScreen({ navigation }: Props) {
       const limit = isPremium ? 5 : 100;
       setTotalSessions(limit);
       setSessionsRemaining(Math.max(0, limit - p.sessions_used_today));
+
+      // Load product preferences
+      const savedRegion = await AsyncStorage.getItem('@livestylist_product_region');
+      const savedShowProducts = await AsyncStorage.getItem('@livestylist_show_products');
+      if (savedRegion === 'eu' || savedRegion === 'us') {
+        setProductRegion(savedRegion);
+      } else {
+        // Auto-detect region from device locale
+        const locale = Platform.OS === 'ios'
+          ? (NativeModules.SettingsManager?.settings?.AppleLocale || NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] || 'en_US')
+          : (NativeModules.I18nManager?.localeIdentifier || 'en_US');
+        const isEU = /^(de|fr|it|es|nl|pt|pl|sv|da|fi|no|cs|hu|ro|bg|hr|sk|sl|et|lv|lt|el|ga)/.test(locale) || /_?(AT|BE|BG|HR|CY|CZ|DK|EE|FI|FR|DE|GR|HU|IE|IT|LV|LT|LU|MT|NL|PL|PT|RO|SK|SI|ES|SE|GB|UK)$/i.test(locale);
+        const detected: ProductRegion = isEU ? 'eu' : 'us';
+        setProductRegion(detected);
+        await AsyncStorage.setItem('@livestylist_product_region', detected);
+      }
+      if (savedShowProducts !== null) {
+        setShowProducts(savedShowProducts !== 'false');
+      }
     } catch (err: any) {
       if (err.status === 404) {
         navigation.replace('Onboarding');
@@ -73,7 +101,7 @@ export default function HomeScreen({ navigation }: Props) {
   const handleStartSession = async () => {
     setStarting(true);
     try {
-      const session = await api.startSession(selectedOccasion ?? undefined);
+      const session = await api.startSession(selectedOccasion ?? undefined, showProducts ? productRegion : undefined);
       navigation.navigate('LiveSession', {
         sessionId: session.session_id,
         expiryTime: session.session_expiry_time,
@@ -136,7 +164,7 @@ export default function HomeScreen({ navigation }: Props) {
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.pink} style={{ marginTop: 40 }} />
         ) : (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(20, insets.bottom + 16) }]}>
             {/* Greeting */}
             <View style={styles.greeting}>
               <Text style={styles.greetingText}>
@@ -203,6 +231,17 @@ export default function HomeScreen({ navigation }: Props) {
                 disabled={starting}>
                 {starting ? 'Starting...' : 'Start Session!'}
               </BubbleButton>
+
+              <Text style={styles.consentNote}>
+                By starting, you agree to our{' '}
+                <Text style={styles.consentLink} onPress={() => Linking.openURL('https://livestylist.app/terms')}>
+                  Terms
+                </Text>
+                {' & '}
+                <Text style={styles.consentLink} onPress={() => Linking.openURL('https://livestylist.app/privacy')}>
+                  Privacy Policy
+                </Text>
+              </Text>
             </View>
 
             {/* Past Sessions */}
@@ -212,6 +251,45 @@ export default function HomeScreen({ navigation }: Props) {
               activeOpacity={0.7}>
               <Text style={styles.pastSessionsText}>Past Sessions</Text>
             </TouchableOpacity>
+
+            {/* Product Suggestions Settings */}
+            <View style={styles.productSettings}>
+              <View style={styles.productSettingRow}>
+                <Text style={styles.productSettingLabel}>Show product suggestions</Text>
+                <Switch
+                  value={showProducts}
+                  onValueChange={async (val) => {
+                    setShowProducts(val);
+                    await AsyncStorage.setItem('@livestylist_show_products', String(val));
+                  }}
+                  trackColor={{ false: COLORS.grayMid, true: COLORS.pinkLight }}
+                  thumbColor={showProducts ? COLORS.pink : COLORS.grayLight}
+                />
+              </View>
+              {showProducts && (
+                <View style={styles.regionSelector}>
+                  <Text style={styles.regionLabel}>Shopping region:</Text>
+                  <View style={styles.regionOptions}>
+                    <TouchableOpacity
+                      style={[styles.regionOption, productRegion === 'eu' && styles.regionOptionActive]}
+                      onPress={async () => {
+                        setProductRegion('eu');
+                        await AsyncStorage.setItem('@livestylist_product_region', 'eu');
+                      }}>
+                      <Text style={[styles.regionOptionText, productRegion === 'eu' && styles.regionOptionTextActive]}>EU</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.regionOption, productRegion === 'us' && styles.regionOptionActive]}
+                      onPress={async () => {
+                        setProductRegion('us');
+                        await AsyncStorage.setItem('@livestylist_product_region', 'us');
+                      }}>
+                      <Text style={[styles.regionOptionText, productRegion === 'us' && styles.regionOptionTextActive]}>US</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
 
             {/* Tip */}
             <View style={styles.tip}>
@@ -242,8 +320,23 @@ export default function HomeScreen({ navigation }: Props) {
         )}
       </Animated.View>
 
-      {/* Version info */}
-      <Text style={styles.version}>v1.0 (build 1)</Text>
+      {/* Footer */}
+      <View style={[styles.footer, { paddingBottom: Math.max(16, insets.bottom + 8) }]}>
+        <View style={styles.footerLinks}>
+          <Text
+            style={styles.footerLink}
+            onPress={() => Linking.openURL('https://livestylist.app/terms')}>
+            Terms &amp; Conditions
+          </Text>
+          <Text style={styles.footerDot}>&middot;</Text>
+          <Text
+            style={styles.footerLink}
+            onPress={() => Linking.openURL('https://livestylist.app/privacy')}>
+            Privacy Policy
+          </Text>
+        </View>
+        <Text style={styles.version}>v1.0 (build 1)</Text>
+      </View>
 
       {profile && (
         <ProfileModal
@@ -441,6 +534,64 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.pink,
   },
+  productSettings: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: COLORS.pinkLight + '30',
+    shadowColor: COLORS.grayLight,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 1,
+  },
+  productSettingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  productSettingLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textMid,
+  },
+  regionSelector: {
+    marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  regionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+  },
+  regionOptions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  regionOption: {
+    paddingVertical: 5,
+    paddingHorizontal: 16,
+    borderRadius: 50,
+    borderWidth: 1.5,
+    borderColor: COLORS.grayMid,
+    backgroundColor: COLORS.white,
+  },
+  regionOptionActive: {
+    borderColor: COLORS.pink,
+    backgroundColor: COLORS.pinkSoft,
+  },
+  regionOptionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+  },
+  regionOptionTextActive: {
+    color: COLORS.pink,
+  },
   tip: {
     marginTop: 14,
     padding: 14,
@@ -460,11 +611,42 @@ const styles = StyleSheet.create({
     color: COLORS.textMid,
     lineHeight: 20,
   },
+  consentNote: {
+    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    marginTop: 12,
+    lineHeight: 16,
+  },
+  consentLink: {
+    color: COLORS.pink,
+    textDecorationLine: 'underline',
+  },
+  footer: {
+    alignItems: 'center',
+    paddingTop: 8,
+  },
+  footerLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  footerLink: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.textMid,
+    textDecorationLine: 'underline',
+  },
+  footerDot: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+  },
   version: {
     textAlign: 'center',
     fontSize: 11,
     fontWeight: '600',
     color: COLORS.textMuted,
-    paddingBottom: 28,
   },
 });

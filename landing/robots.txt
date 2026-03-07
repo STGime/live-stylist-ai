@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://livestylist.app/sitemap.xml

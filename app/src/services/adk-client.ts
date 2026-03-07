@@ -14,6 +14,18 @@ export interface PreviewImageData {
   trigger: 'agent' | 'client';
 }
 
+export interface ProductResult {
+  id: string;
+  name: string;
+  brand: string;
+  price: string;
+  currency: string;
+  imageUrl: string;
+  affiliateUrl: string;
+  merchant: string;
+  region: 'eu' | 'us';
+}
+
 export interface AdkSessionCallbacks {
   onReady: () => void;
   onAudioChunk: (base64Pcm: string) => void;
@@ -24,6 +36,7 @@ export interface AdkSessionCallbacks {
   onPreviewGenerating?: (prompt: string) => void;
   onPreviewImage?: (data: PreviewImageData) => void;
   onPreviewError?: (data: { message: string; prompt: string }) => void;
+  onProducts?: (products: ProductResult[]) => void;
   onError: (error: string) => void;
   onClose: () => void;
 }
@@ -132,6 +145,12 @@ export class AdkSessionClient {
           message: data.message,
           prompt: data.prompt,
         });
+        break;
+
+      case 'products':
+        if (data.products && Array.isArray(data.products)) {
+          this.config.callbacks.onProducts?.(data.products);
+        }
         break;
 
       case 'error':

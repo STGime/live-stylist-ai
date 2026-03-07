@@ -47,6 +47,20 @@ export interface SessionRecord {
   status: 'active' | 'completed' | 'expired';
 }
 
+export type ProductRegion = 'eu' | 'us';
+
+export interface ProductResult {
+  id: string;
+  name: string;
+  brand: string;
+  price: string;
+  currency: string;
+  imageUrl: string;
+  affiliateUrl: string;
+  merchant: string;
+  region: ProductRegion;
+}
+
 export interface ActiveSession {
   session_id: string;
   device_id: string;
@@ -54,6 +68,7 @@ export interface ActiveSession {
   started_at: number; // Unix ms
   expires_at: number; // Unix ms
   occasion?: Occasion;
+  region?: ProductRegion;
   warning_timer?: NodeJS.Timeout;
   expiry_timer?: NodeJS.Timeout;
   ws?: import('ws').WebSocket;
@@ -87,7 +102,8 @@ export type ServerEvent =
   | { type: 'pong' }
   | { type: 'preview_generating'; prompt: string }
   | { type: 'preview_image'; image: string; mimeType: string; prompt: string; description?: string; trigger: 'agent' | 'client' }
-  | { type: 'preview_error'; message: string; prompt: string };
+  | { type: 'preview_error'; message: string; prompt: string }
+  | { type: 'products'; products: ProductResult[] };
 
 export type AdkAiState = 'listening' | 'thinking' | 'speaking' | 'analyzing' | 'idle';
 
@@ -120,6 +136,7 @@ export interface SessionMemory {
   session_id: string;
   summary: string;
   tips?: string[];
+  products?: ProductResult[];
   duration_seconds?: number;
   occasion?: Occasion;
   created_at: FirebaseFirestore.Timestamp;

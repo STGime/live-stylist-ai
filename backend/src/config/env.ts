@@ -12,6 +12,8 @@ const EnvSchema = z.object({
   PREMIUM_SESSIONS_PER_DAY: z.coerce.number().default(5),
   SESSION_DURATION_SECONDS: z.coerce.number().default(300),
   SESSION_WARNING_SECONDS: z.coerce.number().default(270),
+  AWIN_API_TOKEN: z.string().optional(),
+  AWIN_AFFILIATE_ID: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

@@ -13,6 +13,7 @@ router.use(deviceIdMiddleware);
 
 const StartSessionBodySchema = z.object({
   occasion: z.enum(['casual', 'work', 'date_night', 'event', 'going_out', 'selfcare']).optional(),
+  region: z.enum(['eu', 'us']).optional(),
 }).optional();
 
 const EndSessionBodySchema = z.object({
@@ -24,6 +25,7 @@ router.post('/start-session', sessionStartRateLimiter, async (req: Request, res:
   const deviceId = req.deviceId!;
   const body = StartSessionBodySchema?.parse(req.body);
   const occasion = body?.occasion;
+  const region = body?.region;
 
   try {
     // 1. Check for existing active session — end it and start fresh
@@ -56,7 +58,7 @@ router.post('/start-session', sessionStartRateLimiter, async (req: Request, res:
     }
 
     // 5. Create in-memory session with timers
-    const session = sessionManager.startSession(deviceId, tier, occasion);
+    const session = sessionManager.startSession(deviceId, tier, occasion, region);
 
     // 6. Persist session record to Firestore
     await firebaseService.createSessionRecord(session.session_id, deviceId, tier);

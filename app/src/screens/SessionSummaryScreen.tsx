@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   ScrollView,
+  Image,
+  Linking,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -137,6 +139,34 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
                         <Text style={styles.tipIcon}>✨</Text>
                         <Text style={styles.tipText}>{tip}</Text>
                       </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Products mentioned */}
+                {summaryData.products && summaryData.products.length > 0 && (
+                  <View style={styles.productsSection}>
+                    <Text style={styles.productsSectionTitle}>Products Mentioned</Text>
+                    {summaryData.products.map((product, i) => (
+                      <TouchableOpacity
+                        key={`${product.id}-${i}`}
+                        style={styles.productRow}
+                        activeOpacity={0.7}
+                        onPress={() => product.affiliateUrl && Linking.openURL(product.affiliateUrl)}>
+                        {product.imageUrl ? (
+                          <Image source={{ uri: product.imageUrl }} style={styles.productThumb} />
+                        ) : (
+                          <View style={[styles.productThumb, styles.productThumbPlaceholder]} />
+                        )}
+                        <View style={styles.productInfo}>
+                          {product.brand ? <Text style={styles.productBrand}>{product.brand}</Text> : null}
+                          <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+                          <Text style={styles.productPrice}>
+                            {product.currency === 'USD' ? '$' : product.currency === 'GBP' ? '\u00A3' : '\u20AC'}{product.price}
+                          </Text>
+                        </View>
+                        <Text style={styles.productShopLink}>Shop →</Text>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 )}
@@ -331,6 +361,60 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     textAlign: 'center',
     paddingVertical: 12,
+  },
+  productsSection: {
+    marginTop: 14,
+    gap: 6,
+  },
+  productsSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginBottom: 4,
+  },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.pinkPale,
+    borderRadius: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 10,
+  },
+  productThumb: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: COLORS.grayLight,
+  },
+  productThumbPlaceholder: {
+    backgroundColor: COLORS.grayMid,
+  },
+  productInfo: {
+    flex: 1,
+    gap: 1,
+  },
+  productBrand: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.pink,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  productName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textDark,
+  },
+  productPrice: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: COLORS.textDark,
+  },
+  productShopLink: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.pink,
   },
   buttonArea: {
     width: '100%',

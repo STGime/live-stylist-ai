@@ -26,6 +26,19 @@ export type Occasion = 'casual' | 'work' | 'date_night' | 'event' | 'going_out' 
 
 export type AiState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'analyzing';
 export type SessionEndReason = 'time' | 'manual' | 'error';
+export type ProductRegion = 'eu' | 'us';
+
+export interface ProductResult {
+  id: string;
+  name: string;
+  brand: string;
+  price: string;
+  currency: string;
+  imageUrl: string;
+  affiliateUrl: string;
+  merchant: string;
+  region: ProductRegion;
+}
 
 export interface FrameCrops {
   eyeCrop: string;
@@ -43,6 +56,7 @@ export interface SessionHistoryItem {
   session_id: string;
   summary: string;
   tips?: string[];
+  products?: ProductResult[];
   duration_seconds?: number;
   occasion?: Occasion;
   created_at: string;

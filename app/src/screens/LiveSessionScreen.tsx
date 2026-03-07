@@ -23,6 +23,7 @@ import AgentMaskOverlay from '../components/AgentMaskOverlay';
 import SuggestionBubbles from '../components/SuggestionBubbles';
 import PreviewSheet from '../components/PreviewSheet';
 import PreviewRequestButton from '../components/PreviewRequestButton';
+import ProductCarousel from '../components/ProductCarousel';
 import * as api from '../services/api';
 import { useAdkSession } from '../hooks/useAdkSession';
 import type { SessionEvent } from '../services/adk-client';
@@ -69,8 +70,8 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   const {
     aiState, cameraRef, isConnected, error, visionActive,
     previewImage, previewMimeType, previewPrompt, previewLoading, previewTrigger,
-    amplitudeRef,
-    requestPreview, dismissPreview,
+    products, amplitudeRef,
+    requestPreview, dismissPreview, dismissProducts,
   } = useAdkSession({
       wsUrl,
       muted,
@@ -307,6 +308,11 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
           }
           disabled={previewLoading || !isConnected}
         />
+      )}
+
+      {/* Product carousel */}
+      {mounted && (
+        <ProductCarousel products={products} onDismiss={dismissProducts} />
       )}
 
       {/* Preview bottom sheet */}
