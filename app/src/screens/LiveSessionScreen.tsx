@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Modal,
   Animated,
+  AppState,
 } from 'react-native';
 import Svg, { Path, Line } from 'react-native-svg';
 import {
@@ -14,6 +15,7 @@ import {
   useCameraPermission,
 } from 'react-native-vision-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useIsFocused } from '@react-navigation/native';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import FloatingBubbles from '../components/FloatingBubbles';
@@ -44,12 +46,21 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   const [muted, setMuted] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [sessionEnded, setSessionEnded] = useState(false);
+  const [appActive, setAppActive] = useState(true);
+  const [cameraReady, setCameraReady] = useState(false);
   const sessionStartTime = useRef(Date.now());
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const isFocused = useIsFocused();
 
   // Camera
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('front');
+
+  useEffect(() => {
+    if (!hasPermission) requestPermission();
+  }, [hasPermission, requestPermission]);
 
   // Handle session events from the backend
   const handleSessionEvent = useCallback((event: SessionEvent) => {
@@ -71,19 +82,12 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
     aiState, cameraRef, isConnected, error, visionActive,
     previewImage, previewMimeType, previewPrompt, previewLoading, previewTrigger,
     products, amplitudeRef,
-    requestPreview, dismissPreview, dismissProducts,
+    requestPreview, dismissPreview, dismissProducts, deactivateCamera,
   } = useAdkSession({
       wsUrl,
       muted,
       onSessionEvent: handleSessionEvent,
     });
-
-  // Request camera permission on mount
-  useEffect(() => {
-    if (!hasPermission) {
-      requestPermission();
-    }
-  }, [hasPermission, requestPermission]);
 
   // Mount animation
   useEffect(() => {
@@ -95,6 +99,20 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
       useNativeDriver: true,
     }).start();
   }, [fadeAnim]);
+
+  // AppState listener — pause camera when backgrounded
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      setAppActive(state === 'active');
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Brief delay before activating camera to let previous native session release
+  useEffect(() => {
+    const timer = setTimeout(() => setCameraReady(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Countdown timer
   useEffect(() => {
@@ -135,6 +153,10 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
 
   const handleEndSession = useCallback(
     async (reason: 'manual' | 'time' | 'error') => {
+      // Deactivate camera before teardown to release native resources cleanly
+      setSessionEnded(true);
+      deactivateCamera();
+
       const elapsed = Math.floor(
         (Date.now() - sessionStartTime.current) / 1000,
       );
@@ -152,7 +174,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
         sessionId,
       });
     },
-    [navigation, sessionId],
+    [navigation, sessionId, deactivateCamera],
   );
 
   const mins = Math.floor(timeLeft / 60);
@@ -163,6 +185,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
       : timeLeft <= 60
         ? COLORS.gold
         : 'rgba(255,255,255,0.85)';
+  const cameraActive = isFocused && appActive && !sessionEnded;
   const showCamera = hasPermission && device != null;
 
   return (
@@ -173,7 +196,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
           ref={cameraRef}
           style={StyleSheet.absoluteFill}
           device={device}
-          isActive={true}
+          isActive={cameraActive && cameraReady}
           photo={true}
           video={true}
         />
@@ -203,7 +226,9 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
               strokeLinejoin="round"
             />
           </Svg>
-          <Text style={styles.cameraText}>Camera permission required</Text>
+          <Text style={styles.cameraText}>
+            {!hasPermission ? 'Camera permission required' : 'No front camera detected'}
+          </Text>
         </View>
       )}
 

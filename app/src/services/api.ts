@@ -55,6 +55,12 @@ async function apiRequest<T>(
   return data as T;
 }
 
+// Reset
+export async function resetAccount(): Promise<void> {
+  cachedDeviceId = null;
+  await AsyncStorage.clear();
+}
+
 // User
 export function register(name: string, favoriteColor: string, stylistName?: string, language?: string) {
   return apiRequest<UserProfile>('POST', '/register', {

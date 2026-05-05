@@ -10,6 +10,7 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
+import { Camera } from 'react-native-vision-camera';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -53,6 +54,10 @@ export default function OnboardingScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
+      // Request camera + microphone permissions upfront
+      await Camera.requestCameraPermission();
+      await Camera.requestMicrophonePermission();
+
       await api.register(name.trim(), selectedColor, stylistName.trim() || undefined, language);
       navigation.replace('Home');
     } catch (err: any) {

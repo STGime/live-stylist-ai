@@ -18,6 +18,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Camera } from 'react-native-vision-camera';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import FloatingBubbles from '../components/FloatingBubbles';
@@ -101,6 +102,23 @@ export default function HomeScreen({ navigation }: Props) {
   const handleStartSession = async () => {
     setStarting(true);
     try {
+      // Ensure camera + mic permissions before launching
+      const camStatus = await Camera.requestCameraPermission();
+      const micStatus = await Camera.requestMicrophonePermission();
+
+      if (camStatus !== 'granted' || micStatus !== 'granted') {
+        Alert.alert(
+          'Permissions Required',
+          'LiveStylist needs camera and microphone access to work. Please enable them in your device settings.',
+          [
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            { text: 'Cancel', style: 'cancel' },
+          ],
+        );
+        setStarting(false);
+        return;
+      }
+
       const session = await api.startSession(selectedOccasion ?? undefined, showProducts ? productRegion : undefined);
       navigation.navigate('LiveSession', {
         sessionId: session.session_id,
@@ -345,6 +363,10 @@ export default function HomeScreen({ navigation }: Props) {
           onSaved={() => {
             setProfileModalVisible(false);
             loadProfile();
+          }}
+          onReset={() => {
+            setProfileModalVisible(false);
+            navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
           }}
           currentName={profile.name}
           currentStylistName={profile.stylist_name ?? ''}

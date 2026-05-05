@@ -43,6 +43,7 @@ interface UseAdkSessionResult {
   requestPreview: (prompt: string, category?: string) => void;
   dismissPreview: () => void;
   dismissProducts: () => void;
+  deactivateCamera: () => void;
 }
 
 export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult {
@@ -63,6 +64,7 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
 
   const cameraRef = useRef<Camera | null>(null);
   const amplitudeRef = useRef(0);
+  const cameraActiveRef = useRef(true);
   const clientRef = useRef<AdkSessionClient | null>(null);
   const playerRef = useRef<PcmAudioPlayer | null>(null);
   const aiStateRef = useRef<AdkAiState>('idle');
@@ -221,7 +223,8 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
       } as any);
 
       LiveAudioStream.on('data', (base64Chunk: string) => {
-        if (!mutedRef.current && clientRef.current?.isConnected) {
+        // Suppress mic while agent is speaking to prevent echo feedback loop
+        if (!mutedRef.current && aiStateRef.current !== 'speaking' && clientRef.current?.isConnected) {
           clientRef.current.sendAudio(base64Chunk);
         }
       });
@@ -246,6 +249,9 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     // Capture frames every 2 seconds and send crops to backend
     frameIntervalRef.current = setInterval(async () => {
       try {
+        if (!cameraActiveRef.current) {
+          return;
+        }
         const camera = cameraRef.current;
         if (!camera) {
           console.log('[AdkSession] Frame skip: no camera ref');
@@ -296,6 +302,11 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     setProducts([]);
   }, []);
 
+  const deactivateCamera = useCallback(() => {
+    cameraActiveRef.current = false;
+    stopCameraFrames();
+  }, []);
+
   return {
     aiState,
     cameraRef,
@@ -314,5 +325,6 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     requestPreview,
     dismissPreview,
     dismissProducts,
+    deactivateCamera,
   };
 }

@@ -113,7 +113,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
             logger.info({ sessionId }, 'Gemini Live session opened');
           },
           onmessage: (msg: LiveServerMessage) => {
-            processGeminiMessage(msg, ws, sessionId, sessionLog, checkForPreviewTrigger, checkBufferOnTurnComplete, checkForProductTrigger);
+            processGeminiMessage(msg, ws, sessionId, sessionLog, checkForPreviewTrigger, checkBufferOnTurnComplete, checkForProductTrigger, (speaking) => { agentSpeaking = speaking; });
           },
           onerror: (e: any) => {
             logger.error({ sessionId, error: e?.message || e }, 'Gemini Live error');
@@ -151,11 +151,15 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
     // Track state
     let visionInProgress = false;
     let muted = false;
+    let agentSpeaking = false;
     let visionUpdateCount = 0;
+    let greetingComplete = false; // Set true after first turn completes (greeting finished)
+    let pendingVisionResult: string | null = null; // Buffer vision results until greeting done
     const sessionLog: string[] = [];
     let latestBodyCrop: string | null = null;
     let previewInProgress = false;
     let transcriptBuffer = '';
+    let previewCooldownUntil = 0; // Timestamp: ignore preview triggers until this time
 
     // Product recommendation state
     const productTrigger = new ProductTriggerCooldown(15000);
@@ -188,7 +192,8 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
 
         switch (msg.type) {
           case 'audio':
-            if (msg.data && !muted) {
+            // Drop mic audio while agent is speaking to prevent echo feedback
+            if (msg.data && !muted && !agentSpeaking) {
               geminiSession.sendRealtimeInput({
                 audio: {
                   mimeType: 'audio/pcm;rate=16000',
@@ -275,18 +280,26 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
         visionUpdateCount++;
         const isFirstVision = visionUpdateCount === 1;
         const resultText = formatVisionResults(results);
-        geminiSession.sendClientContent({
-          turns: [{
-            role: 'user',
-            parts: [{ text: resultText }],
-          }],
-          turnComplete: isFirstVision,
-        });
+
+        if (isFirstVision && !greetingComplete) {
+          // Buffer the first vision result — injecting with turnComplete:true
+          // while the greeting is still speaking would interrupt it
+          pendingVisionResult = resultText;
+          logger.info({ sessionId }, 'Vision results buffered (waiting for greeting to finish)');
+        } else {
+          geminiSession.sendClientContent({
+            turns: [{
+              role: 'user',
+              parts: [{ text: resultText }],
+            }],
+            turnComplete: isFirstVision,
+          });
+          logger.info({ sessionId }, 'Vision results injected into coordinator');
+        }
 
         sessionLog.push(`[Vision]: ${resultText}`);
 
         sendToClient(ws, { type: 'vision_active', agents: [] });
-        logger.info({ sessionId }, 'Vision results injected into coordinator');
       } catch (error) {
         logger.error({ sessionId, error }, 'Vision pipeline failed');
         sendToClient(ws, { type: 'vision_active', agents: [] });
@@ -354,7 +367,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
           turns: [{
             role: 'user',
             parts: [{
-              text: `[System: A style preview image was just generated and shown to the user. Prompt: "${prompt}". You can reference it naturally, e.g. "As you can see in the preview..." — do not read this aloud.]`,
+              text: `[System: A style preview image was just generated and shown to the user. Prompt: "${prompt}". The user can see it on their screen. Do NOT use phrases like "let me show you" or "here's a preview" again — the preview is already visible. Just continue the conversation naturally.]`,
             }],
           }],
           turnComplete: false,
@@ -367,6 +380,10 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
           prompt,
         });
       } finally {
+        // Block re-triggers for 30s so the agent's follow-up speech
+        // (e.g. "as you can see in the preview…") doesn't loop
+        previewCooldownUntil = Date.now() + 30000;
+        transcriptBuffer = '';
         setTimeout(() => {
           previewInProgress = false;
         }, 5000);
@@ -374,6 +391,9 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
     }
 
     function checkForPreviewTrigger(text: string) {
+      // Skip trigger detection during cooldown (prevents loop from agent referencing the preview)
+      if (Date.now() < previewCooldownUntil) return;
+
       transcriptBuffer += text;
 
       logger.info(
@@ -433,6 +453,26 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
 
     // Called when the agent finishes speaking — check any remaining buffer
     function checkBufferOnTurnComplete() {
+      // Flush buffered vision results once greeting finishes
+      if (!greetingComplete) {
+        greetingComplete = true;
+        if (pendingVisionResult) {
+          logger.info({ sessionId }, 'Greeting done — injecting buffered vision results');
+          geminiSession.sendClientContent({
+            turns: [{
+              role: 'user',
+              parts: [{ text: pendingVisionResult }],
+            }],
+            turnComplete: true,
+          });
+          pendingVisionResult = null;
+        }
+      }
+
+      if (Date.now() < previewCooldownUntil) {
+        transcriptBuffer = '';
+        return;
+      }
       if (!transcriptBuffer.trim()) return;
 
       const remaining = transcriptBuffer.trim();
@@ -518,7 +558,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
 /**
  * Process a Gemini Live server message and forward relevant data to the client.
  */
-function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: string, sessionLog: string[], onOutputText?: (text: string) => void, onTurnComplete?: () => void, onProductCheck?: (text: string) => void): void {
+function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: string, sessionLog: string[], onOutputText?: (text: string) => void, onTurnComplete?: () => void, onProductCheck?: (text: string) => void, onSpeakingChange?: (speaking: boolean) => void): void {
   // Handle server content (audio, text, transcriptions)
   if (msg.serverContent) {
     const content = msg.serverContent;
@@ -527,6 +567,7 @@ function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: 
     if (content.modelTurn?.parts) {
       for (const part of content.modelTurn.parts) {
         if (part.inlineData?.mimeType?.startsWith('audio/pcm')) {
+          onSpeakingChange?.(true);
           sendToClient(ws, {
             type: 'audio',
             data: part.inlineData.data,
@@ -571,6 +612,7 @@ function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: 
 
     // Turn complete
     if (content.turnComplete) {
+      onSpeakingChange?.(false);
       sendToClient(ws, { type: 'state', ai_state: 'listening' });
       sendToClient(ws, {
         type: 'transcript',
@@ -583,6 +625,7 @@ function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: 
 
     // Interrupted
     if (content.interrupted) {
+      onSpeakingChange?.(false);
       sendToClient(ws, { type: 'state', ai_state: 'listening' });
     }
   }

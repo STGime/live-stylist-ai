@@ -22,6 +22,7 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   onSaved: () => void;
+  onReset: () => void;
   currentName: string;
   currentStylistName: string;
   currentColor: string;
@@ -32,6 +33,7 @@ export default function ProfileModal({
   visible,
   onClose,
   onSaved,
+  onReset,
   currentName,
   currentStylistName,
   currentColor,
@@ -59,6 +61,28 @@ export default function ProfileModal({
 
   const handleStylistNameChange = (text: string) => {
     setStylistName(text.replace(/[^a-zA-Z\s'-]/g, ''));
+  };
+
+  const handleReset = () => {
+    Alert.alert(
+      'Reset Account',
+      'This will delete all your data including your profile, session history, and preferences. You will start fresh with the onboarding flow.\n\nThis action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.resetAccount();
+              onReset();
+            } catch {
+              Alert.alert('Error', 'Could not reset account');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleSave = async () => {
@@ -176,6 +200,11 @@ export default function ProfileModal({
             </BubbleButton>
           </View>
 
+          {/* Reset */}
+          <TouchableOpacity onPress={handleReset} style={styles.resetButton}>
+            <Text style={styles.resetText}>Reset Account</Text>
+          </TouchableOpacity>
+
           {saving && (
             <ActivityIndicator
               size="small"
@@ -275,6 +304,20 @@ const styles = StyleSheet.create({
   },
   buttonArea: {
     marginTop: 24,
+  },
+  resetButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: '#FF4444' + '30',
+    backgroundColor: '#FF4444' + '08',
+  },
+  resetText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FF4444',
   },
   spinner: {
     position: 'absolute',
