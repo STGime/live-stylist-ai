@@ -1,5 +1,5 @@
 import { LlmAgent } from '@google/adk';
-import type { Occasion, UserProfile, SessionMemory } from '../types';
+import type { Occasion, UserProfile, SessionMemory } from '../types/index.js';
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English',
@@ -57,7 +57,7 @@ STYLE PREVIEWS:
   - When describing a dramatic change
   - When comparing two specific options
 - After a preview is shown, you can reference it: "As you can see..." or "What do you think of that look?"
-- Limit to 2-3 previews per session to keep the experience focused
+- Use previews when they add genuine value (a dramatic change, helping the user choose between options, or when explicitly asked) — no hard cap, but don't generate one for every minor suggestion
 - If the user asks "can you show me?" — always generate a preview
 
 When the session is ending soon, gently ask if they have any final questions.`;
@@ -110,7 +110,7 @@ LANGUAGE:
 
   if (memories && memories.length > 0) {
     const memoriesBlock = memories.map(m => {
-      const date = m.created_at.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const date = new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       return `[Session from ${date}]:\n${m.summary}`;
     }).join('\n\n');
 

@@ -1,9 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
-import { eyeAgent } from './eyeAgent';
-import { mouthAgent } from './mouthAgent';
-import { bodyAgent } from './bodyAgent';
-import { getEnv } from '../config/env';
-import { logger } from '../utils/logger';
+import { eyeAgent } from './eyeAgent.js';
+import { mouthAgent } from './mouthAgent.js';
+import { bodyAgent } from './bodyAgent.js';
+import { getEnv } from '../config/env.js';
+import { logger } from '../utils/logger.js';
 
 export interface VisionResults {
   eye_analysis: Record<string, unknown>;

@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { WebSocket } from 'ws';
-import { getEnv } from '../config/env';
-import { logger } from '../utils/logger';
-import * as firebaseService from './firebase.service';
-import type { ActiveSession, Occasion, ProductRegion, ServerEvent, SubscriptionTier } from '../types';
+import { getEnv } from '../config/env.js';
+import { logger } from '../utils/logger.js';
+import * as dbService from './db.service.js';
+import type { ActiveSession, Occasion, ProductRegion, ServerEvent, SubscriptionTier } from '../types/index.js';
 
 const activeSessions = new Map<string, ActiveSession>();
 // deviceId → sessionId mapping to prevent duplicate sessions
@@ -105,12 +105,12 @@ export async function endSession(sessionId: string, reason: string = 'manual'): 
     session.ws.close(1000, 'Session ended');
   }
 
-  // Update Firestore
+  // Update Eurobase
   try {
     const status = reason === 'expired' ? 'expired' as const : 'completed' as const;
-    await firebaseService.completeSessionRecord(sessionId, durationSeconds, status);
+    await dbService.completeSessionRecord(sessionId, durationSeconds, status);
   } catch (error) {
-    logger.error({ sessionId, error }, 'Failed to update session record in Firestore');
+    logger.error({ sessionId, error }, 'Failed to update session record in Eurobase');
   }
 
   // Cleanup

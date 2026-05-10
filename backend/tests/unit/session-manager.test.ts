@@ -20,7 +20,7 @@ vi.mock('../../src/utils/logger', () => ({
   },
 }));
 
-import * as sessionManager from '../../src/services/session-manager.service';
+import * as sessionManager from '../../src/services/session-manager.service.js';
 
 describe('SessionManager', () => {
   beforeEach(() => {

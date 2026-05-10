@@ -1,9 +1,9 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
 import { URL } from 'url';
-import { logger } from '../utils/logger';
-import * as sessionManager from '../services/session-manager.service';
-import { ClientEventSchema } from '../types';
+import { logger } from '../utils/logger.js';
+import * as sessionManager from '../services/session-manager.service.js';
+import { ClientEventSchema } from '../types/index.js';
 
 export function setupWebSocket(wss: WebSocketServer): void {
   wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {

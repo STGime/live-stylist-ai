@@ -6,7 +6,7 @@
  * to avoid spamming affiliate searches.
  */
 
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logger.js';
 
 // Beauty brands to detect (case-insensitive)
 const BRANDS = [

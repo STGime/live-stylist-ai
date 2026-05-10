@@ -5,8 +5,8 @@
  * and returns affiliate-linked results filtered by EU or US merchants.
  */
 
-import { logger } from '../utils/logger';
-import { getEnv } from '../config/env';
+import { logger } from '../utils/logger.js';
+import { getEnv } from '../config/env.js';
 
 export interface ProductResult {
   id: string;

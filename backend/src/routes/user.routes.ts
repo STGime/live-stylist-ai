@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { RegisterBodySchema, UpdateProfileBodySchema } from '../types';
-import * as firebaseService from '../services/firebase.service';
-import { deviceIdMiddleware } from '../middleware/device-id.middleware';
+import { RegisterBodySchema, UpdateProfileBodySchema } from '../types/index.js';
+import * as dbService from '../services/db.service.js';
+import { deviceIdMiddleware } from '../middleware/device-id.middleware.js';
 
 const router = Router();
 
@@ -11,14 +11,14 @@ router.use(deviceIdMiddleware);
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = RegisterBodySchema.parse(req.body);
-    const user = await firebaseService.createUser(req.deviceId!, body.name, body.favorite_color, body.stylist_name, body.language);
+    const user = await dbService.createUser(req.deviceId!, body.name, body.favorite_color, body.stylist_name, body.language);
     res.status(201).json({
       device_id: req.deviceId,
       name: user.name,
       favorite_color: user.favorite_color,
       stylist_name: user.stylist_name,
       language: user.language,
-      created_at: user.created_at.toDate().toISOString(),
+      created_at: user.created_at,
     });
   } catch (error) {
     next(error);
@@ -28,7 +28,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
 // GET /profile
 router.get('/profile', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await firebaseService.getUser(req.deviceId!);
+    const user = await dbService.getUser(req.deviceId!);
     if (!user) {
       res.status(404).json({ error: 'not_found', message: 'User not registered' });
       return;
@@ -41,7 +41,7 @@ router.get('/profile', async (req: Request, res: Response, next: NextFunction) =
       language: user.language,
       sessions_used_today: user.sessions_used_today,
       last_session_date: user.last_session_date,
-      created_at: user.created_at.toDate().toISOString(),
+      created_at: user.created_at,
     });
   } catch (error) {
     next(error);
@@ -52,7 +52,7 @@ router.get('/profile', async (req: Request, res: Response, next: NextFunction) =
 router.put('/profile', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = UpdateProfileBodySchema.parse(req.body);
-    const user = await firebaseService.updateUser(req.deviceId!, body);
+    const user = await dbService.updateUser(req.deviceId!, body);
     res.json({
       device_id: req.deviceId,
       name: user.name,
@@ -68,14 +68,14 @@ router.put('/profile', async (req: Request, res: Response, next: NextFunction) =
 // GET /session-history
 router.get('/session-history', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const memories = await firebaseService.getSessionHistory(req.deviceId!);
+    const memories = await dbService.getSessionHistory(req.deviceId!);
     const items = memories.map(m => ({
       session_id: m.session_id,
       summary: m.summary,
       tips: m.tips || [],
       duration_seconds: m.duration_seconds,
       occasion: m.occasion,
-      created_at: m.created_at.toDate().toISOString(),
+      created_at: m.created_at,
     }));
     res.json(items);
   } catch (error) {
@@ -87,7 +87,7 @@ router.get('/session-history', async (req: Request, res: Response, next: NextFun
 router.get('/session-summary/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sessionId = req.params.sessionId as string;
-    const memory = await firebaseService.getSessionMemory(req.deviceId!, sessionId);
+    const memory = await dbService.getSessionMemory(req.deviceId!, sessionId);
     if (!memory) {
       res.status(404).json({ error: 'not_found', message: 'Session summary not found' });
       return;
@@ -98,7 +98,7 @@ router.get('/session-summary/:sessionId', async (req: Request, res: Response, ne
       tips: memory.tips || [],
       duration_seconds: memory.duration_seconds,
       occasion: memory.occasion,
-      created_at: memory.created_at.toDate().toISOString(),
+      created_at: memory.created_at,
     });
   } catch (error) {
     next(error);

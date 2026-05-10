@@ -27,8 +27,8 @@ steps:
       - '--concurrency=100'
       - '--memory=512Mi'
       - '--cpu=1'
-      - '--set-secrets=GEMINI_API_KEY=gemini-api-key:latest,REVENUECAT_API_KEY=revenuecat-api-key:latest'
-      - '--set-env-vars=NODE_ENV=production,FIREBASE_PROJECT_ID=$PROJECT_ID,FREE_SESSIONS_PER_DAY=100,GEMINI_MODEL=gemini-2.5-flash-native-audio-latest'
+      - '--set-secrets=GEMINI_API_KEY=gemini-api-key:latest,REVENUECAT_API_KEY=revenuecat-api-key:latest,EUROBASE_SECRET_KEY=eurobase-secret-key:latest,FAL_AI_KEY=fal-ai-key:latest'
+      - '--set-env-vars=NODE_ENV=production,EUROBASE_URL=https://livestylist.eurobase.app,FREE_SESSIONS_PER_DAY=100,GEMINI_MODEL=gemini-2.5-flash-native-audio-latest'
       - '--allow-unauthenticated'
 
 images:

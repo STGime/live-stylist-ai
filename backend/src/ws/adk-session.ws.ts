@@ -2,17 +2,16 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { IncomingMessage } from 'http';
 import { URL } from 'url';
 import { GoogleGenAI, Modality, Session as GeminiSession, LiveServerMessage } from '@google/genai';
-import * as admin from 'firebase-admin';
-import { buildCoordinatorInstruction } from '../agents/coordinator';
-import { runVisionPipeline, formatVisionResults } from '../agents/visionPipeline';
-import { logger } from '../utils/logger';
-import { getEnv } from '../config/env';
-import * as sessionManager from '../services/session-manager.service';
-import * as firebaseService from '../services/firebase.service';
-import { generateStylePreview } from '../services/image-generation.service';
-import type { GenerationRequest } from '../services/image-generation.service';
-import { searchProducts, type ProductResult } from '../services/awin-product-search';
-import { ProductTriggerCooldown } from '../services/product-trigger';
+import { buildCoordinatorInstruction } from '../agents/coordinator.js';
+import { runVisionPipeline, formatVisionResults } from '../agents/visionPipeline.js';
+import { logger } from '../utils/logger.js';
+import { getEnv } from '../config/env.js';
+import * as sessionManager from '../services/session-manager.service.js';
+import * as dbService from '../services/db.service.js';
+import { generateStylePreview } from '../services/image-generation.service.js';
+import type { GenerationRequest } from '../services/image-generation.service.js';
+import { searchProducts, type ProductResult } from '../services/awin-product-search.js';
+import { ProductTriggerCooldown } from '../services/product-trigger.js';
 
 // Track active sessions for cleanup
 const activeSessions = new Map<string, {
@@ -20,13 +19,11 @@ const activeSessions = new Map<string, {
 }>();
 
 interface ClientMessage {
-  type: 'audio' | 'frame' | 'mute' | 'unmute' | 'end_session' | 'ping' | 'generate_preview';
+  type: 'audio' | 'frame' | 'mute' | 'unmute' | 'end_session' | 'ping';
   data?: string;
   eye_crop?: string;
   mouth_crop?: string;
   body_crop?: string;
-  prompt?: string;
-  category?: string;
 }
 
 function sendToClient(ws: WebSocket, message: Record<string, unknown>): void {
@@ -73,7 +70,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
     // Load user profile for personalized agent
     let userProfile;
     try {
-      userProfile = await firebaseService.getUser(deviceId);
+      userProfile = await dbService.getUser(deviceId);
       if (!userProfile) {
         ws.close(4004, 'User profile not found');
         return;
@@ -87,9 +84,9 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
     const userLanguage = userProfile.language;
 
     // Load past session memories for continuity
-    let memories: import('../types').SessionMemory[] = [];
+    let memories: import('../types/index.js').SessionMemory[] = [];
     try {
-      memories = await firebaseService.getRecentMemories(deviceId, 3);
+      memories = await dbService.getRecentMemories(deviceId, 3);
       if (memories.length > 0) {
         logger.info({ sessionId, deviceId, memoryCount: memories.length }, 'Loaded past session memories');
       }
@@ -158,8 +155,11 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
     const sessionLog: string[] = [];
     let latestBodyCrop: string | null = null;
     let previewInProgress = false;
+    let previewResetTimer: NodeJS.Timeout | null = null;
     let transcriptBuffer = '';
     let previewCooldownUntil = 0; // Timestamp: ignore preview triggers until this time
+
+    const PREVIEW_TIMEOUT_MS = 60000;
 
     // Product recommendation state
     const productTrigger = new ProductTriggerCooldown(15000);
@@ -192,8 +192,13 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
 
         switch (msg.type) {
           case 'audio':
-            // Drop mic audio while agent is speaking to prevent echo feedback
-            if (msg.data && !muted && !agentSpeaking) {
+            // Always forward mic audio when not muted; Gemini Live's BIDI
+            // stream emits `interrupted` when it detects the user speaking
+            // over the agent, which the message handler below converts into
+            // a `state: 'listening'` event the client uses to flush its
+            // playback queue. AEC on the client mic source prevents the
+            // agent's own voice from feeding back.
+            if (msg.data && !muted) {
               geminiSession.sendRealtimeInput({
                 audio: {
                   mimeType: 'audio/pcm;rate=16000',
@@ -234,23 +239,6 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
             sessionManager.endSession(sessionId, 'manual').catch(err => {
               logger.error({ sessionId, error: err }, 'Error ending session');
             });
-            break;
-
-          case 'generate_preview':
-            if (!latestBodyCrop) {
-              sendToClient(ws, {
-                type: 'preview_error',
-                message: 'No image available yet. Please ensure the camera can see you.',
-                prompt: msg.prompt || '',
-              });
-              break;
-            }
-            handlePreviewGeneration(
-              latestBodyCrop,
-              msg.prompt || '',
-              msg.category,
-              'client',
-            );
             break;
 
           case 'ping':
@@ -315,7 +303,8 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
     const PREVIEW_TRIGGERS = [
       // English
       /let me show you/i,
-      /here'?s a preview/i,
+      /here(?:'?s| is) a preview/i,
+      /here(?:'?s| is) (?:a|an|the) (?:quick )?preview/i,
       /let me generate/i,
       /take a look at this/i,
       /how about something like this/i,
@@ -338,7 +327,10 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
       trigger: 'agent' | 'client' = 'client',
     ) {
       if (previewInProgress) {
-        logger.info({ sessionId }, 'Preview generation already in progress, skipping');
+        // The agent narrated a second trigger phrase before the first preview
+        // finished — drop it silently. Surfacing this would confuse the user
+        // since they didn't ask for anything.
+        logger.info({ sessionId, trigger }, 'Preview generation already in progress');
         return;
       }
 
@@ -346,11 +338,16 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
       sendToClient(ws, { type: 'preview_generating', prompt });
 
       try {
-        const result = await generateStylePreview({
-          sourceImage: bodyCrop,
-          prompt,
-          category: category as GenerationRequest['category'],
-        });
+        const result = await Promise.race([
+          generateStylePreview({
+            sourceImage: bodyCrop,
+            prompt,
+            category: category as GenerationRequest['category'],
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('preview_timeout')), PREVIEW_TIMEOUT_MS),
+          ),
+        ]);
 
         sendToClient(ws, {
           type: 'preview_image',
@@ -373,19 +370,31 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
           turnComplete: false,
         });
       } catch (error: any) {
-        logger.error({ sessionId, error: error.message }, 'Preview generation failed');
+        const isTimeout = error?.message === 'preview_timeout';
+        logger.error(
+          { sessionId, error: error?.message, timeout: isTimeout },
+          'Preview generation failed',
+        );
         sendToClient(ws, {
           type: 'preview_error',
-          message: 'Could not generate preview. Please try again.',
+          message: isTimeout
+            ? 'Preview is taking too long. Please try again.'
+            : 'Could not generate preview. Please try again.',
           prompt,
         });
       } finally {
-        // Block re-triggers for 30s so the agent's follow-up speech
-        // (e.g. "as you can see in the preview…") doesn't loop
-        previewCooldownUntil = Date.now() + 30000;
+        // Short cooldown so the agent's immediate follow-up sentence
+        // (e.g. "as you can see in the preview…") doesn't accidentally
+        // re-trigger. Kept short so a genuine *new* preview request a
+        // few seconds later isn't silently dropped. The system message
+        // injected on success also tells the agent to stop using the
+        // trigger phrases.
+        previewCooldownUntil = Date.now() + 5000;
         transcriptBuffer = '';
-        setTimeout(() => {
+        if (previewResetTimer) clearTimeout(previewResetTimer);
+        previewResetTimer = setTimeout(() => {
           previewInProgress = false;
+          previewResetTimer = null;
         }, 5000);
       }
     }
@@ -503,9 +512,16 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
         description = description.replace(trigger, '');
       }
 
-      description = description.replace(/^[\s,.:—-]+/, '').replace(/[.!?]+$/, '').trim();
+      // Strip leading punctuation/whitespace, then any leading filler words
+      // ("of", "with", "showing", "a"/"an"/"the") so the prompt reads cleanly.
+      description = description
+        .replace(/^[\s,.:—-]+/, '')
+        .replace(/^(?:of|with|showing|featuring|that has|that shows)\s+/i, '')
+        .replace(/^(?:a |an |the )/i, '')
+        .replace(/[.!?]+$/, '')
+        .trim();
 
-      if (description.length < 10) return null;
+      if (description.length < 5) return null;
 
       return `Apply this style change to the person in the photo: ${description}. Keep the person's face and identity clearly recognizable. Make the change look natural and realistic.`;
     }
@@ -645,7 +661,7 @@ async function generateSessionSummary(
   deviceId: string,
   genai: GoogleGenAI,
   durationSeconds?: number,
-  occasion?: import('../types').Occasion,
+  occasion?: import('../types/index.js').Occasion,
   language?: string,
   shownProducts?: ProductResult[],
 ): Promise<void> {
@@ -697,14 +713,14 @@ ${transcript}`,
       summary = rawText;
     }
 
-    await firebaseService.saveSessionMemory(deviceId, {
+    await dbService.saveSessionMemory(deviceId, {
       session_id: sessionId,
       summary,
       tips,
       ...(durationSeconds !== undefined && { duration_seconds: durationSeconds }),
       ...(occasion && { occasion }),
       ...(shownProducts && shownProducts.length > 0 && { products: shownProducts }),
-      created_at: admin.firestore.Timestamp.now(),
+      created_at: new Date().toISOString(),
     });
   } catch (error) {
     logger.warn({ sessionId, error }, 'Session summary generation failed');

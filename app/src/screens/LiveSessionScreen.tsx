@@ -7,6 +7,9 @@ import {
   Modal,
   Animated,
   AppState,
+  Platform,
+  ToastAndroid,
+  Alert,
 } from 'react-native';
 import Svg, { Path, Line } from 'react-native-svg';
 import {
@@ -24,7 +27,6 @@ import AiOrb from '../components/AiOrb';
 import AgentMaskOverlay from '../components/AgentMaskOverlay';
 import SuggestionBubbles from '../components/SuggestionBubbles';
 import PreviewSheet from '../components/PreviewSheet';
-import PreviewRequestButton from '../components/PreviewRequestButton';
 import ProductCarousel from '../components/ProductCarousel';
 import * as api from '../services/api';
 import { useAdkSession } from '../hooks/useAdkSession';
@@ -81,13 +83,25 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   const {
     aiState, cameraRef, isConnected, error, visionActive,
     previewImage, previewMimeType, previewPrompt, previewLoading, previewTrigger,
+    previewError, clearPreviewError,
     products, amplitudeRef,
-    requestPreview, dismissPreview, dismissProducts, deactivateCamera,
+    dismissPreview, dismissProducts, deactivateCamera,
   } = useAdkSession({
       wsUrl,
       muted,
       onSessionEvent: handleSessionEvent,
     });
+
+  // Surface preview errors as a toast (Android) or alert (iOS)
+  useEffect(() => {
+    if (!previewError) return;
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(previewError, ToastAndroid.SHORT);
+    } else {
+      Alert.alert('Preview', previewError);
+    }
+    clearPreviewError();
+  }, [previewError, clearPreviewError]);
 
   // Mount animation
   useEffect(() => {
@@ -321,18 +335,6 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
             )}
           </TouchableOpacity>
         </View>
-      )}
-
-      {/* Preview request button */}
-      {mounted && (
-        <PreviewRequestButton
-          onPress={() =>
-            requestPreview(
-              "Show me an improved version of my current look based on the stylist's suggestions",
-            )
-          }
-          disabled={previewLoading || !isConnected}
-        />
       )}
 
       {/* Product carousel */}

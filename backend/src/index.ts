@@ -2,24 +2,27 @@ import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
-import pinoHttp from 'pino-http';
-import { logger } from './utils/logger';
-import { loadEnv } from './config/env';
-import { initFirebase } from './config/firebase';
-import { generalRateLimiter } from './middleware/rate-limiter.middleware';
-import { errorHandler } from './middleware/error-handler.middleware';
-import healthRoutes from './routes/health.routes';
-import userRoutes from './routes/user.routes';
-import sessionRoutes from './routes/session.routes';
-import { setupWebSocket } from './ws/session-control.ws';
-import { setupAdkWebSocket, shutdownAdkSessions } from './ws/adk-session.ws';
-import { shutdownAllSessions } from './services/session-manager.service';
+import { pinoHttp } from 'pino-http';
+import { logger } from './utils/logger.js';
+import { loadEnv } from './config/env.js';
+import { pingEurobase } from './config/eurobase.js';
+import { generalRateLimiter } from './middleware/rate-limiter.middleware.js';
+import { errorHandler } from './middleware/error-handler.middleware.js';
+import healthRoutes from './routes/health.routes.js';
+import userRoutes from './routes/user.routes.js';
+import sessionRoutes from './routes/session.routes.js';
+import { setupWebSocket } from './ws/session-control.ws.js';
+import { setupAdkWebSocket, shutdownAdkSessions } from './ws/adk-session.ws.js';
+import { shutdownAllSessions } from './services/session-manager.service.js';
 
 // Load and validate env vars (fail-fast)
 const env = loadEnv();
 
-// Initialize Firebase
-initFirebase();
+// Verify Eurobase connectivity (non-blocking — log a warning if unreachable so
+// boot can still complete and routes return 503 from /ready until it recovers).
+pingEurobase().catch((err) => {
+  logger.warn({ err: err instanceof Error ? err.message : err }, 'Eurobase ping failed at boot');
+});
 
 // Express app
 const app = express();

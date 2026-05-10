@@ -1,5 +1,5 @@
-import { getEnv } from '../config/env';
-import type { UserProfile } from '../types';
+import { getEnv } from '../config/env.js';
+import type { UserProfile } from '../types/index.js';
 
 /**
  * Legacy system prompt builder — kept for reference.

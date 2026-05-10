@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Platform, PermissionsAndroid } from 'react-native';
+import { Platform, PermissionsAndroid, AppState } from 'react-native';
 import LiveAudioStream from 'react-native-live-audio-stream';
 import RNFS from 'react-native-fs';
 import type { Camera } from 'react-native-vision-camera';
@@ -22,6 +22,11 @@ interface UseAdkSessionConfig {
   muted: boolean;
   onSessionEvent?: (event: SessionEvent) => void;
 }
+
+// RMS over the user's mic above this triggers an immediate playback flush
+// when the agent is speaking. Picked empirically: typical conversational
+// speech RMS through VOICE_COMMUNICATION is 0.05–0.2; quiet ambient is < 0.02.
+const USER_BARGE_IN_RMS_THRESHOLD = 0.05;
 
 export type SubtitleDirection = 'input' | 'output';
 
@@ -38,9 +43,10 @@ interface UseAdkSessionResult {
   previewPrompt: string;
   previewLoading: boolean;
   previewTrigger: 'agent' | 'client' | null;
+  previewError: string | null;
+  clearPreviewError: () => void;
   products: ProductResult[];
   amplitudeRef: React.RefObject<number>;
-  requestPreview: (prompt: string, category?: string) => void;
   dismissPreview: () => void;
   dismissProducts: () => void;
   deactivateCamera: () => void;
@@ -60,6 +66,7 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
   const [previewPrompt, setPreviewPrompt] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewTrigger, setPreviewTrigger] = useState<'agent' | 'client' | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [products, setProducts] = useState<ProductResult[]>([]);
 
   const cameraRef = useRef<Camera | null>(null);
@@ -72,7 +79,6 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
   const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const subtitleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const micStartedRef = useRef(false);
-  const greetingDoneRef = useRef(false);
   const onSessionEventRef = useRef(onSessionEvent);
 
   // Keep refs in sync
@@ -92,6 +98,25 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     onSessionEventRef.current = onSessionEvent;
   }, [onSessionEvent]);
 
+  // Pause mic + drain playback when the app is backgrounded so we don't
+  // stream wasted audio to a possibly-muted speaker or capture audio while
+  // the user is in another app. Resume mic on foreground.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        if (clientRef.current?.isConnected && !micStartedRef.current) {
+          startMic();
+        }
+      } else {
+        stopMic();
+        playerRef.current?.flush();
+        amplitudeRef.current = 0;
+      }
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const player = new PcmAudioPlayer();
     player.start();
@@ -103,7 +128,10 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
         onReady: () => {
           setIsConnected(true);
           setAiState('listening');
-          // Don't start mic yet — wait until greeting finishes to avoid feedback loop
+          // Start mic immediately — Android AEC (audioSource: 7 VOICE_COMMUNICATION)
+          // suppresses the agent's voice from the mic stream, so the user can
+          // barge in even during the greeting.
+          startMic();
           startCameraFrames();
         },
         onAudioChunk: (base64Pcm: string) => {
@@ -111,15 +139,12 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
           player.enqueue(base64Pcm);
         },
         onStateChange: (state: AdkAiState) => {
-          // Flush audio when interrupted (speaking → listening)
+          // Flush queued playback the moment the agent stops speaking
+          // (turn-complete or interruption) so we don't keep playing
+          // chunks after the user has the floor.
           if (aiStateRef.current === 'speaking' && state === 'listening') {
             playerRef.current?.flush();
             amplitudeRef.current = 0;
-            // Start mic after greeting finishes (first speaking → listening transition)
-            if (!greetingDoneRef.current) {
-              greetingDoneRef.current = true;
-              startMic();
-            }
           }
           aiStateRef.current = state;
           setAiState(state);
@@ -160,9 +185,10 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
           setPreviewPrompt(data.prompt);
           setPreviewTrigger(data.trigger);
         },
-        onPreviewError: () => {
+        onPreviewError: ({ message }) => {
           setPreviewLoading(false);
           setPreviewImage(null);
+          setPreviewError(message);
         },
         onProducts: (productList: ProductResult[]) => {
           setProducts(productList);
@@ -223,10 +249,25 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
       } as any);
 
       LiveAudioStream.on('data', (base64Chunk: string) => {
-        // Suppress mic while agent is speaking to prevent echo feedback loop
-        if (!mutedRef.current && aiStateRef.current !== 'speaking' && clientRef.current?.isConnected) {
-          clientRef.current.sendAudio(base64Chunk);
+        // Always forward mic audio when not muted — Android AEC (audioSource: 7
+        // VOICE_COMMUNICATION) suppresses the agent's voice from the mic stream
+        // at the OS level, so the user can barge in over the agent and Gemini
+        // will detect the overlap and emit `interrupted`.
+        if (mutedRef.current || !clientRef.current?.isConnected) return;
+
+        // Local VAD: if the user is clearly speaking while the agent is
+        // speaking, drain the playback queue immediately so the cut-off
+        // feels instant rather than waiting for Gemini's `interrupted`
+        // signal (which adds 200-500ms RTT). The threshold is intentionally
+        // generous to avoid false positives from background noise.
+        if (aiStateRef.current === 'speaking') {
+          const userRms = computeRmsAmplitude(base64Chunk);
+          if (userRms > USER_BARGE_IN_RMS_THRESHOLD) {
+            playerRef.current?.flush();
+          }
         }
+
+        clientRef.current.sendAudio(base64Chunk);
       });
 
       await new Promise<void>(resolve => setTimeout(resolve, 200));
@@ -287,15 +328,16 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     }
   }
 
-  const requestPreview = useCallback((prompt: string, category?: string) => {
-    clientRef.current?.sendGeneratePreview(prompt, category);
-  }, []);
-
   const dismissPreview = useCallback(() => {
     setPreviewImage(null);
     setPreviewLoading(false);
     setPreviewPrompt('');
     setPreviewTrigger(null);
+    setPreviewError(null);
+  }, []);
+
+  const clearPreviewError = useCallback(() => {
+    setPreviewError(null);
   }, []);
 
   const dismissProducts = useCallback(() => {
@@ -320,10 +362,11 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     previewPrompt,
     previewLoading,
     previewTrigger,
+    previewError,
     products,
     amplitudeRef,
-    requestPreview,
     dismissPreview,
+    clearPreviewError,
     dismissProducts,
     deactivateCamera,
   };

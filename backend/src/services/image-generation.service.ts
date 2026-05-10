@@ -1,7 +1,7 @@
-import { GoogleGenAI } from '@google/genai';
-import { getEnv } from '../config/env';
-import { logger } from '../utils/logger';
-import { buildEditPrompt, PROMPT_TEMPLATES } from './prompt-templates';
+import { fal } from '@fal-ai/client';
+import { getEnv } from '../config/env.js';
+import { logger } from '../utils/logger.js';
+import { buildEditPrompt, PROMPT_TEMPLATES } from './prompt-templates.js';
 
 export interface GenerationRequest {
   sourceImage: string;
@@ -16,68 +16,65 @@ export interface GenerationResult {
   processingTimeMs: number;
 }
 
+const FAL_MODEL = 'fal-ai/gemini-25-flash-image/edit';
+
+let _falConfigured = false;
+function ensureFalConfigured(): void {
+  if (_falConfigured) return;
+  const env = getEnv();
+  fal.config({ credentials: env.FAL_AI_KEY });
+  _falConfigured = true;
+}
+
+interface FalEditOutput {
+  images?: Array<{ url: string; content_type?: string }>;
+  description?: string;
+}
+
 export async function generateStylePreview(
   request: GenerationRequest,
 ): Promise<GenerationResult> {
   const startTime = Date.now();
-  const env = getEnv();
-  const genai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+  ensureFalConfigured();
 
   const fullPrompt = request.category
     ? buildEditPrompt(request.prompt, request.category as keyof typeof PROMPT_TEMPLATES)
     : request.prompt;
 
   logger.info(
-    { promptLength: fullPrompt.length, category: request.category },
-    'Starting image generation',
+    { promptLength: fullPrompt.length, category: request.category, model: FAL_MODEL },
+    'Starting image generation (Fal.ai)',
   );
 
-  const response = await genai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: [
-      {
-        role: 'user',
-        parts: [
-          { text: fullPrompt },
-          {
-            inlineData: {
-              mimeType: 'image/jpeg',
-              data: request.sourceImage,
-            },
-          },
-        ],
-      },
-    ],
-    config: {
-      responseModalities: ['IMAGE', 'TEXT'],
+  const result = await fal.subscribe(FAL_MODEL, {
+    input: {
+      prompt: fullPrompt,
+      image_urls: [`data:image/jpeg;base64,${request.sourceImage}`],
     },
+    logs: false,
   });
 
-  let image: string | undefined;
-  let mimeType = 'image/jpeg';
-  let description: string | undefined;
-
-  if (response.candidates?.[0]?.content?.parts) {
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        image = part.inlineData.data;
-        mimeType = part.inlineData.mimeType || 'image/jpeg';
-      }
-      if (part.text) {
-        description = part.text;
-      }
-    }
+  const data = result.data as FalEditOutput;
+  const imageUrl = data.images?.[0]?.url;
+  if (!imageUrl) {
+    throw new Error('No image returned from Fal.ai image generation');
   }
 
-  if (!image) {
-    throw new Error('No image returned from Gemini image generation');
+  // Fetch the hosted image and convert to base64 to keep the existing
+  // wire format with the React Native client unchanged.
+  const fetched = await fetch(imageUrl);
+  if (!fetched.ok) {
+    throw new Error(`Failed to fetch generated image: ${fetched.status} ${fetched.statusText}`);
   }
+  const mimeType = data.images?.[0]?.content_type || fetched.headers.get('content-type') || 'image/jpeg';
+  const buf = Buffer.from(await fetched.arrayBuffer());
+  const image = buf.toString('base64');
 
   const processingTimeMs = Date.now() - startTime;
   logger.info(
-    { processingTimeMs, hasDescription: !!description },
+    { processingTimeMs, hasDescription: !!data.description, sizeBytes: buf.byteLength },
     'Image generation completed',
   );
 
-  return { image, mimeType, description, processingTimeMs };
+  return { image, mimeType, description: data.description, processingTimeMs };
 }

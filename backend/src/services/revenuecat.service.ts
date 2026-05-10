@@ -1,6 +1,6 @@
-import { getEnv } from '../config/env';
-import { logger } from '../utils/logger';
-import type { SubscriptionTier } from '../types';
+import { getEnv } from '../config/env.js';
+import { logger } from '../utils/logger.js';
+import type { SubscriptionTier } from '../types/index.js';
 
 const REVENUECAT_BASE_URL = 'https://api.revenuecat.com/v1';
 const PREMIUM_ENTITLEMENT_ID = 'premium';

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { logger } from '../utils/logger';
-import { ConflictError, NotFoundError } from '../services/firebase.service';
+import { logger } from '../utils/logger.js';
+import { ConflictError, NotFoundError } from '../services/db.service.js';
 
 export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
   // Zod validation errors

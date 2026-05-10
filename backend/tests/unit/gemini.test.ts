@@ -7,8 +7,8 @@ vi.mock('../../src/config/env', () => ({
   }),
 }));
 
-import { buildSystemPrompt, getGeminiModel } from '../../src/services/gemini.service';
-import type { UserProfile } from '../../src/types';
+import { buildSystemPrompt, getGeminiModel } from '../../src/services/gemini.service.js';
+import type { UserProfile } from '../../src/types/index.js';
 
 describe('GeminiService', () => {
   describe('buildSystemPrompt', () => {

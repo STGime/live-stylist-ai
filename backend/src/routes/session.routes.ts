@@ -1,11 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { deviceIdMiddleware } from '../middleware/device-id.middleware';
-import { sessionStartRateLimiter } from '../middleware/rate-limiter.middleware';
-import * as firebaseService from '../services/firebase.service';
-import * as revenuecatService from '../services/revenuecat.service';
-import * as sessionManager from '../services/session-manager.service';
-import { logger } from '../utils/logger';
+import { deviceIdMiddleware } from '../middleware/device-id.middleware.js';
+import { sessionStartRateLimiter } from '../middleware/rate-limiter.middleware.js';
+import * as dbService from '../services/db.service.js';
+import * as revenuecatService from '../services/revenuecat.service.js';
+import * as sessionManager from '../services/session-manager.service.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -39,14 +39,14 @@ router.post('/start-session', sessionStartRateLimiter, async (req: Request, res:
     const tier = await revenuecatService.checkEntitlement(deviceId);
 
     // 3. Load user profile
-    const user = await firebaseService.getUser(deviceId);
+    const user = await dbService.getUser(deviceId);
     if (!user) {
       res.status(404).json({ error: 'not_found', message: 'User not registered. Call POST /register first.' });
       return;
     }
 
     // 4. Check/increment daily session count
-    const sessionCheck = await firebaseService.incrementSessionCount(deviceId, tier);
+    const sessionCheck = await dbService.incrementSessionCount(deviceId, tier);
     if (!sessionCheck.allowed) {
       res.status(429).json({
         error: 'session_limit_exceeded',
@@ -60,8 +60,8 @@ router.post('/start-session', sessionStartRateLimiter, async (req: Request, res:
     // 5. Create in-memory session with timers
     const session = sessionManager.startSession(deviceId, tier, occasion, region);
 
-    // 6. Persist session record to Firestore
-    await firebaseService.createSessionRecord(session.session_id, deviceId, tier);
+    // 6. Persist session record to Eurobase
+    await dbService.createSessionRecord(session.session_id, deviceId, tier);
 
     // 7. Build backend WebSocket URL for ADK session
     const protocol = req.protocol === 'https' ? 'wss' : 'ws';

@@ -27,7 +27,7 @@ export interface UserProfile {
   favorite_color: string;
   stylist_name?: string;
   language?: string;
-  created_at: FirebaseFirestore.Timestamp;
+  created_at: string; // ISO 8601 (Postgres timestamptz)
   sessions_used_today: number;
   last_session_date: string; // YYYY-MM-DD
 }
@@ -40,8 +40,8 @@ export type Occasion = 'casual' | 'work' | 'date_night' | 'event' | 'going_out' 
 
 export interface SessionRecord {
   device_id: string;
-  start_time: FirebaseFirestore.Timestamp;
-  end_time?: FirebaseFirestore.Timestamp;
+  start_time: string; // ISO 8601
+  end_time?: string;  // ISO 8601
   duration_seconds?: number;
   subscription_tier: 'free' | 'premium';
   status: 'active' | 'completed' | 'expired';
@@ -113,8 +113,7 @@ export type ClientEvent =
   | { type: 'mute' }
   | { type: 'unmute' }
   | { type: 'end_session'; session_id: string }
-  | { type: 'ping' }
-  | { type: 'generate_preview'; prompt: string; category?: string };
+  | { type: 'ping' };
 
 export const ClientEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('audio'), data: z.string() }),
@@ -123,11 +122,6 @@ export const ClientEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('unmute') }),
   z.object({ type: z.literal('end_session'), session_id: z.string().uuid() }),
   z.object({ type: z.literal('ping') }),
-  z.object({
-    type: z.literal('generate_preview'),
-    prompt: z.string().min(1).max(500),
-    category: z.enum(['hairstyle', 'makeup', 'accessory', 'clothing', 'full_look']).optional(),
-  }),
 ]);
 
 // --- Session Memory ---
@@ -139,7 +133,7 @@ export interface SessionMemory {
   products?: ProductResult[];
   duration_seconds?: number;
   occasion?: Occasion;
-  created_at: FirebaseFirestore.Timestamp;
+  created_at: string; // ISO 8601
 }
 
 // --- Subscription ---

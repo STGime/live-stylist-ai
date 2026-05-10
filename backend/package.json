@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "LiveStylist AI backend - real-time beauty/style assistant orchestrator",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
@@ -12,12 +13,13 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@eurobase/sdk": "^0.2.2",
+    "@fal-ai/client": "^1.10.1",
     "@google/adk": "^0.3.0",
     "@google/genai": "^1.0.0",
     "dotenv": "^17.3.1",
     "express": "^4.21.0",
     "express-rate-limit": "^7.4.0",
-    "firebase-admin": "^12.7.0",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
     "uuid": "^11.0.0",

@@ -57,18 +57,27 @@ export class AdkSessionClient {
   private config: AdkSessionConfig;
   private ready = false;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
+  private reconnectAttempts = 0;
+  private intentionalClose = false;
+  private static readonly MAX_RECONNECT_ATTEMPTS = 1;
+  private static readonly RECONNECT_DELAY_MS = 1000;
 
   constructor(config: AdkSessionConfig) {
     this.config = config;
   }
 
   connect(): void {
-    console.log('[AdkClient] Connecting to:', this.config.wsUrl.substring(0, 80) + '...');
+    const isReconnect = this.reconnectAttempts > 0;
+    console.log(
+      `[AdkClient] ${isReconnect ? 'Reconnecting' : 'Connecting'} to:`,
+      this.config.wsUrl.substring(0, 80) + '...',
+    );
     this.ws = new WebSocket(this.config.wsUrl);
 
     this.ws.onopen = () => {
       console.log('[AdkClient] WebSocket opened');
       this.ready = true;
+      this.reconnectAttempts = 0; // Reset on successful open
       this.config.callbacks.onReady();
 
       // Start keepalive pings every 25s
@@ -95,6 +104,17 @@ export class AdkSessionClient {
       console.log('[AdkClient] WebSocket closed:', e?.code, e?.reason);
       this.ready = false;
       this.cleanup();
+
+      const abnormal = !this.intentionalClose && e?.code !== 1000;
+      if (abnormal && this.reconnectAttempts < AdkSessionClient.MAX_RECONNECT_ATTEMPTS) {
+        this.reconnectAttempts += 1;
+        console.log(`[AdkClient] Attempting reconnect ${this.reconnectAttempts}/${AdkSessionClient.MAX_RECONNECT_ATTEMPTS} in ${AdkSessionClient.RECONNECT_DELAY_MS}ms`);
+        setTimeout(() => {
+          if (!this.intentionalClose) this.connect();
+        }, AdkSessionClient.RECONNECT_DELAY_MS);
+        return;
+      }
+
       this.config.callbacks.onClose();
     };
   }
@@ -192,12 +212,8 @@ export class AdkSessionClient {
     this.send({ type: 'end_session' });
   }
 
-  sendGeneratePreview(prompt: string, category?: string): void {
-    if (!this.ready) return;
-    this.send({ type: 'generate_preview', prompt, ...(category && { category }) });
-  }
-
   disconnect(): void {
+    this.intentionalClose = true;
     this.cleanup();
     if (this.ws) {
       this.ws.onclose = null;

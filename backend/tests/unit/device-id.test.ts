@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Request, Response } from 'express';
-import { deviceIdMiddleware } from '../../src/middleware/device-id.middleware';
+import { deviceIdMiddleware } from '../../src/middleware/device-id.middleware.js';
 
 function mockReqRes(deviceId?: string) {
   const req = { headers: {} } as Request;
