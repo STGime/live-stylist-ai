@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Camera } from 'react-native-vision-camera';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';

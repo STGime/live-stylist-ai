@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ViewStyle,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../theme/colors';
 
 type Variant = 'primary' | 'secondary' | 'dark' | 'ghost';
