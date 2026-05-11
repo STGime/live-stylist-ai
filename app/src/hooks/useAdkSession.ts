@@ -8,7 +8,16 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Platform, PermissionsAndroid, AppState } from 'react-native';
-import LiveAudioStream from 'react-native-live-audio-stream';
+// react-native-live-audio-stream import is stubbed while debugging iOS launch
+// crash. The lib's iOS native module collides with NSObject.init under
+// TurboModules, causing an immediate SIGABRT at NativeEventEmitter creation.
+// Restore via dynamic require once the iOS native side is patched.
+const LiveAudioStream: any = {
+  init: () => undefined,
+  on: () => undefined,
+  start: () => undefined,
+  stop: () => undefined,
+};
 import RNFS from 'react-native-fs';
 import type { Camera } from 'react-native-vision-camera';
 import { AdkSessionClient } from '../services/adk-client';
