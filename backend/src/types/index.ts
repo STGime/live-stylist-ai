@@ -29,6 +29,35 @@ export interface UserProfile {
   language?: string;
   created_at: string; // ISO 8601 (Postgres timestamptz)
   trial_used: boolean;
+  magic_id?: string;
+  expo_push_token?: string | null;
+}
+
+// --- Follows ---
+
+export type FollowStatus = 'pending' | 'accepted' | 'denied';
+
+export interface FollowRow {
+  id: string;
+  follower_device_id: string;
+  followee_device_id: string;
+  status: FollowStatus;
+  created_at: string;
+  responded_at?: string | null;
+}
+
+// --- Session Images ---
+
+export interface SessionImageRow {
+  id: string;
+  session_id: string;
+  device_id: string;
+  storage_url: string;
+  mime_type: string;
+  prompt: string;
+  description?: string | null;
+  created_at: string;
+  expires_at: string;
 }
 
 // --- Occasion ---

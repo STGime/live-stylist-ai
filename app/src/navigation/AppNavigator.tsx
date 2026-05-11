@@ -8,6 +8,9 @@ import HomeScreen from '../screens/HomeScreen';
 import LiveSessionScreen from '../screens/LiveSessionScreen';
 import SessionSummaryScreen from '../screens/SessionSummaryScreen';
 import SessionHistoryScreen from '../screens/SessionHistoryScreen';
+import FollowScreen from '../screens/FollowScreen';
+import FeedScreen from '../screens/FeedScreen';
+import FollowedSessionDetailScreen from '../screens/FollowedSessionDetailScreen';
 import PaywallScreen from '../screens/PaywallScreen';
 import type { RootStackParamList } from '../types';
 
@@ -47,6 +50,9 @@ export default function AppNavigator() {
       />
       <Stack.Screen name="SessionSummary" component={SessionSummaryScreen} />
       <Stack.Screen name="SessionHistory" component={SessionHistoryScreen} />
+      <Stack.Screen name="Follow" component={FollowScreen} />
+      <Stack.Screen name="Feed" component={FeedScreen} />
+      <Stack.Screen name="FollowedSessionDetail" component={FollowedSessionDetailScreen} />
       <Stack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );

@@ -24,6 +24,7 @@ import FloatingBubbles from '../components/FloatingBubbles';
 import ProfileModal from '../components/ProfileModal';
 import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
+import { registerForPushNotifications } from '../services/push';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
 import { useDialog } from '../components/AppDialog';
@@ -42,6 +43,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [productRegion, setProductRegion] = useState<ProductRegion>('us');
   const [showProducts, setShowProducts] = useState(true);
+  const [pendingFollowCount, setPendingFollowCount] = useState(0);
   const dialog = useDialog();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(16)).current;
@@ -77,6 +79,15 @@ export default function HomeScreen({ navigation }: Props) {
       if (savedShowProducts !== null) {
         setShowProducts(savedShowProducts !== 'false');
       }
+
+      // Pending follow requests for the badge — fire-and-forget, the badge
+      // just disappears next refresh if this fails.
+      api.listPendingFollows()
+        .then((rows) => setPendingFollowCount(rows.length))
+        .catch(() => setPendingFollowCount(0));
+
+      // Push registration is idempotent after the first call.
+      registerForPushNotifications().catch(() => {});
     } catch (err: any) {
       if (err.status === 404) {
         navigation.replace('Onboarding');
@@ -286,6 +297,27 @@ export default function HomeScreen({ navigation }: Props) {
                   Privacy Policy
                 </Text>
               </Text>
+            </View>
+
+            {/* Friends + Feed shortcuts */}
+            <View style={styles.shortcutRow}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Follow')}
+                style={styles.shortcutButton}
+                activeOpacity={0.7}>
+                <Text style={styles.shortcutText}>Friends</Text>
+                {pendingFollowCount > 0 && (
+                  <View style={styles.shortcutBadge}>
+                    <Text style={styles.shortcutBadgeText}>{pendingFollowCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Feed')}
+                style={styles.shortcutButton}
+                activeOpacity={0.7}>
+                <Text style={styles.shortcutText}>Feed</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Past Sessions */}
@@ -596,6 +628,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.pink,
+  },
+  shortcutRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 18,
+  },
+  shortcutButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 50,
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: COLORS.pinkLight + '40',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: COLORS.grayLight,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 1,
+    flexDirection: 'row',
+    gap: 6,
+  },
+  shortcutText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.pink,
+  },
+  shortcutBadge: {
+    backgroundColor: COLORS.pink,
+    borderRadius: 50,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 22,
+    alignItems: 'center',
+  },
+  shortcutBadgeText: {
+    color: COLORS.white,
+    fontSize: 11,
+    fontWeight: '800',
   },
   productSettings: {
     marginTop: 14,

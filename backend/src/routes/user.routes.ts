@@ -41,6 +41,7 @@ router.get('/profile', async (req: Request, res: Response, next: NextFunction) =
       language: user.language,
       trial_used: user.trial_used,
       created_at: user.created_at,
+      magic_id: user.magic_id,
     });
   } catch (error) {
     next(error);
