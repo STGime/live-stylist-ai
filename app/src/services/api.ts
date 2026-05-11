@@ -40,7 +40,10 @@ async function apiRequest<T>(
     ...(body && { body: JSON.stringify(body) }),
   });
 
-  const data = await response.json();
+  // 204 No Content (e.g. DELETE /account) has an empty body — JSON.parse on
+  // "" throws "unexpected end of input", so read as text first.
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
     const error = new Error(data.message || 'Request failed') as Error & {

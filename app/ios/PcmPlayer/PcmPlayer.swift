@@ -13,6 +13,7 @@
  */
 import AVFoundation
 import Foundation
+import UIKit
 
 @objc(PcmPlayer)
 final class PcmPlayer: NSObject {
@@ -23,6 +24,7 @@ final class PcmPlayer: NSObject {
   private let playerNode = AVAudioPlayerNode()
   private var format: AVAudioFormat?
   private var isStarted = false
+  private var enqueueCount = 0
   private let workQueue = DispatchQueue(label: "app.livestylist.pcmplayer", qos: .userInitiated)
 
   @objc static func requiresMainQueueSetup() -> Bool { false }
@@ -32,18 +34,26 @@ final class PcmPlayer: NSObject {
     workQueue.async { [weak self] in
       guard let self = self, !self.isStarted else { return }
 
+      NSLog("[PcmPlayer] start() called")
+
+      // Defensive: disable proximity monitoring so the OS doesn't auto-route
+      // playback to the earpiece when the user holds the phone to their face.
+      DispatchQueue.main.async {
+        UIDevice.current.isProximityMonitoringEnabled = false
+      }
+
       // Audio session — share with the mic (which uses .playAndRecord/.voiceChat).
       let session = AVAudioSession.sharedInstance()
       do {
         try session.setCategory(.playAndRecord,
                                 mode: .voiceChat,
                                 options: [.defaultToSpeaker, .allowBluetooth, .allowAirPlay])
+        // Ask iOS to run hardware at 24kHz to avoid AVAudioEngine resample
+        // surprises. Falls back to nearest supported rate.
+        try session.setPreferredSampleRate(PcmPlayer.sampleRate)
         try session.setActive(true, options: [])
-        // .voiceChat defaults to the earpiece on iOS — force the speaker route
-        // up-front. We also re-apply this in routeToSpeaker() after the mic
-        // module starts, because mic init calls setCategory without
-        // .defaultToSpeaker and re-routes to the earpiece.
         try session.overrideOutputAudioPort(.speaker)
+        NSLog("[PcmPlayer] session OK: hwRate=\(session.sampleRate) outputs=\(session.currentRoute.outputs.map { $0.portType.rawValue })")
       } catch {
         NSLog("[PcmPlayer] AVAudioSession setup failed: \(error)")
       }
@@ -69,6 +79,8 @@ final class PcmPlayer: NSObject {
         try self.engine.start()
         self.playerNode.play()
         self.isStarted = true
+        let outFmt = self.engine.outputNode.outputFormat(forBus: 0)
+        NSLog("[PcmPlayer] engine started: running=\(self.engine.isRunning) outputFormat=\(outFmt) playerNode.isPlaying=\(self.playerNode.isPlaying)")
       } catch {
         NSLog("[PcmPlayer] engine start failed: \(error)")
       }
@@ -78,14 +90,23 @@ final class PcmPlayer: NSObject {
   @objc(enqueue:)
   func enqueue(_ base64: String) {
     workQueue.async { [weak self] in
-      guard let self = self,
-            self.isStarted,
-            let fmt = self.format,
+      guard let self = self else { return }
+      if !self.isStarted {
+        NSLog("[PcmPlayer] enqueue dropped: not started")
+        return
+      }
+      guard let fmt = self.format,
             let data = Data(base64Encoded: base64),
-            data.count >= 2 else { return }
+            data.count >= 2 else {
+        NSLog("[PcmPlayer] enqueue dropped: bad data")
+        return
+      }
 
       let frameCount = UInt32(data.count / 2) // 16-bit samples
-      guard let buffer = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: frameCount) else { return }
+      guard let buffer = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: frameCount) else {
+        NSLog("[PcmPlayer] enqueue dropped: buffer alloc failed")
+        return
+      }
       buffer.frameLength = frameCount
 
       // Copy raw PCM bytes into the buffer's int16 channel data.
@@ -96,6 +117,14 @@ final class PcmPlayer: NSObject {
       }
 
       self.playerNode.scheduleBuffer(buffer, completionHandler: nil)
+      self.enqueueCount += 1
+      // Log every 50 buffers so we can confirm continuous playback without
+      // spamming the console.
+      if self.enqueueCount % 50 == 1 {
+        let session = AVAudioSession.sharedInstance()
+        let outputs = session.currentRoute.outputs.map { $0.portType.rawValue }
+        NSLog("[PcmPlayer] enqueued \(self.enqueueCount) buffers; engine.running=\(self.engine.isRunning) playerNode.playing=\(self.playerNode.isPlaying) outputs=\(outputs)")
+      }
     }
   }
 
@@ -112,8 +141,11 @@ final class PcmPlayer: NSObject {
   @objc(routeToSpeaker)
   func routeToSpeaker() {
     workQueue.async {
+      let session = AVAudioSession.sharedInstance()
       do {
-        try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
+        try session.overrideOutputAudioPort(.speaker)
+        let outputs = session.currentRoute.outputs.map { $0.portType.rawValue }
+        NSLog("[PcmPlayer] routeToSpeaker applied; outputs=\(outputs)")
       } catch {
         NSLog("[PcmPlayer] overrideOutputAudioPort(.speaker) failed: \(error)")
       }
@@ -133,8 +165,17 @@ final class PcmPlayer: NSObject {
         output.portType == .headphones ||
         output.portType == .airPlay
       }
-      if usingExternal { return }
-      try? session.overrideOutputAudioPort(.speaker)
+      if usingExternal {
+        NSLog("[PcmPlayer] route change — external audio device present, skipping override")
+        return
+      }
+      do {
+        try session.overrideOutputAudioPort(.speaker)
+        let outputs = session.currentRoute.outputs.map { $0.portType.rawValue }
+        NSLog("[PcmPlayer] route change — re-applied speaker; outputs=\(outputs)")
+      } catch {
+        NSLog("[PcmPlayer] route change — override failed: \(error)")
+      }
     }
   }
 
@@ -148,6 +189,8 @@ final class PcmPlayer: NSObject {
       self.engine.disconnectNodeOutput(self.playerNode)
       self.engine.detach(self.playerNode)
       self.isStarted = false
+      self.enqueueCount = 0
+      NSLog("[PcmPlayer] stopped")
     }
   }
 
