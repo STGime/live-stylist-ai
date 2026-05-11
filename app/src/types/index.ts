@@ -6,6 +6,53 @@ export interface UserProfile {
   language?: string;
   trial_used?: boolean;
   created_at: string;
+  magic_id?: string;
+}
+
+export type FollowStatus = 'pending' | 'accepted' | 'denied';
+
+export interface FollowSummary {
+  id: string;
+  status: FollowStatus;
+  follower_device_id: string;
+  followee_device_id: string;
+  follower_name?: string;
+  follower_magic_id?: string;
+  followee_name?: string;
+  followee_magic_id?: string;
+  created_at: string;
+  responded_at?: string | null;
+}
+
+export interface FeedItem {
+  session_id: string;
+  followee_device_id: string;
+  followee_name?: string;
+  summary: string;
+  tips?: string[];
+  occasion?: Occasion;
+  duration_seconds?: number;
+  image_urls: string[];
+  created_at: string;
+}
+
+export interface FollowedSessionDetail {
+  session_id: string;
+  followee_device_id: string;
+  followee_name?: string;
+  summary: string;
+  tips: string[];
+  products: ProductResult[];
+  duration_seconds?: number;
+  occasion?: Occasion;
+  created_at: string;
+  images: Array<{
+    url: string;
+    mime_type: string;
+    prompt: string;
+    description: string | null;
+    expires_at: string;
+  }>;
 }
 
 export interface StartSessionResponse {
@@ -76,5 +123,8 @@ export type RootStackParamList = {
     sessionId?: string;
   };
   SessionHistory: undefined;
+  Follow: undefined;
+  Feed: undefined;
+  FollowedSessionDetail: { sessionId: string };
   Paywall: { reason?: 'trial_used' | 'monthly_cap' | 'manual' } | undefined;
 };

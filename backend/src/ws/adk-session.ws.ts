@@ -12,6 +12,7 @@ import { generateStylePreview } from '../services/image-generation.service.js';
 import type { GenerationRequest } from '../services/image-generation.service.js';
 import { searchProducts, type ProductResult } from '../services/awin-product-search.js';
 import { ProductTriggerCooldown } from '../services/product-trigger.js';
+import * as push from '../services/push.service.js';
 
 // Track active sessions for cleanup
 const activeSessions = new Map<string, {
@@ -360,6 +361,20 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
         });
 
         sessionLog.push(`[Preview generated]: ${prompt}`);
+
+        // Persist a row so followers (and the owner's history) can see the
+        // image until expires_at (now + 24h). Fire-and-forget — don't block
+        // the user's in-session preview UX on the database write.
+        dbService
+          .saveSessionImage({
+            sessionId,
+            deviceId,
+            storageUrl: result.url,
+            mimeType: result.mimeType,
+            prompt,
+            ...(result.description && { description: result.description }),
+          })
+          .catch((err) => logger.warn({ sessionId, err }, 'Failed to persist session_image row'));
 
         geminiSession.sendClientContent({
           turns: [{
@@ -723,6 +738,24 @@ ${transcript}`,
       ...(shownProducts && shownProducts.length > 0 && { products: shownProducts }),
       created_at: new Date().toISOString(),
     });
+
+    // Notify accepted followers that there's a new session to peek at.
+    try {
+      const followerIds = await dbService.getAcceptedFollowersDeviceIds(deviceId);
+      if (followerIds.length > 0) {
+        const owner = await dbService.getUser(deviceId).catch(() => null);
+        const name = owner?.name ?? 'A friend';
+        await push.fanoutPush(
+          followerIds,
+          'new_session',
+          `${name} just finished a session`,
+          'Tap to see their new style update',
+          { session_id: sessionId, followee_device_id: deviceId },
+        );
+      }
+    } catch (pushErr) {
+      logger.warn({ sessionId, err: pushErr }, 'Follower notification fan-out failed');
+    }
   } catch (error) {
     logger.warn({ sessionId, error }, 'Session summary generation failed');
   }

@@ -1,6 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
-import type { UserProfile, StartSessionResponse, EndSessionResponse, Occasion, SessionHistoryItem, ProductRegion } from '../types';
+import type {
+  UserProfile,
+  StartSessionResponse,
+  EndSessionResponse,
+  Occasion,
+  SessionHistoryItem,
+  ProductRegion,
+  FollowSummary,
+  FeedItem,
+  FollowedSessionDetail,
+} from '../types';
 
 const BASE_URL = 'https://livestylist-backend-833955805931.us-central1.run.app';
 const DEVICE_ID_KEY = '@livestylist_device_id';
@@ -111,4 +121,55 @@ export function getSessionHistory() {
 
 export function getSessionSummary(sessionId: string) {
   return apiRequest<SessionHistoryItem>('GET', `/session-summary/${sessionId}`);
+}
+
+// Magic ID + push token
+export function getMyMagicId() {
+  return apiRequest<{ magic_id: string }>('GET', '/me/magic-id');
+}
+
+export function registerPushToken(token: string) {
+  return apiRequest<void>('POST', '/me/push-token', { token });
+}
+
+export function clearPushToken() {
+  return apiRequest<void>('DELETE', '/me/push-token');
+}
+
+// Follow graph
+export function requestFollow(magicId: string) {
+  return apiRequest<{ id: string; status: 'pending' | 'accepted' | 'denied'; followee: { name: string; magic_id?: string } }>(
+    'POST',
+    '/follows/request',
+    { magic_id: magicId },
+  );
+}
+
+export function respondToFollow(id: string, action: 'accept' | 'deny') {
+  return apiRequest<{ id: string; status: 'accepted' | 'denied' }>('POST', `/follows/${id}/respond`, { action });
+}
+
+export function unfollow(id: string) {
+  return apiRequest<void>('DELETE', `/follows/${id}`);
+}
+
+export function listPendingFollows() {
+  return apiRequest<FollowSummary[]>('GET', '/follows/pending');
+}
+
+export function listFollowing() {
+  return apiRequest<FollowSummary[]>('GET', '/follows/following');
+}
+
+export function listFollowers() {
+  return apiRequest<FollowSummary[]>('GET', '/follows/followers');
+}
+
+// Feed
+export function getFeed() {
+  return apiRequest<FeedItem[]>('GET', '/feed');
+}
+
+export function getFollowedSession(sessionId: string) {
+  return apiRequest<FollowedSessionDetail>('GET', `/feed/sessions/${sessionId}`);
 }

@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import * as Sentry from '@sentry/react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { DialogProvider } from './src/components/AppDialog';
+import { attachNotificationTapHandler } from './src/services/push';
+import type { RootStackParamList } from './src/types';
 
 // Sentry — required for the iOS startup-crash investigation. The DSN comes
 // from EXPO_PUBLIC_SENTRY_DSN (baked into the build by EAS env block). If the
@@ -21,11 +23,27 @@ if (SENTRY_DSN) {
   });
 }
 
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
 function App() {
+  const detachRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    attachNotificationTapHandler((route, params) => {
+      if (!navigationRef.isReady()) return;
+      // @ts-ignore — push handler types stay decoupled from RootStackParamList
+      navigationRef.navigate(route, params);
+    }).then((detach) => {
+      detachRef.current = detach;
+    });
+    return () => {
+      detachRef.current?.();
+    };
+  }, []);
+
   return (
     <SafeAreaProvider>
       <DialogProvider>
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
           <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
           <AppNavigator />
         </NavigationContainer>

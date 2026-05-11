@@ -1,13 +1,26 @@
 import { getEurobase } from '../config/eurobase.js';
 import { getEnv } from '../config/env.js';
 import { logger } from '../utils/logger.js';
-import type { UserProfile, SessionRecord, SessionMemory, SubscriptionTier } from '../types/index.js';
+import { generateMagicId } from './magic-id.service.js';
+import type {
+  UserProfile,
+  SessionRecord,
+  SessionMemory,
+  SubscriptionTier,
+  FollowRow,
+  FollowStatus,
+  SessionImageRow,
+} from '../types/index.js';
 
 // 'users' is reserved by the Eurobase platform auth users table, so device-keyed
 // profile data lives in 'app_users'.
 const USERS_TABLE = 'app_users';
 const SESSIONS_TABLE = 'sessions';
 const MEMORIES_TABLE = 'session_memories';
+const FOLLOWS_TABLE = 'follows';
+const SESSION_IMAGES_TABLE = 'session_images';
+
+const IMAGE_TTL_HOURS = 24;
 
 function startOfMonthIso(): string {
   const d = new Date();
@@ -49,29 +62,68 @@ export async function createUser(
     throw new ConflictError('User already registered');
   }
 
-  const insertPayload = {
-    device_id: deviceId,
-    name,
-    favorite_color: favoriteColor,
-    ...(stylistName && { stylist_name: stylistName }),
-    ...(language && { language }),
-    trial_used: false,
-    // Legacy NOT NULL columns from the old daily-quota tier model. Backend
-    // no longer reads these — kept here only so the INSERT succeeds while
-    // the columns still exist on app_users. Once they're dropped via
-    // ALTER TABLE ... DROP COLUMN, these two lines can go too.
-    sessions_used_today: 0,
-    last_session_date: new Date().toISOString().slice(0, 10),
-  };
+  // Pick a magic_id, retrying if we hit the unique index.
+  let inserted: UserRow | null = null;
+  let lastError: string | null = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const magicId = generateMagicId();
+    const insertPayload = {
+      device_id: deviceId,
+      name,
+      favorite_color: favoriteColor,
+      magic_id: magicId,
+      ...(stylistName && { stylist_name: stylistName }),
+      ...(language && { language }),
+      trial_used: false,
+      // Legacy NOT NULL columns from the old daily-quota tier model. Backend
+      // no longer reads these — kept here only so the INSERT succeeds while
+      // the columns still exist on app_users. Once they're dropped via
+      // ALTER TABLE ... DROP COLUMN, these two lines can go too.
+      sessions_used_today: 0,
+      last_session_date: new Date().toISOString().slice(0, 10),
+    };
 
-  const { data, error } = await eb.db.from<UserRow>(USERS_TABLE).insert(insertPayload);
-  if (error || !data) {
-    throw new Error(`createUser failed: ${error ?? 'no data returned'}`);
+    const { data, error } = await eb.db.from<UserRow>(USERS_TABLE).insert(insertPayload);
+    if (!error && data) {
+      inserted = Array.isArray(data) ? (data[0] as UserRow) : (data as UserRow);
+      break;
+    }
+    lastError = error ?? 'no data returned';
+    if (!/unique|duplicate/i.test(String(lastError))) {
+      throw new Error(`createUser failed: ${lastError}`);
+    }
+    logger.warn({ magicId }, 'magic_id collision, retrying');
+  }
+  if (!inserted) {
+    throw new Error(`createUser failed: ${lastError}`);
   }
   logger.info({ deviceId }, 'User created');
+  return stripRow(inserted) as UserProfile;
+}
 
+export async function getUserByMagicId(magicId: string): Promise<{ deviceId: string; profile: UserProfile } | null> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db.from<UserRow>(USERS_TABLE).eq('magic_id', magicId).single();
+  if (error) {
+    if (/not found/i.test(error)) return null;
+    throw new Error(`getUserByMagicId failed: ${error}`);
+  }
+  if (!data) return null;
   const row = Array.isArray(data) ? data[0] : data;
-  return stripRow(row) as UserProfile;
+  if (!row) return null;
+  return { deviceId: row.device_id, profile: stripRow(row) as UserProfile };
+}
+
+export async function setExpoPushToken(deviceId: string, token: string | null): Promise<void> {
+  const eb = getEurobase();
+  const lookup = await eb.db.from<UserRow>(USERS_TABLE).select('id').eq('device_id', deviceId).single();
+  if (lookup.error || !lookup.data) {
+    throw new NotFoundError('User not found');
+  }
+  const row = Array.isArray(lookup.data) ? lookup.data[0] : lookup.data;
+  if (!row) throw new NotFoundError('User not found');
+  const { error } = await eb.db.from(USERS_TABLE).update(row.id, { expo_push_token: token });
+  if (error) throw new Error(`setExpoPushToken failed: ${error}`);
 }
 
 export async function getUser(deviceId: string): Promise<UserProfile | null> {
@@ -287,6 +339,24 @@ export async function deleteUserAndAllData(deviceId: string): Promise<void> {
     if (row?.id) await eb.db.from(MEMORIES_TABLE).delete(row.id);
   }
 
+  const images = await eb.db.from<SessionImageRow>(SESSION_IMAGES_TABLE).select('id').eq('device_id', deviceId);
+  const imageRows = Array.isArray(images.data) ? images.data : images.data ? [images.data] : [];
+  for (const row of imageRows) {
+    if (row?.id) await eb.db.from(SESSION_IMAGES_TABLE).delete(row.id);
+  }
+
+  // Follow rows where this user is either side.
+  const asFollower = await eb.db.from<FollowRow>(FOLLOWS_TABLE).select('id').eq('follower_device_id', deviceId);
+  const asFollowerRows = Array.isArray(asFollower.data) ? asFollower.data : asFollower.data ? [asFollower.data] : [];
+  for (const row of asFollowerRows) {
+    if (row?.id) await eb.db.from(FOLLOWS_TABLE).delete(row.id);
+  }
+  const asFollowee = await eb.db.from<FollowRow>(FOLLOWS_TABLE).select('id').eq('followee_device_id', deviceId);
+  const asFolloweeRows = Array.isArray(asFollowee.data) ? asFollowee.data : asFollowee.data ? [asFollowee.data] : [];
+  for (const row of asFolloweeRows) {
+    if (row?.id) await eb.db.from(FOLLOWS_TABLE).delete(row.id);
+  }
+
   const user = await eb.db.from<UserRow>(USERS_TABLE).select('id').eq('device_id', deviceId).single();
   const userRow = Array.isArray(user.data) ? user.data[0] : user.data;
   if (userRow?.id) {
@@ -294,9 +364,318 @@ export async function deleteUserAndAllData(deviceId: string): Promise<void> {
   }
 
   logger.info(
-    { deviceId, sessionsDeleted: sessionRows.length, memoriesDeleted: memoryRows.length },
+    {
+      deviceId,
+      sessionsDeleted: sessionRows.length,
+      memoriesDeleted: memoryRows.length,
+      imagesDeleted: imageRows.length,
+      followsDeleted: asFollowerRows.length + asFolloweeRows.length,
+    },
     'Account deleted',
   );
+}
+
+// --- Follows ---
+
+export interface FollowSummary {
+  id: string;
+  status: FollowStatus;
+  follower_device_id: string;
+  followee_device_id: string;
+  follower_name?: string;
+  follower_magic_id?: string;
+  followee_name?: string;
+  followee_magic_id?: string;
+  created_at: string;
+  responded_at?: string | null;
+}
+
+async function joinUserSummaries(rows: FollowRow[]): Promise<FollowSummary[]> {
+  if (rows.length === 0) return [];
+  const eb = getEurobase();
+  const ids = Array.from(new Set(rows.flatMap(r => [r.follower_device_id, r.followee_device_id])));
+
+  const lookups = await Promise.all(
+    ids.map(async (deviceId) => {
+      const { data } = await eb.db
+        .from<UserRow>(USERS_TABLE)
+        .select('device_id,name,magic_id')
+        .eq('device_id', deviceId)
+        .single();
+      const row = Array.isArray(data) ? data[0] : data;
+      return row ? { device_id: deviceId, name: row.name, magic_id: row.magic_id } : null;
+    }),
+  );
+  const byDevice = new Map<string, { name: string; magic_id?: string }>();
+  for (const u of lookups) {
+    if (u) byDevice.set(u.device_id, { name: u.name, magic_id: u.magic_id });
+  }
+
+  return rows.map((r) => {
+    const follower = byDevice.get(r.follower_device_id);
+    const followee = byDevice.get(r.followee_device_id);
+    return {
+      id: r.id,
+      status: r.status,
+      follower_device_id: r.follower_device_id,
+      followee_device_id: r.followee_device_id,
+      ...(follower?.name && { follower_name: follower.name }),
+      ...(follower?.magic_id && { follower_magic_id: follower.magic_id }),
+      ...(followee?.name && { followee_name: followee.name }),
+      ...(followee?.magic_id && { followee_magic_id: followee.magic_id }),
+      created_at: r.created_at,
+      responded_at: r.responded_at ?? null,
+    };
+  });
+}
+
+export async function createFollowRequest(
+  followerDeviceId: string,
+  followeeDeviceId: string,
+): Promise<{ row: FollowRow; created: boolean }> {
+  if (followerDeviceId === followeeDeviceId) {
+    throw new ConflictError('Cannot follow yourself');
+  }
+  const eb = getEurobase();
+
+  const existing = await eb.db
+    .from<FollowRow>(FOLLOWS_TABLE)
+    .eq('follower_device_id', followerDeviceId)
+    .eq('followee_device_id', followeeDeviceId)
+    .single();
+  if (!existing.error && existing.data) {
+    const row = Array.isArray(existing.data) ? existing.data[0] : existing.data;
+    if (row) {
+      if (row.status === 'accepted') {
+        throw new ConflictError('Already following this user');
+      }
+      // pending or denied: re-open as pending and bump created_at
+      const upd = await eb.db.from(FOLLOWS_TABLE).update(row.id, {
+        status: 'pending',
+        responded_at: null,
+        created_at: new Date().toISOString(),
+      });
+      if (upd.error) throw new Error(`createFollowRequest update failed: ${upd.error}`);
+      return { row: { ...row, status: 'pending', responded_at: null }, created: false };
+    }
+  }
+
+  const { data, error } = await eb.db.from<FollowRow>(FOLLOWS_TABLE).insert({
+    follower_device_id: followerDeviceId,
+    followee_device_id: followeeDeviceId,
+    status: 'pending' as FollowStatus,
+  });
+  if (error || !data) throw new Error(`createFollowRequest failed: ${error ?? 'no data'}`);
+  const row = Array.isArray(data) ? (data[0] as FollowRow) : (data as FollowRow);
+  return { row, created: true };
+}
+
+export async function getFollowById(id: string): Promise<FollowRow | null> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db.from<FollowRow>(FOLLOWS_TABLE).eq('id', id).single();
+  if (error) {
+    if (/not found/i.test(error)) return null;
+    throw new Error(`getFollowById failed: ${error}`);
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  return row ?? null;
+}
+
+export async function respondToFollow(
+  id: string,
+  followeeDeviceId: string,
+  action: 'accept' | 'deny',
+): Promise<FollowRow> {
+  const eb = getEurobase();
+  const row = await getFollowById(id);
+  if (!row) throw new NotFoundError('Follow request not found');
+  if (row.followee_device_id !== followeeDeviceId) {
+    throw new NotFoundError('Follow request not found'); // 404 hides existence from non-target
+  }
+  if (row.status !== 'pending') {
+    throw new ConflictError('Already responded to this request');
+  }
+  const newStatus: FollowStatus = action === 'accept' ? 'accepted' : 'denied';
+  const upd = await eb.db.from(FOLLOWS_TABLE).update(row.id, {
+    status: newStatus,
+    responded_at: new Date().toISOString(),
+  });
+  if (upd.error) throw new Error(`respondToFollow failed: ${upd.error}`);
+  return { ...row, status: newStatus, responded_at: new Date().toISOString() };
+}
+
+export async function deleteFollow(id: string, requesterDeviceId: string): Promise<void> {
+  const eb = getEurobase();
+  const row = await getFollowById(id);
+  if (!row) throw new NotFoundError('Follow not found');
+  if (row.follower_device_id !== requesterDeviceId && row.followee_device_id !== requesterDeviceId) {
+    throw new NotFoundError('Follow not found');
+  }
+  const { error } = await eb.db.from(FOLLOWS_TABLE).delete(row.id);
+  if (error) throw new Error(`deleteFollow failed: ${error}`);
+}
+
+export async function listPendingFollowsForFollowee(deviceId: string): Promise<FollowSummary[]> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<FollowRow>(FOLLOWS_TABLE)
+    .eq('followee_device_id', deviceId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`listPendingFollowsForFollowee failed: ${error}`);
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  return joinUserSummaries(rows);
+}
+
+export async function listFollowing(deviceId: string): Promise<FollowSummary[]> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<FollowRow>(FOLLOWS_TABLE)
+    .eq('follower_device_id', deviceId)
+    .eq('status', 'accepted')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`listFollowing failed: ${error}`);
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  return joinUserSummaries(rows);
+}
+
+export async function listFollowers(deviceId: string): Promise<FollowSummary[]> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<FollowRow>(FOLLOWS_TABLE)
+    .eq('followee_device_id', deviceId)
+    .eq('status', 'accepted')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`listFollowers failed: ${error}`);
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  return joinUserSummaries(rows);
+}
+
+export async function getAcceptedFollowersDeviceIds(followeeDeviceId: string): Promise<string[]> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<FollowRow>(FOLLOWS_TABLE)
+    .select('follower_device_id')
+    .eq('followee_device_id', followeeDeviceId)
+    .eq('status', 'accepted');
+  if (error) throw new Error(`getAcceptedFollowersDeviceIds failed: ${error}`);
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  return rows.map(r => r.follower_device_id);
+}
+
+export async function isAcceptedFollower(
+  followerDeviceId: string,
+  followeeDeviceId: string,
+): Promise<boolean> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<FollowRow>(FOLLOWS_TABLE)
+    .eq('follower_device_id', followerDeviceId)
+    .eq('followee_device_id', followeeDeviceId)
+    .eq('status', 'accepted')
+    .single();
+  if (error) {
+    if (/not found/i.test(error)) return false;
+    throw new Error(`isAcceptedFollower failed: ${error}`);
+  }
+  return !!data;
+}
+
+// --- Session Images (24h TTL) ---
+
+export async function saveSessionImage(input: {
+  sessionId: string;
+  deviceId: string;
+  storageUrl: string;
+  mimeType: string;
+  prompt: string;
+  description?: string;
+}): Promise<SessionImageRow> {
+  const eb = getEurobase();
+  const now = new Date();
+  const expires = new Date(now.getTime() + IMAGE_TTL_HOURS * 60 * 60 * 1000);
+  const { data, error } = await eb.db.from<SessionImageRow>(SESSION_IMAGES_TABLE).insert({
+    session_id: input.sessionId,
+    device_id: input.deviceId,
+    storage_url: input.storageUrl,
+    mime_type: input.mimeType,
+    prompt: input.prompt,
+    ...(input.description && { description: input.description }),
+    expires_at: expires.toISOString(),
+  });
+  if (error || !data) throw new Error(`saveSessionImage failed: ${error ?? 'no data'}`);
+  const row = Array.isArray(data) ? (data[0] as SessionImageRow) : (data as SessionImageRow);
+  return row;
+}
+
+export async function getSessionImages(sessionId: string): Promise<SessionImageRow[]> {
+  const eb = getEurobase();
+  const nowIso = new Date().toISOString();
+  const { data, error } = await eb.db
+    .from<SessionImageRow>(SESSION_IMAGES_TABLE)
+    .eq('session_id', sessionId)
+    .gt('expires_at', nowIso)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(`getSessionImages failed: ${error}`);
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  return rows;
+}
+
+export async function purgeExpiredSessionImages(): Promise<number> {
+  const eb = getEurobase();
+  const nowIso = new Date().toISOString();
+  const { data, error } = await eb.db
+    .from<SessionImageRow>(SESSION_IMAGES_TABLE)
+    .select('id')
+    .lte('expires_at', nowIso);
+  if (error) throw new Error(`purgeExpiredSessionImages select failed: ${error}`);
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  let purged = 0;
+  for (const row of rows) {
+    if (!row?.id) continue;
+    const del = await eb.db.from(SESSION_IMAGES_TABLE).delete(row.id);
+    if (!del.error) purged++;
+  }
+  return purged;
+}
+
+export async function getFollowedSessionFeed(
+  followerDeviceId: string,
+  limit = 30,
+): Promise<Array<SessionMemory & { followee_device_id: string; followee_name?: string; image_urls: string[] }>> {
+  const following = await listFollowing(followerDeviceId);
+  if (following.length === 0) return [];
+
+  const eb = getEurobase();
+  const results: Array<SessionMemory & { followee_device_id: string; followee_name?: string; image_urls: string[] }> = [];
+
+  // Pull recent memories for each followee, then merge. Eurobase SDK doesn't
+  // expose IN(...) here, so we fan out — bounded by the number of follows.
+  for (const f of following) {
+    const { data, error } = await eb.db
+      .from<MemoryRow>(MEMORIES_TABLE)
+      .eq('device_id', f.followee_device_id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) {
+      logger.warn({ followee: f.followee_device_id, error }, 'feed: memory fetch failed');
+      continue;
+    }
+    const rows = Array.isArray(data) ? data : data ? [data] : [];
+    for (const row of rows) {
+      const memory = stripRow(row) as SessionMemory;
+      const images = await getSessionImages(memory.session_id);
+      results.push({
+        ...memory,
+        followee_device_id: f.followee_device_id,
+        ...(f.followee_name && { followee_name: f.followee_name }),
+        image_urls: images.map(i => i.storage_url),
+      });
+    }
+  }
+
+  results.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  return results.slice(0, limit);
 }
 
 // --- Custom Errors ---

@@ -32,6 +32,9 @@ const EnvSchema = z.object({
   SESSION_WARNING_SECONDS: z.coerce.number().default(270),
   AWIN_API_TOKEN: z.string().optional(),
   AWIN_AFFILIATE_ID: z.string().optional(),
+  // Shared secret used by Cloud Scheduler (or any cron) to invoke
+  // /internal/purge-images. If unset, the endpoint is disabled.
+  PURGE_SECRET: z.string().min(8).optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
