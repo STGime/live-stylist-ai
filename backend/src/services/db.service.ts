@@ -56,6 +56,12 @@ export async function createUser(
     ...(stylistName && { stylist_name: stylistName }),
     ...(language && { language }),
     trial_used: false,
+    // Legacy NOT NULL columns from the old daily-quota tier model. Backend
+    // no longer reads these — kept here only so the INSERT succeeds while
+    // the columns still exist on app_users. Once they're dropped via
+    // ALTER TABLE ... DROP COLUMN, these two lines can go too.
+    sessions_used_today: 0,
+    last_session_date: new Date().toISOString().slice(0, 10),
   };
 
   const { data, error } = await eb.db.from<UserRow>(USERS_TABLE).insert(insertPayload);
