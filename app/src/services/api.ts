@@ -55,8 +55,10 @@ async function apiRequest<T>(
   return data as T;
 }
 
-// Reset
-export async function resetAccount(): Promise<void> {
+// Account deletion (Apple-required). Wipes server-side data first, then
+// clears the local device id + storage so the next launch starts onboarding.
+export async function deleteAccount(): Promise<void> {
+  await apiRequest<void>('DELETE', '/account');
   cachedDeviceId = null;
   await AsyncStorage.clear();
 }

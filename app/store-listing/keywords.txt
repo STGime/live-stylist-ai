@@ -1,0 +1,5 @@
+# App Store keywords (CSV, max 100 chars total including commas)
+ai stylist,fashion,style advice,wardrobe,outfit,beauty,personal stylist,closet,trendy,makeup,glow up
+
+# Play Store: keywords aren't a thing — pick the right Category + Tags instead.
+# Recommended: Category = Lifestyle. Tags = Beauty & Fashion, Personal Style, AI Assistant.

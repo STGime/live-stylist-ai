@@ -4,15 +4,14 @@ export interface UserProfile {
   favorite_color: string;
   stylist_name?: string;
   language?: string;
-  sessions_used_today: number;
-  last_session_date: string;
+  trial_used?: boolean;
   created_at: string;
 }
 
 export interface StartSessionResponse {
   session_id: string;
   session_expiry_time: number;
-  remaining_sessions_today: number;
+  remaining_sessions_this_month: number | null;
   ws_url: string;
 }
 
@@ -77,4 +76,5 @@ export type RootStackParamList = {
     sessionId?: string;
   };
   SessionHistory: undefined;
+  Paywall: { reason?: 'trial_used' | 'monthly_cap' | 'manual' } | undefined;
 };

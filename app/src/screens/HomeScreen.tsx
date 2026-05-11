@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
-  Alert,
   ActivityIndicator,
   ScrollView,
   Linking,
@@ -27,6 +26,7 @@ import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
+import { useDialog } from '../components/AppDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -42,17 +42,22 @@ export default function HomeScreen({ navigation }: Props) {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [productRegion, setProductRegion] = useState<ProductRegion>('us');
   const [showProducts, setShowProducts] = useState(true);
+  const dialog = useDialog();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(16)).current;
+  const [dailyPulseOn, setDailyPulseOn] = useState(false);
 
   const loadProfile = useCallback(async () => {
     try {
       setLoading(true);
       const p = await api.getProfile();
       setProfile(p);
-      const limit = isPremium ? 5 : 100;
+      // Tier model: free = 1 lifetime trial, premium = 30/mo soft cap.
+      // The remaining-sessions UI is informational; the backend is the source of truth.
+      const limit = isPremium ? 30 : 1;
+      const used = !isPremium && p.trial_used ? 1 : 0;
       setTotalSessions(limit);
-      setSessionsRemaining(Math.max(0, limit - p.sessions_used_today));
+      setSessionsRemaining(Math.max(0, limit - used));
 
       // Load product preferences
       const savedRegion = await AsyncStorage.getItem('@livestylist_product_region');
@@ -77,7 +82,7 @@ export default function HomeScreen({ navigation }: Props) {
         navigation.replace('Onboarding');
         return;
       }
-      Alert.alert('Error', 'Could not load your profile');
+      await dialog.alert({ title: 'Couldn\'t load profile', message: 'Please check your connection and try again.' });
     } finally {
       setLoading(false);
     }
@@ -96,6 +101,17 @@ export default function HomeScreen({ navigation }: Props) {
     ]).start();
   }, [fadeAnim, slideAnim]);
 
+  useEffect(() => {
+    // Color-pulse on the word "daily" in two places (upgrade banner + sessions
+    // pill when exhausted). Tried Animated.timing on color with useNativeDriver:
+    // false — flaky on RN New Arch + Hermes. setInterval+state toggle is
+    // bulletproof: re-renders every 700ms, instant snap between two gold shades.
+    const t = setInterval(() => setDailyPulseOn((p) => !p), 700);
+    return () => clearInterval(t);
+  }, []);
+
+  const dailyAccentColor = dailyPulseOn ? COLORS.gold : '#8a6a2c';
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Hey there' : 'Good evening';
 
@@ -107,14 +123,13 @@ export default function HomeScreen({ navigation }: Props) {
       const micStatus = await Camera.requestMicrophonePermission();
 
       if (camStatus !== 'granted' || micStatus !== 'granted') {
-        Alert.alert(
-          'Permissions Required',
-          'LiveStylist needs camera and microphone access to work. Please enable them in your device settings.',
-          [
-            { text: 'Open Settings', onPress: () => Linking.openSettings() },
-            { text: 'Cancel', style: 'cancel' },
-          ],
-        );
+        const ok = await dialog.confirm({
+          title: 'Permissions Needed',
+          message: 'LiveStylist needs camera and microphone access to work. Open settings to enable them?',
+          cancelLabel: 'Not now',
+          confirmLabel: 'Open Settings',
+        });
+        if (ok) Linking.openSettings();
         setStarting(false);
         return;
       }
@@ -126,11 +141,15 @@ export default function HomeScreen({ navigation }: Props) {
         wsUrl: session.ws_url,
       });
     } catch (err: any) {
-      if (err.code === 'session_limit_exceeded') {
-        setSessionsRemaining(0);
-        Alert.alert('No Sessions Left', 'You\'ve used all your sessions today. Come back tomorrow!');
+      if (err.status === 402 || err.code === 'trial_used' || err.code === 'monthly_cap') {
+        const reason: 'trial_used' | 'monthly_cap' =
+          err.code === 'monthly_cap' ? 'monthly_cap' : 'trial_used';
+        navigation.navigate('Paywall', { reason });
+      } else if (err.code === 'session_limit_exceeded') {
+        // Legacy code path — older backend revisions returned this.
+        navigation.navigate('Paywall', { reason: 'trial_used' });
       } else {
-        Alert.alert('Error', err.message || 'Could not start session');
+        await dialog.alert({ title: 'Couldn\'t start session', message: err.message || 'Please try again.' });
       }
     } finally {
       setStarting(false);
@@ -217,27 +236,34 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
               </View>
 
-              {/* Sessions pill */}
-              <View
-                style={[
-                  styles.sessionsPill,
-                  {
-                    backgroundColor:
-                      sessionsRemaining > 0 ? COLORS.green + '12' : COLORS.gold + '15',
-                    borderColor:
-                      sessionsRemaining > 0 ? COLORS.green + '30' : COLORS.gold + '30',
-                  },
-                ]}>
-                <Text
+              {/* Sessions pill — tap when empty goes to the paywall. */}
+              {sessionsRemaining > 0 ? (
+                <View
                   style={[
-                    styles.sessionsText,
-                    { color: sessionsRemaining > 0 ? COLORS.green : COLORS.gold },
+                    styles.sessionsPill,
+                    { backgroundColor: COLORS.green + '12', borderColor: COLORS.green + '30' },
                   ]}>
-                  {sessionsRemaining > 0
-                    ? `${sessionsRemaining} of ${totalSessions} session${sessionsRemaining !== 1 ? 's' : ''} left`
-                    : 'All sessions used today'}
-                </Text>
-              </View>
+                  <Text style={[styles.sessionsText, { color: COLORS.green }]}>
+                    {`${sessionsRemaining} of ${totalSessions} session${sessionsRemaining !== 1 ? 's' : ''} left`}
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('Paywall', { reason: 'trial_used' })}
+                  style={[
+                    styles.sessionsPill,
+                    { backgroundColor: COLORS.gold + '15', borderColor: COLORS.gold + '30' },
+                  ]}>
+                  <Text style={[styles.sessionsText, { color: COLORS.gold }]}>
+                    Upgrade for{' '}
+                    <Text style={{ fontWeight: '800', color: dailyAccentColor }}>
+                      daily
+                    </Text>
+                    {' '}sessions
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               <OccasionPicker
                 selected={selectedOccasion}
@@ -270,7 +296,8 @@ export default function HomeScreen({ navigation }: Props) {
               <Text style={styles.pastSessionsText}>Past Sessions</Text>
             </TouchableOpacity>
 
-            {/* Product Suggestions Settings */}
+            {/* Product Suggestions — disabled for v1, see PRODUCT_SUGGESTIONS_DEFERRED. */}
+            {/*
             <View style={styles.productSettings}>
               <View style={styles.productSettingRow}>
                 <Text style={styles.productSettingLabel}>Show product suggestions</Text>
@@ -308,6 +335,7 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
               )}
             </View>
+            */}
 
             {/* Tip */}
             <View style={styles.tip}>
@@ -318,13 +346,22 @@ export default function HomeScreen({ navigation }: Props) {
 
             {/* Upgrade Banner */}
             {!isPremium && (
-              <TouchableOpacity activeOpacity={0.85} style={styles.upgradeBanner}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.upgradeBanner}
+                onPress={() => navigation.navigate('Paywall', { reason: 'manual' })}>
                 <LinearGradient
                   colors={[COLORS.textDark, '#5A2D45']}
                   style={styles.upgradeGradient}>
                   <View>
                     <Text style={styles.upgradeTitle}>Go Premium</Text>
-                    <Text style={styles.upgradeSub}>5 sessions per day</Text>
+                    <Text style={styles.upgradeSub}>
+                      Get{' '}
+                      <Text style={[styles.upgradeSubAccent, { color: dailyAccentColor }]}>
+                        daily
+                      </Text>
+                      {' '}styling tips
+                    </Text>
                   </View>
                   <LinearGradient
                     colors={[COLORS.gold, COLORS.peach]}
@@ -526,6 +563,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'rgba(255,255,255,0.4)',
     marginTop: 1,
+  },
+  upgradeSubAccent: {
+    color: COLORS.gold,
+    fontWeight: '800',
   },
   upgradePill: {
     paddingVertical: 7,

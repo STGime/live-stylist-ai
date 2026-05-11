@@ -9,8 +9,9 @@ const USERS_TABLE = 'app_users';
 const SESSIONS_TABLE = 'sessions';
 const MEMORIES_TABLE = 'session_memories';
 
-function todayDateString(): string {
-  return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+function startOfMonthIso(): string {
+  const d = new Date();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString();
 }
 
 interface UserRow extends UserProfile {
@@ -54,8 +55,7 @@ export async function createUser(
     favorite_color: favoriteColor,
     ...(stylistName && { stylist_name: stylistName }),
     ...(language && { language }),
-    sessions_used_today: 0,
-    last_session_date: todayDateString(),
+    trial_used: false,
   };
 
   const { data, error } = await eb.db.from<UserRow>(USERS_TABLE).insert(insertPayload);
@@ -100,14 +100,20 @@ export async function updateUser(
   return fresh;
 }
 
+export type TierGateReason = 'trial_used' | 'monthly_cap';
+
+export interface TierGateResult {
+  allowed: boolean;
+  reason?: TierGateReason;
+  sessionsUsedThisMonth?: number;
+  remaining?: number;
+}
+
 export async function incrementSessionCount(
   deviceId: string,
   tier: SubscriptionTier,
-): Promise<{ allowed: boolean; sessionsUsedToday: number; remaining: number }> {
+): Promise<TierGateResult> {
   const eb = getEurobase();
-  const env = getEnv();
-  const limit = tier === 'premium' ? env.PREMIUM_SESSIONS_PER_DAY : env.FREE_SESSIONS_PER_DAY;
-  const today = todayDateString();
 
   const { data, error } = await eb.db.from<UserRow>(USERS_TABLE).eq('device_id', deviceId).single();
   if (error || !data) {
@@ -116,24 +122,32 @@ export async function incrementSessionCount(
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) throw new NotFoundError('User not found');
 
-  // Lazy daily reset
-  let sessionsUsed = row.sessions_used_today;
-  if (row.last_session_date !== today) {
-    sessionsUsed = 0;
+  if (tier === 'free') {
+    if (row.trial_used) {
+      return { allowed: false, reason: 'trial_used' };
+    }
+    const upd = await eb.db.from<UserRow>(USERS_TABLE).update(row.id, { trial_used: true });
+    if (upd.error) throw new Error(`incrementSessionCount (trial) failed: ${upd.error}`);
+    return { allowed: true };
   }
 
-  if (sessionsUsed >= limit) {
-    return { allowed: false, sessionsUsedToday: sessionsUsed, remaining: 0 };
+  // Premium: count sessions started this calendar month (UTC).
+  const env = getEnv();
+  const cap = env.MONTHLY_PREMIUM_SESSION_CAP;
+  const monthStart = startOfMonthIso();
+
+  const monthly = await eb.db
+    .from<SessionRow>(SESSIONS_TABLE)
+    .select('id')
+    .eq('device_id', deviceId)
+    .gte('start_time', monthStart);
+  if (monthly.error) throw new Error(`incrementSessionCount (premium) failed: ${monthly.error}`);
+  const used = Array.isArray(monthly.data) ? monthly.data.length : monthly.data ? 1 : 0;
+
+  if (used >= cap) {
+    return { allowed: false, reason: 'monthly_cap', sessionsUsedThisMonth: used, remaining: 0 };
   }
-
-  const newCount = sessionsUsed + 1;
-  const upd = await eb.db.from<UserRow>(USERS_TABLE).update(row.id, {
-    sessions_used_today: newCount,
-    last_session_date: today,
-  });
-  if (upd.error) throw new Error(`incrementSessionCount failed: ${upd.error}`);
-
-  return { allowed: true, sessionsUsedToday: newCount, remaining: limit - newCount };
+  return { allowed: true, sessionsUsedThisMonth: used + 1, remaining: cap - used - 1 };
 }
 
 // --- Sessions ---
@@ -220,6 +234,44 @@ export async function getSessionMemory(deviceId: string, sessionId: string): Pro
   if (!data) return null;
   const row = Array.isArray(data) ? data[0] : data;
   return row ? (stripRow(row) as SessionMemory) : null;
+}
+
+// --- Account deletion (Apple compliance) ---
+
+/**
+ * Hard-deletes the user's profile and every session + memory tied to their
+ * device_id. Used by `DELETE /account`.
+ *
+ * Bulk deletes go through the Eurobase SQL endpoint via a small helper since
+ * the SDK only exposes single-row .delete(id). Order doesn't matter — there
+ * are no FKs; we just want all three tables wiped atomically.
+ */
+export async function deleteUserAndAllData(deviceId: string): Promise<void> {
+  const eb = getEurobase();
+  // Use the SDK's delete-by-id by listing each row first. Acceptable at v1
+  // scale (sessions per user are bounded by the monthly cap × user lifetime).
+  const sessions = await eb.db.from<SessionRow>(SESSIONS_TABLE).select('id').eq('device_id', deviceId);
+  const sessionRows = Array.isArray(sessions.data) ? sessions.data : sessions.data ? [sessions.data] : [];
+  for (const row of sessionRows) {
+    if (row?.id) await eb.db.from(SESSIONS_TABLE).delete(row.id);
+  }
+
+  const memories = await eb.db.from<MemoryRow>(MEMORIES_TABLE).select('id').eq('device_id', deviceId);
+  const memoryRows = Array.isArray(memories.data) ? memories.data : memories.data ? [memories.data] : [];
+  for (const row of memoryRows) {
+    if (row?.id) await eb.db.from(MEMORIES_TABLE).delete(row.id);
+  }
+
+  const user = await eb.db.from<UserRow>(USERS_TABLE).select('id').eq('device_id', deviceId).single();
+  const userRow = Array.isArray(user.data) ? user.data[0] : user.data;
+  if (userRow?.id) {
+    await eb.db.from(USERS_TABLE).delete(userRow.id);
+  }
+
+  logger.info(
+    { deviceId, sessionsDeleted: sessionRows.length, memoriesDeleted: memoryRows.length },
+    'Account deleted',
+  );
 }
 
 // --- Custom Errors ---

@@ -20,6 +20,7 @@ const SHEET_HEIGHT = SCREEN_HEIGHT * 0.75;
 
 interface PreviewSheetProps {
   image: string | null;
+  url: string | null;
   mimeType: string;
   loading: boolean;
   onDismiss: () => void;
@@ -27,6 +28,7 @@ interface PreviewSheetProps {
 
 export default function PreviewSheet({
   image,
+  url,
   mimeType,
   loading,
   onDismiss,
@@ -36,7 +38,9 @@ export default function PreviewSheet({
   const shimmerAnim = useRef(new Animated.Value(0)).current;
   const [saving, setSaving] = useState(false);
 
-  const visible = loading || !!image;
+  const visible = loading || !!image || !!url;
+  // Prefer the CDN URL (fast path) and fall back to inline base64.
+  const displayUri = url ?? (image ? `data:${mimeType};base64,${image}` : null);
 
   useEffect(() => {
     if (visible) {
@@ -90,7 +94,8 @@ export default function PreviewSheet({
   }, [loading, shimmerAnim]);
 
   const handleSave = async () => {
-    if (!image || saving) return;
+    if (saving) return;
+    if (!image && !url) return;
     setSaving(true);
 
     try {
@@ -111,25 +116,36 @@ export default function PreviewSheet({
 
       const ext = mimeType.includes('png') ? 'png' : 'jpg';
       const fileName = `LiveStylist_${Date.now()}.${ext}`;
+      const baseDir =
+        Platform.OS === 'android'
+          ? `${RNFS.PicturesDirectoryPath}/LiveStylist`
+          : RNFS.DocumentDirectoryPath;
 
       if (Platform.OS === 'android') {
-        // Write to Pictures directory (scoped storage handles this on API 29+)
-        const picturesDir = `${RNFS.PicturesDirectoryPath}/LiveStylist`;
-        const dirExists = await RNFS.exists(picturesDir);
+        const dirExists = await RNFS.exists(baseDir);
         if (!dirExists) {
-          await RNFS.mkdir(picturesDir);
+          await RNFS.mkdir(baseDir);
         }
-        const filePath = `${picturesDir}/${fileName}`;
+      }
+      const filePath = `${baseDir}/${fileName}`;
+
+      if (image) {
+        // Inline base64 path
         await RNFS.writeFile(filePath, image, 'base64');
-        // Notify media scanner so it appears in gallery
+      } else if (url) {
+        // URL path — download from Fal CDN to disk
+        const { promise } = RNFS.downloadFile({ fromUrl: url, toFile: filePath });
+        const result = await promise;
+        if (result.statusCode >= 400) {
+          throw new Error(`Download failed: HTTP ${result.statusCode}`);
+        }
+      }
+
+      if (Platform.OS === 'android') {
         await RNFS.scanFile(filePath);
         ToastAndroid.show('Saved to gallery', ToastAndroid.SHORT);
-      } else {
-        // iOS: write to documents then save to camera roll
-        const filePath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
-        await RNFS.writeFile(filePath, image, 'base64');
-        // CameraRoll would be needed for iOS — for now save to files
       }
+      // iOS: file saved to Documents; CameraRoll save would be a separate step.
     } catch (e: any) {
       console.warn('[PreviewSheet] Save error:', e?.message || e);
     } finally {
@@ -175,10 +191,10 @@ export default function PreviewSheet({
           >
             <Text style={styles.loadingText}>Generating preview...</Text>
           </Animated.View>
-        ) : image ? (
+        ) : displayUri ? (
           <View style={styles.content}>
             <Image
-              source={{ uri: `data:${mimeType};base64,${image}` }}
+              source={{ uri: displayUri }}
               style={styles.previewImage}
               resizeMode="contain"
             />

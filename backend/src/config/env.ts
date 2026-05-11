@@ -9,9 +9,16 @@ const EnvSchema = z.object({
   GEMINI_API_KEY: z.string().min(1),
   GEMINI_MODEL: z.string().default('gemini-2.5-flash-native-audio-latest'),
   FAL_AI_KEY: z.string().min(1),
+  // Preview delivery mode. 'url' (default, fast) sends the Fal CDN URL
+  // straight to the client; 'base64' fetches the image server-side and
+  // ships it inline. Flip to 'base64' if Fal CDN URLs ever stop being
+  // reachable from clients or if we need to enforce server-side egress.
+  PREVIEW_DELIVERY: z.enum(['url', 'base64']).default('url'),
   REVENUECAT_API_KEY: z.string().min(1),
-  FREE_SESSIONS_PER_DAY: z.coerce.number().default(1),
-  PREMIUM_SESSIONS_PER_DAY: z.coerce.number().default(5),
+  // Tier model: free users get 1 lifetime trial session; premium users get
+  // a generous monthly soft cap. Daily limits removed (lifetime trial fits
+  // the cost-per-session economics — see plan).
+  MONTHLY_PREMIUM_SESSION_CAP: z.coerce.number().default(30),
   SESSION_DURATION_SECONDS: z.coerce.number().default(300),
   SESSION_WARNING_SECONDS: z.coerce.number().default(270),
   AWIN_API_TOKEN: z.string().optional(),

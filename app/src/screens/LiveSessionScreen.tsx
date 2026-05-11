@@ -9,7 +9,6 @@ import {
   AppState,
   Platform,
   ToastAndroid,
-  Alert,
 } from 'react-native';
 import Svg, { Path, Line } from 'react-native-svg';
 import {
@@ -32,6 +31,7 @@ import * as api from '../services/api';
 import { useAdkSession } from '../hooks/useAdkSession';
 import type { SessionEvent } from '../services/adk-client';
 import type { RootStackParamList } from '../types';
+import { useDialog } from '../components/AppDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LiveSession'>;
 
@@ -82,7 +82,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
   // ADK session (replaces useGeminiSession)
   const {
     aiState, cameraRef, isConnected, error, visionActive,
-    previewImage, previewMimeType, previewPrompt, previewLoading, previewTrigger,
+    previewImage, previewUrl, previewMimeType, previewPrompt, previewLoading, previewTrigger,
     previewError, clearPreviewError,
     products, amplitudeRef,
     dismissPreview, dismissProducts, deactivateCamera,
@@ -92,16 +92,17 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
       onSessionEvent: handleSessionEvent,
     });
 
-  // Surface preview errors as a toast (Android) or alert (iOS)
+  // Surface preview errors as a quick toast (Android) or in-app dialog (iOS)
+  const dialog = useDialog();
   useEffect(() => {
     if (!previewError) return;
     if (Platform.OS === 'android') {
       ToastAndroid.show(previewError, ToastAndroid.SHORT);
+      clearPreviewError();
     } else {
-      Alert.alert('Preview', previewError);
+      dialog.alert({ title: 'Preview', message: previewError }).then(clearPreviewError);
     }
-    clearPreviewError();
-  }, [previewError, clearPreviewError]);
+  }, [previewError, clearPreviewError, dialog]);
 
   // Mount animation
   useEffect(() => {
@@ -345,6 +346,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
       {/* Preview bottom sheet */}
       <PreviewSheet
         image={previewImage}
+        url={previewUrl}
         mimeType={previewMimeType}
         loading={previewLoading}
         onDismiss={dismissPreview}

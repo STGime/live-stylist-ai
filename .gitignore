@@ -62,6 +62,9 @@ tmp/
 # Service account keys (SECRETS)
 **/service-account.json
 **/serviceAccountKey.json
+**/play-service-account.json
+app/google-services.json
+app/ios/GoogleService-Info.plist
 
 # Claude
 .claude/

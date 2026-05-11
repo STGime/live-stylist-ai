@@ -10,6 +10,11 @@
     "scheme": "livestylist",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f0f23"
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.livestylist.ios",
@@ -20,6 +25,7 @@
     },
     "android": {
       "package": "com.livestylist",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0f0f23"
@@ -31,7 +37,8 @@
       ]
     },
     "plugins": [
-      "react-native-vision-camera"
+      "react-native-vision-camera",
+      "expo-splash-screen"
     ],
     "extra": {
       "eas": {

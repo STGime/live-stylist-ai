@@ -10,8 +10,11 @@ export interface GenerationRequest {
 }
 
 export interface GenerationResult {
-  image: string;
+  /** Hosted CDN URL from Fal — always present. */
+  url: string;
   mimeType: string;
+  /** Inline base64 of the image, only populated when PREVIEW_DELIVERY=base64. */
+  image?: string;
   description?: string;
   processingTimeMs: number;
 }
@@ -36,13 +39,14 @@ export async function generateStylePreview(
 ): Promise<GenerationResult> {
   const startTime = Date.now();
   ensureFalConfigured();
+  const env = getEnv();
 
   const fullPrompt = request.category
     ? buildEditPrompt(request.prompt, request.category as keyof typeof PROMPT_TEMPLATES)
     : request.prompt;
 
   logger.info(
-    { promptLength: fullPrompt.length, category: request.category, model: FAL_MODEL },
+    { promptLength: fullPrompt.length, category: request.category, model: FAL_MODEL, delivery: env.PREVIEW_DELIVERY },
     'Starting image generation (Fal.ai)',
   );
 
@@ -59,22 +63,34 @@ export async function generateStylePreview(
   if (!imageUrl) {
     throw new Error('No image returned from Fal.ai image generation');
   }
+  const mimeType = data.images?.[0]?.content_type || 'image/jpeg';
 
-  // Fetch the hosted image and convert to base64 to keep the existing
-  // wire format with the React Native client unchanged.
+  // Fast path: hand the CDN URL to the client and let it stream from Fal in
+  // parallel with the WebSocket message arriving. Skips a server-side round
+  // trip + base64 inflation entirely.
+  if (env.PREVIEW_DELIVERY === 'url') {
+    const processingTimeMs = Date.now() - startTime;
+    logger.info(
+      { processingTimeMs, hasDescription: !!data.description, delivery: 'url' },
+      'Image generation completed',
+    );
+    return { url: imageUrl, mimeType, description: data.description, processingTimeMs };
+  }
+
+  // Legacy path: fetch the image server-side and inline it as base64.
   const fetched = await fetch(imageUrl);
   if (!fetched.ok) {
     throw new Error(`Failed to fetch generated image: ${fetched.status} ${fetched.statusText}`);
   }
-  const mimeType = data.images?.[0]?.content_type || fetched.headers.get('content-type') || 'image/jpeg';
+  const resolvedMime = fetched.headers.get('content-type') || mimeType;
   const buf = Buffer.from(await fetched.arrayBuffer());
   const image = buf.toString('base64');
 
   const processingTimeMs = Date.now() - startTime;
   logger.info(
-    { processingTimeMs, hasDescription: !!data.description, sizeBytes: buf.byteLength },
+    { processingTimeMs, hasDescription: !!data.description, sizeBytes: buf.byteLength, delivery: 'base64' },
     'Image generation completed',
   );
 
-  return { image, mimeType, description: data.description, processingTimeMs };
+  return { url: imageUrl, image, mimeType: resolvedMime, description: data.description, processingTimeMs };
 }

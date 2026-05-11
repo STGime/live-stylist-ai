@@ -351,7 +351,8 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
 
         sendToClient(ws, {
           type: 'preview_image',
-          image: result.image,
+          url: result.url,
+          ...(result.image && { image: result.image }),
           mimeType: result.mimeType,
           prompt,
           description: result.description,

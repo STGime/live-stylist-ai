@@ -39,8 +39,7 @@ router.get('/profile', async (req: Request, res: Response, next: NextFunction) =
       favorite_color: user.favorite_color,
       stylist_name: user.stylist_name,
       language: user.language,
-      sessions_used_today: user.sessions_used_today,
-      last_session_date: user.last_session_date,
+      trial_used: user.trial_used,
       created_at: user.created_at,
     });
   } catch (error) {
@@ -60,6 +59,16 @@ router.put('/profile', async (req: Request, res: Response, next: NextFunction) =
       stylist_name: user.stylist_name,
       language: user.language,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /account — Apple-required: hard-deletes profile + all sessions + memories.
+router.delete('/account', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await dbService.deleteUserAndAllData(req.deviceId!);
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

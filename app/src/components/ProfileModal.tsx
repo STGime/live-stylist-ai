@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
@@ -17,6 +16,7 @@ import { COLORS } from '../theme/colors';
 import BubbleButton from './BubbleButton';
 import ColorSwatchPicker from './ColorSwatchPicker';
 import * as api from '../services/api';
+import { useDialog } from './AppDialog';
 
 interface Props {
   visible: boolean;
@@ -44,6 +44,7 @@ export default function ProfileModal({
   const [selectedColor, setSelectedColor] = useState(currentColor);
   const [language, setLanguage] = useState(currentLanguage || 'en');
   const [saving, setSaving] = useState(false);
+  const dialog = useDialog();
 
   // Reset fields when modal opens with new props
   React.useEffect(() => {
@@ -63,31 +64,30 @@ export default function ProfileModal({
     setStylistName(text.replace(/[^a-zA-Z\s'-]/g, ''));
   };
 
-  const handleReset = () => {
-    Alert.alert(
-      'Reset Account',
-      'This will delete all your data including your profile, session history, and preferences. You will start fresh with the onboarding flow.\n\nThis action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset Everything',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.resetAccount();
-              onReset();
-            } catch {
-              Alert.alert('Error', 'Could not reset account');
-            }
-          },
-        },
-      ],
-    );
+  const handleDelete = async () => {
+    const confirmed = await dialog.confirm({
+      title: 'Delete Account?',
+      message:
+        'This permanently deletes your profile, session history, and saved preferences from our servers and from this device. This action cannot be undone.',
+      cancelLabel: 'Cancel',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!confirmed) return;
+    try {
+      await api.deleteAccount();
+      onReset();
+    } catch (e: any) {
+      await dialog.alert({
+        title: 'Could not delete',
+        message: e?.message || 'Something went wrong. Please try again.',
+      });
+    }
   };
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Oops', "What's your name?");
+      await dialog.alert({ title: 'Oops', message: "What's your name?" });
       return;
     }
 
@@ -101,7 +101,10 @@ export default function ProfileModal({
       });
       onSaved();
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Could not save changes');
+      await dialog.alert({
+        title: 'Could not save',
+        message: err.message || 'Please try again.',
+      });
     } finally {
       setSaving(false);
     }
@@ -201,8 +204,8 @@ export default function ProfileModal({
           </View>
 
           {/* Reset */}
-          <TouchableOpacity onPress={handleReset} style={styles.resetButton}>
-            <Text style={styles.resetText}>Reset Account</Text>
+          <TouchableOpacity onPress={handleDelete} style={styles.resetButton}>
+            <Text style={styles.resetText}>Delete Account</Text>
           </TouchableOpacity>
 
           {saving && (

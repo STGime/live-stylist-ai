@@ -7,7 +7,10 @@
 export type AdkAiState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'analyzing';
 
 export interface PreviewImageData {
-  image: string;
+  /** Hosted CDN URL — present when backend uses URL delivery (default fast path). */
+  url?: string;
+  /** Inline base64 of the image — present when backend uses base64 delivery. */
+  image?: string;
   mimeType: string;
   prompt: string;
   description?: string;
@@ -152,6 +155,7 @@ export class AdkSessionClient {
 
       case 'preview_image':
         this.config.callbacks.onPreviewImage?.({
+          url: data.url,
           image: data.image,
           mimeType: data.mimeType,
           prompt: data.prompt,

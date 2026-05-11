@@ -39,6 +39,7 @@ interface UseAdkSessionResult {
   subtitleText: string;
   subtitleDirection: SubtitleDirection;
   previewImage: string | null;
+  previewUrl: string | null;
   previewMimeType: string;
   previewPrompt: string;
   previewLoading: boolean;
@@ -62,6 +63,7 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
   const [subtitleText, setSubtitleText] = useState('');
   const [subtitleDirection, setSubtitleDirection] = useState<SubtitleDirection>('output');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewMimeType, setPreviewMimeType] = useState('image/jpeg');
   const [previewPrompt, setPreviewPrompt] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -180,7 +182,8 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
         },
         onPreviewImage: (data: PreviewImageData) => {
           setPreviewLoading(false);
-          setPreviewImage(data.image);
+          setPreviewUrl(data.url ?? null);
+          setPreviewImage(data.image ?? null);
           setPreviewMimeType(data.mimeType);
           setPreviewPrompt(data.prompt);
           setPreviewTrigger(data.trigger);
@@ -330,6 +333,7 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
 
   const dismissPreview = useCallback(() => {
     setPreviewImage(null);
+    setPreviewUrl(null);
     setPreviewLoading(false);
     setPreviewPrompt('');
     setPreviewTrigger(null);
@@ -358,6 +362,7 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
     subtitleText,
     subtitleDirection,
     previewImage,
+    previewUrl,
     previewMimeType,
     previewPrompt,
     previewLoading,

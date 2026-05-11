@@ -28,8 +28,7 @@ export interface UserProfile {
   stylist_name?: string;
   language?: string;
   created_at: string; // ISO 8601 (Postgres timestamptz)
-  sessions_used_today: number;
-  last_session_date: string; // YYYY-MM-DD
+  trial_used: boolean;
 }
 
 // --- Occasion ---
@@ -77,7 +76,7 @@ export interface ActiveSession {
 export interface StartSessionResponse {
   session_id: string;
   session_expiry_time: number;
-  remaining_sessions_today: number;
+  remaining_sessions_this_month: number | null;
   ws_url: string;
 }
 
@@ -101,7 +100,7 @@ export type ServerEvent =
   | { type: 'error'; message: string }
   | { type: 'pong' }
   | { type: 'preview_generating'; prompt: string }
-  | { type: 'preview_image'; image: string; mimeType: string; prompt: string; description?: string; trigger: 'agent' | 'client' }
+  | { type: 'preview_image'; url: string; image?: string; mimeType: string; prompt: string; description?: string; trigger: 'agent' | 'client' }
   | { type: 'preview_error'; message: string; prompt: string }
   | { type: 'products'; products: ProductResult[] };
 

@@ -8,6 +8,7 @@ import HomeScreen from '../screens/HomeScreen';
 import LiveSessionScreen from '../screens/LiveSessionScreen';
 import SessionSummaryScreen from '../screens/SessionSummaryScreen';
 import SessionHistoryScreen from '../screens/SessionHistoryScreen';
+import PaywallScreen from '../screens/PaywallScreen';
 import type { RootStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -46,6 +47,7 @@ export default function AppNavigator() {
       />
       <Stack.Screen name="SessionSummary" component={SessionSummaryScreen} />
       <Stack.Screen name="SessionHistory" component={SessionHistoryScreen} />
+      <Stack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 }

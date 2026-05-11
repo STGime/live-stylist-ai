@@ -7,7 +7,6 @@ import {
   Animated,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { Camera } from 'react-native-vision-camera';
@@ -20,6 +19,7 @@ import FloatingBubbles from '../components/FloatingBubbles';
 import ColorSwatchPicker from '../components/ColorSwatchPicker';
 import * as api from '../services/api';
 import type { RootStackParamList } from '../types';
+import { useDialog } from '../components/AppDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
@@ -32,6 +32,7 @@ export default function OnboardingScreen({ navigation }: Props) {
   const [error, setError] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+  const dialog = useDialog();
 
   useEffect(() => {
     Animated.parallel([
@@ -66,7 +67,7 @@ export default function OnboardingScreen({ navigation }: Props) {
         navigation.replace('Home');
         return;
       }
-      Alert.alert('Oops', err.message || 'Something went wrong. Try again!');
+      await dialog.alert({ title: 'Oops', message: err.message || 'Something went wrong. Try again!' });
     } finally {
       setLoading(false);
     }

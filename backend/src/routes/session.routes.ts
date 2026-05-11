@@ -45,14 +45,16 @@ router.post('/start-session', sessionStartRateLimiter, async (req: Request, res:
       return;
     }
 
-    // 4. Check/increment daily session count
+    // 4. Tier gate (lifetime trial for free, monthly cap for premium).
     const sessionCheck = await dbService.incrementSessionCount(deviceId, tier);
     if (!sessionCheck.allowed) {
-      res.status(429).json({
-        error: 'session_limit_exceeded',
-        message: `Daily session limit reached for ${tier} tier`,
-        sessions_used_today: sessionCheck.sessionsUsedToday,
-        remaining_sessions_today: 0,
+      const message =
+        sessionCheck.reason === 'trial_used'
+          ? 'Your free session is used up. Subscribe to continue.'
+          : 'You have reached your monthly session limit.';
+      res.status(402).json({
+        error: sessionCheck.reason ?? 'tier_limit',
+        message,
       });
       return;
     }
@@ -73,7 +75,7 @@ router.post('/start-session', sessionStartRateLimiter, async (req: Request, res:
     res.status(201).json({
       session_id: session.session_id,
       session_expiry_time: session.expires_at,
-      remaining_sessions_today: sessionCheck.remaining,
+      remaining_sessions_this_month: sessionCheck.remaining ?? null,
       ws_url: wsUrl,
     });
   } catch (error) {

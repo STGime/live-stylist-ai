@@ -69,65 +69,68 @@
   <main class="legal-page" id="main">
     <div class="legal-content">
       <h1>Privacy Policy</h1>
-      <p class="last-updated">Last updated: March 6, 2026</p>
-
-      <div class="placeholder-note">
-        [PLACEHOLDER] This privacy policy contains placeholder text. Replace with actual legal content before launch.
-      </div>
+      <p class="last-updated">Last updated: May 11, 2026</p>
 
       <h2>1. Information We Collect</h2>
-      <p>When you use LiveStylist, we may collect the following types of information:</p>
+      <p>LiveStylist is built around a minimal data model. We do not require an email address or login. Your account is identified only by an anonymous device identifier (a randomly-generated UUID stored on your device).</p>
       <ul>
-        <li><strong>Camera Data:</strong> Video frames from your device camera are processed in real-time by our AI to provide style advice. [PLACEHOLDER: Specify whether frames are stored, for how long, and where.]</li>
-        <li><strong>Voice Data:</strong> Audio from voice conversations is processed to understand your questions and provide responses. [PLACEHOLDER: Specify retention policy.]</li>
-        <li><strong>Account Information:</strong> Email address, display name, and profile preferences you provide during registration.</li>
-        <li><strong>Usage Data:</strong> Session history, feature usage, and app performance metrics.</li>
-        <li><strong>Device Information:</strong> Device type, operating system, app version, and unique device identifiers.</li>
+        <li><strong>Camera Data:</strong> While a session is active, your front-facing camera streams cropped frames (eye, mouth, body) to our AI vision pipeline. Frames are processed in memory and <strong>are not persisted</strong> to disk on our servers.</li>
+        <li><strong>Voice Data:</strong> Microphone audio is streamed in real time to Google's Gemini Live API for transcription and dialogue. We do not store the raw audio. Transcripts are kept only as part of your session memory (see below).</li>
+        <li><strong>Profile Data:</strong> The name, favorite color, optional stylist nickname, and language preference you provide during onboarding.</li>
+        <li><strong>Session Data:</strong> Start time, end time, duration, and a short text summary of each session ("session memory") so the stylist can reference past sessions.</li>
+        <li><strong>Generated Images:</strong> Style preview images generated during sessions are temporarily hosted on Fal.ai's content delivery network. We do not retain copies on our servers.</li>
+        <li><strong>Subscription Data:</strong> If you purchase Premium, an anonymous subscriber record is kept by RevenueCat (which integrates with Apple App Store and Google Play). We do not see your payment details.</li>
       </ul>
+      <p>We do <strong>not</strong> collect email addresses, real names, contacts, location, or device contact lists. We do not use third-party analytics or advertising trackers.</p>
 
       <h2>2. How We Use Your Information</h2>
-      <p>We use collected information to:</p>
       <ul>
-        <li>Provide real-time AI-powered style and beauty advice</li>
-        <li>Maintain your personal style preferences and session history</li>
-        <li>Improve our AI models and service quality</li>
-        <li>Send important service updates and notifications</li>
-        <li>Ensure app security and prevent abuse</li>
+        <li>To provide real-time AI-powered style and beauty advice during a session.</li>
+        <li>To remember your preferences and recent sessions so the stylist can be personal across visits.</li>
+        <li>To enforce subscription limits (free trial vs. Premium).</li>
+        <li>To diagnose and fix bugs.</li>
       </ul>
 
-      <h2>3. Data Sharing</h2>
-      <p>[PLACEHOLDER] We do not sell your personal data. We may share data with:</p>
+      <h2>3. Data Sharing &amp; Sub-processors</h2>
+      <p>We do not sell your personal data. To run the service, the following sub-processors handle data on our behalf:</p>
       <ul>
-        <li><strong>AI Service Providers:</strong> [PLACEHOLDER: e.g., Google Cloud AI] for processing vision and voice data</li>
-        <li><strong>Cloud Infrastructure:</strong> [PLACEHOLDER: e.g., Google Cloud Run] for hosting and processing</li>
-        <li><strong>Analytics Providers:</strong> [PLACEHOLDER] for app usage analytics</li>
+        <li><strong>Google (Gemini API):</strong> Real-time voice conversation and computer-vision analysis of camera frames. Data is processed under Google's Enterprise Privacy Commitment.</li>
+        <li><strong>Fal.ai:</strong> AI image generation for style previews (model: Gemini 2.5 Flash Image, hosted via Fal). Source images and prompts are sent to Fal for inference; generated images are returned via Fal's CDN.</li>
+        <li><strong>Eurobase (Scaleway, France):</strong> Our application database. <strong>All your profile and session data is stored on EU infrastructure (France)</strong> and never leaves the EU.</li>
+        <li><strong>Google Cloud Run (US):</strong> Hosts our backend API and orchestrates the calls above. The backend is stateless — it forwards data; it does not store your session content beyond what's persisted to Eurobase.</li>
+        <li><strong>RevenueCat:</strong> Subscription management and entitlement checking (only if you purchase Premium). Receives an anonymous subscriber identifier.</li>
+        <li><strong>Apple App Store / Google Play Store:</strong> Payment processing for subscriptions. We never see your payment details.</li>
       </ul>
 
       <h2>4. Data Retention</h2>
-      <p>[PLACEHOLDER] Camera frames are processed in real-time and [stored/not stored]. Voice data is [retained for X period / deleted immediately after processing]. Account data is retained as long as your account is active.</p>
-
-      <h2>5. Your Rights</h2>
-      <p>Depending on your location, you may have the right to:</p>
       <ul>
-        <li>Access your personal data</li>
-        <li>Request deletion of your data</li>
-        <li>Opt out of data processing for certain purposes</li>
-        <li>Export your data in a portable format</li>
-        <li>Withdraw consent at any time</li>
+        <li><strong>Camera frames:</strong> processed in memory only; not stored.</li>
+        <li><strong>Audio:</strong> processed in real time by Google Gemini Live; not stored by us.</li>
+        <li><strong>Session memories &amp; profile:</strong> retained for as long as your account exists.</li>
+        <li><strong>Generated preview images:</strong> served from Fal.ai's CDN for a short window (typically up to 24 hours) and not retained by us.</li>
+      </ul>
+      <p>You can delete your entire account from inside the app (Profile → Delete Account). This permanently removes your profile, all session records, and all session memories from our servers.</p>
+
+      <h2>5. Your Rights (GDPR &amp; similar)</h2>
+      <p>Because we collect almost no personal data, most rights are fulfilled automatically: there is no email or real name to access, correct, or export. You always have the right to:</p>
+      <ul>
+        <li>Delete your account and all associated data (Profile → Delete Account).</li>
+        <li>Stop using the app and uninstall it (the local device ID is destroyed).</li>
+        <li>Cancel your subscription at any time via your device's subscription settings.</li>
       </ul>
 
       <h2>6. Data Security</h2>
-      <p>We implement industry-standard security measures to protect your data, including encryption in transit (TLS) and at rest. [PLACEHOLDER: Add specific security measures.]</p>
+      <p>All network traffic is encrypted in transit using TLS. Data at rest in Eurobase is encrypted by the underlying database. API keys for sub-processors are stored in Google Secret Manager and are never embedded in the app.</p>
 
       <h2>7. Children's Privacy</h2>
-      <p>LiveStylist is not intended for users under the age of [PLACEHOLDER: 13/16]. We do not knowingly collect data from children under this age.</p>
+      <p>LiveStylist is not intended for users under the age of 13. We do not knowingly collect data from children under this age.</p>
 
       <h2>8. Changes to This Policy</h2>
-      <p>We may update this Privacy Policy from time to time. We will notify you of significant changes via the app or email.</p>
+      <p>We may update this Privacy Policy from time to time. We will notify you of significant changes via the app or by updating the "Last updated" date above.</p>
 
       <h2>9. Contact Us</h2>
       <p>If you have questions about this Privacy Policy, contact us at:</p>
-      <p>[PLACEHOLDER: Email address]<br>[PLACEHOLDER: Company address]</p>
+      <p>privacy@livestylist.app</p>
     </div>
   </main>
 
@@ -147,7 +150,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2026 [Company Name Placeholder]. All rights reserved.</p>
+      <p>&copy; 2026 LiveStylist Ltd. All rights reserved.</p>
     </div>
   </footer>
 
