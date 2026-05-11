@@ -17,7 +17,8 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "APP_ENV": "preview"
+        "APP_ENV": "preview",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://1e81b3354ccff7acbc7c2f98cc94296b@o4511370880679936.ingest.de.sentry.io/4511370882777168"
       },
       "android": {
         "buildType": "apk"
@@ -30,7 +31,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://1e81b3354ccff7acbc7c2f98cc94296b@o4511370880679936.ingest.de.sentry.io/4511370882777168"
       },
       "android": {
         "buildType": "app-bundle",
