@@ -1,10 +1,82 @@
 PODS:
   - BVLinearGradient (2.8.3):
     - React-Core
+  - EXConstants (55.0.7):
+    - ExpoModulesCore
+  - Expo (55.0.5):
+    - ExpoModulesCore
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTAppDelegate
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactAppDependencyProvider
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
+  - ExpoAsset (55.0.8):
+    - ExpoModulesCore
+  - ExpoDomWebView (55.0.3):
+    - ExpoModulesCore
+  - ExpoFileSystem (55.0.10):
+    - ExpoModulesCore
+  - ExpoFont (55.0.4):
+    - ExpoModulesCore
+  - ExpoKeepAwake (55.0.4):
+    - ExpoModulesCore
+  - ExpoLogBox (55.0.7):
+    - React-Core
+  - ExpoModulesCore (55.0.14):
+    - ExpoModulesJSI
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-jsinspector
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
+  - ExpoModulesJSI (55.0.14):
+    - hermes-engine
+    - React-Core
+    - React-runtimescheduler
+    - ReactCommon
+  - ExpoSplashScreen (55.0.20):
+    - ExpoModulesCore
   - FBLazyVector (0.84.0)
   - hermes-engine (250829098.0.7):
     - hermes-engine/Pre-built (= 250829098.0.7)
   - hermes-engine/Pre-built (250829098.0.7)
+  - PurchasesHybridCommon (18.4.0):
+    - RevenueCat (= 5.70.0)
   - RCTDeprecation (0.84.0)
   - RCTRequired (0.84.0)
   - RCTSwiftUI (0.84.0)
@@ -1922,6 +1994,7 @@ PODS:
     - React-utils (= 0.84.0)
     - ReactNativeDependencies
   - ReactNativeDependencies (0.84.0)
+  - RevenueCat (5.70.0)
   - RNCAsyncStorage (2.2.0):
     - hermes-engine
     - RCTRequired
@@ -1948,6 +2021,9 @@ PODS:
     - React-Core
   - RNLiveAudioStream (1.1.1):
     - React
+  - RNPurchases (10.1.0):
+    - PurchasesHybridCommon (= 18.4.0)
+    - React-Core
   - RNScreens (4.23.0):
     - hermes-engine
     - RCTRequired
@@ -1995,6 +2071,30 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - RNSentry (8.11.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Sentry (= 9.12.1)
+    - Yoga
   - RNSVG (15.15.3):
     - hermes-engine
     - RCTRequired
@@ -2040,6 +2140,9 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - Sentry (9.12.1):
+    - Sentry/Core (= 9.12.1)
+  - Sentry/Core (9.12.1)
   - VisionCamera (4.7.3):
     - VisionCamera/Core (= 4.7.3)
     - VisionCamera/FrameProcessors (= 4.7.3)
@@ -2056,6 +2159,17 @@ PODS:
 
 DEPENDENCIES:
   - BVLinearGradient (from `../node_modules/react-native-linear-gradient`)
+  - EXConstants (from `../node_modules/expo/node_modules/expo-constants/ios`)
+  - Expo (from `../node_modules/expo`)
+  - ExpoAsset (from `../node_modules/expo/node_modules/expo-asset/ios`)
+  - "ExpoDomWebView (from `../node_modules/expo/node_modules/@expo/log-box/node_modules/@expo/dom-webview/ios`)"
+  - ExpoFileSystem (from `../node_modules/expo/node_modules/expo-file-system/ios`)
+  - ExpoFont (from `../node_modules/expo/node_modules/expo-font/ios`)
+  - ExpoKeepAwake (from `../node_modules/expo/node_modules/expo-keep-awake/ios`)
+  - "ExpoLogBox (from `../node_modules/expo/node_modules/@expo/log-box`)"
+  - ExpoModulesCore (from `../node_modules/expo-modules-core`)
+  - ExpoModulesJSI (from `../node_modules/expo-modules-core`)
+  - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
@@ -2136,14 +2250,44 @@ DEPENDENCIES:
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - RNFS (from `../node_modules/react-native-fs`)
   - RNLiveAudioStream (from `../node_modules/react-native-live-audio-stream`)
+  - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNScreens (from `../node_modules/react-native-screens`)
+  - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - RNSVG (from `../node_modules/react-native-svg`)
   - VisionCamera (from `../node_modules/react-native-vision-camera`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
+SPEC REPOS:
+  trunk:
+    - PurchasesHybridCommon
+    - RevenueCat
+    - Sentry
+
 EXTERNAL SOURCES:
   BVLinearGradient:
     :path: "../node_modules/react-native-linear-gradient"
+  EXConstants:
+    :path: "../node_modules/expo/node_modules/expo-constants/ios"
+  Expo:
+    :path: "../node_modules/expo"
+  ExpoAsset:
+    :path: "../node_modules/expo/node_modules/expo-asset/ios"
+  ExpoDomWebView:
+    :path: "../node_modules/expo/node_modules/@expo/log-box/node_modules/@expo/dom-webview/ios"
+  ExpoFileSystem:
+    :path: "../node_modules/expo/node_modules/expo-file-system/ios"
+  ExpoFont:
+    :path: "../node_modules/expo/node_modules/expo-font/ios"
+  ExpoKeepAwake:
+    :path: "../node_modules/expo/node_modules/expo-keep-awake/ios"
+  ExpoLogBox:
+    :path: "../node_modules/expo/node_modules/@expo/log-box"
+  ExpoModulesCore:
+    :path: "../node_modules/expo-modules-core"
+  ExpoModulesJSI:
+    :path: "../node_modules/expo-modules-core"
+  ExpoSplashScreen:
+    :path: "../node_modules/expo-splash-screen/ios"
   FBLazyVector:
     :path: "../node_modules/react-native/Libraries/FBLazyVector"
   hermes-engine:
@@ -2303,8 +2447,12 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-fs"
   RNLiveAudioStream:
     :path: "../node_modules/react-native-live-audio-stream"
+  RNPurchases:
+    :path: "../node_modules/react-native-purchases"
   RNScreens:
     :path: "../node_modules/react-native-screens"
+  RNSentry:
+    :path: "../node_modules/@sentry/react-native"
   RNSVG:
     :path: "../node_modules/react-native-svg"
   VisionCamera:
@@ -2314,8 +2462,20 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   BVLinearGradient: 880f91a7854faff2df62518f0281afb1c60d49a3
+  EXConstants: a16ad8db13865e97aaecf64bb92e8ad8e8ce1ae8
+  Expo: 2332b1dbde7e998db81028b9e342853745f59e0e
+  ExpoAsset: 4fc5f72f8a74135c522fa61df0bfb869e5b3c3e6
+  ExpoDomWebView: d4f2ed3c3fa31d0ce89e79501a0c041c2f233189
+  ExpoFileSystem: 0d267067930a744555ff6ab842fd79d3eeb2c33b
+  ExpoFont: 4d2a6dedce012c4793532cb38d561d3da95eaafd
+  ExpoKeepAwake: 55711a70fe88a41e793bbe28543c93cb47ff265d
+  ExpoLogBox: 35febda08748ff213ea133f51acf976ba8c44b2c
+  ExpoModulesCore: ca091e6eb7b543067f18dcfb8e31d5b02eda4603
+  ExpoModulesJSI: bd2650f43a2c0d3fb753f33b70fa0972602f51d5
+  ExpoSplashScreen: cee0b008718e0a8f80a207d54108e398034127d7
   FBLazyVector: c12d2108050e27952983d565a232f6f7b1ad5e69
   hermes-engine: eb515702eba9a9d6bec0f05854ab43ce9ac7fd28
+  PurchasesHybridCommon: 2cd3e4b74c60f5a61603d78e4071274217cd9f6b
   RCTDeprecation: 3280799c14232a56e5a44f92981a8ee33bc69fd9
   RCTRequired: 9854a51b0f65ccf43ea0b744df4d70fce339db32
   RCTSwiftUI: 96986e49a4fdc2c2103929dee2641e1b57edf33d
@@ -2390,14 +2550,18 @@ SPEC CHECKSUMS:
   ReactCodegen: 27937747ddc743fcb66a8dc19e8edf60188d94cc
   ReactCommon: cc0e38600f82487c5fe5d29150abb6fa9d981986
   ReactNativeDependencies: aa766e89fa6afe200739ccea2350b61751db6d65
+  RevenueCat: f30d8ee4fd36ce56afa40923d314239761eb58a2
   RNCAsyncStorage: e85a99325df9eb0191a6ee2b2a842644c7eb29f4
   RNFS: 4ac0f0ea233904cb798630b3c077808c06931688
   RNLiveAudioStream: 02584d52711b6b9f268cb371a4b1bdd76ab3e079
+  RNPurchases: 617c1e3c17253e3391d05e778ea53045fc4fdb71
   RNScreens: fb11b7412bcbdc0ffafcaf9174938d998d4e2bc4
+  RNSentry: e84501c2e2a836f5cd98f143689d7ed7f41d5db1
   RNSVG: 13970bfde0ea9c9e10e01ab0d7b4a6cde11fca1b
+  Sentry: 49ca124994347ba8f89a70f99784bbeedabfa35e
   VisionCamera: 47f10351a1b6a8d251b90986ae72ca5f52331954
   Yoga: 772166513f9cd2d61a6251d0dacbbfaa5b537479
 
-PODFILE CHECKSUM: def0304221fb71b7eb9f41faa64c001e44889372
+PODFILE CHECKSUM: 17b454998c518d1abf91e18f135bb92e7b69b546
 
 COCOAPODS: 1.16.2
