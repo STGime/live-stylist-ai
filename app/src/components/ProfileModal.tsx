@@ -65,6 +65,13 @@ export default function ProfileModal({
   };
 
   const handleDelete = async () => {
+    // iOS can't reliably present a Modal on top of another Modal — the root
+    // view controller is already busy presenting ProfileModal, and trying to
+    // present the confirm Modal silently fails. Close ProfileModal first,
+    // wait for the slide-down animation to finish, then show the dialog at
+    // the root.
+    onClose();
+    await new Promise<void>((r) => setTimeout(r, 350));
     const confirmed = await dialog.confirm({
       title: 'Delete Account?',
       message:

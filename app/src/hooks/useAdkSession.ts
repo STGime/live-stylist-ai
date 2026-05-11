@@ -277,6 +277,11 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
       LiveAudioStream.start();
       micStartedRef.current = true;
       console.log('[AdkSession] Mic started');
+
+      // The mic's setCategory call re-routes iOS audio to the earpiece. Force
+      // it back to the loudspeaker so the agent's voice is audible. No-op on
+      // Android (PcmPlayer.routeToSpeaker is undefined there).
+      playerRef.current?.routeToSpeaker();
     } catch (e) {
       console.warn('[AdkSession] Mic start error:', e);
     }

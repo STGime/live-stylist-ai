@@ -21,6 +21,16 @@ export class PcmAudioPlayer {
     PcmPlayer?.flush();
   }
 
+  /**
+   * iOS-only: forces the AVAudioSession output to the loudspeaker. Call
+   * after `startMic` because the mic module calls `setCategory(.voiceChat)`
+   * without `.defaultToSpeaker`, which silently re-routes to the earpiece.
+   * No-op on Android (the JS-side optional-chain swallows it).
+   */
+  routeToSpeaker(): void {
+    PcmPlayer?.routeToSpeaker?.();
+  }
+
   stop(): void {
     PcmPlayer?.stop();
   }

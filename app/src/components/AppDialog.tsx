@@ -113,6 +113,10 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
         visible={state.visible}
         transparent
         animationType="fade"
+        // Android: render over the status bar so the overlay covers the screen.
+        // (On iOS this Modal can't reliably stack on top of an already-
+        // presented Modal — see ProfileModal.handleDelete for the workaround.)
+        statusBarTranslucent
         onRequestClose={() => {
           // Android back button — treat as cancel/dismiss.
           if (state.visible && state.kind === 'confirm') close(false);

@@ -39,9 +39,22 @@ final class PcmPlayer: NSObject {
                                 mode: .voiceChat,
                                 options: [.defaultToSpeaker, .allowBluetooth, .allowAirPlay])
         try session.setActive(true, options: [])
+        // .voiceChat defaults to the earpiece on iOS — force the speaker route
+        // up-front. We also re-apply this in routeToSpeaker() after the mic
+        // module starts, because mic init calls setCategory without
+        // .defaultToSpeaker and re-routes to the earpiece.
+        try session.overrideOutputAudioPort(.speaker)
       } catch {
         NSLog("[PcmPlayer] AVAudioSession setup failed: \(error)")
       }
+
+      // Re-apply speaker override whenever the audio route changes (e.g. the
+      // mic module reconfigures the session a few hundred ms after we start).
+      NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(self.handleRouteChange(_:)),
+        name: AVAudioSession.routeChangeNotification,
+        object: session)
 
       let fmt = AVAudioFormat(commonFormat: .pcmFormatInt16,
                               sampleRate: PcmPlayer.sampleRate,
@@ -96,10 +109,40 @@ final class PcmPlayer: NSObject {
     }
   }
 
+  @objc(routeToSpeaker)
+  func routeToSpeaker() {
+    workQueue.async {
+      do {
+        try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
+      } catch {
+        NSLog("[PcmPlayer] overrideOutputAudioPort(.speaker) failed: \(error)")
+      }
+    }
+  }
+
+  @objc private func handleRouteChange(_ notification: Notification) {
+    // Re-assert speaker output whenever the route changes (e.g. the mic
+    // module reconfigures the audio session). Skips the override when the
+    // user has a Bluetooth headset connected.
+    workQueue.async {
+      let session = AVAudioSession.sharedInstance()
+      let usingExternal = session.currentRoute.outputs.contains { output in
+        output.portType == .bluetoothA2DP ||
+        output.portType == .bluetoothHFP ||
+        output.portType == .bluetoothLE ||
+        output.portType == .headphones ||
+        output.portType == .airPlay
+      }
+      if usingExternal { return }
+      try? session.overrideOutputAudioPort(.speaker)
+    }
+  }
+
   @objc(stop)
   func stop() {
     workQueue.async { [weak self] in
       guard let self = self else { return }
+      NotificationCenter.default.removeObserver(self, name: AVAudioSession.routeChangeNotification, object: nil)
       self.playerNode.stop()
       self.engine.stop()
       self.engine.disconnectNodeOutput(self.playerNode)
