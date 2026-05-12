@@ -19,6 +19,15 @@ const EnvSchema = z.object({
   // a generous monthly soft cap. Daily limits removed (lifetime trial fits
   // the cost-per-session economics — see plan).
   MONTHLY_PREMIUM_SESSION_CAP: z.coerce.number().default(30),
+  // Internal / beta tester gating — bypasses the lifetime-trial gate and
+  // gets a generous monthly cap. Two ways to grant it:
+  //   1. Add the device's UUID to TESTER_DEVICE_IDS (comma-separated).
+  //   2. Build the app with EXPO_PUBLIC_TESTER_SECRET set to the same
+  //      value as TESTER_SECRET here; the app sends `X-Tester-Secret` on
+  //      every request and any device using that build is auto-tester.
+  TESTER_DEVICE_IDS: z.string().optional(),
+  TESTER_SECRET: z.string().optional(),
+  TESTER_MONTHLY_SESSION_CAP: z.coerce.number().default(100),
   SESSION_DURATION_SECONDS: z.coerce.number().default(300),
   SESSION_WARNING_SECONDS: z.coerce.number().default(270),
   AWIN_API_TOKEN: z.string().optional(),

@@ -27,8 +27,8 @@ steps:
       - '--concurrency=100'
       - '--memory=512Mi'
       - '--cpu=1'
-      - '--set-secrets=GEMINI_API_KEY=gemini-api-key:latest,REVENUECAT_API_KEY=revenuecat-api-key:latest,EUROBASE_SECRET_KEY=eurobase-secret-key:latest,FAL_AI_KEY=fal-ai-key:latest'
-      - '--set-env-vars=NODE_ENV=production,EUROBASE_URL=https://livestylist.eurobase.app,MONTHLY_PREMIUM_SESSION_CAP=30,GEMINI_MODEL=gemini-2.5-flash-native-audio-latest'
+      - '--set-secrets=GEMINI_API_KEY=gemini-api-key:latest,REVENUECAT_API_KEY=revenuecat-api-key:latest,EUROBASE_SECRET_KEY=eurobase-secret-key:latest,FAL_AI_KEY=fal-ai-key:latest,TESTER_SECRET=tester-secret:latest'
+      - '--set-env-vars=NODE_ENV=production,EUROBASE_URL=https://livestylist.eurobase.app,MONTHLY_PREMIUM_SESSION_CAP=30,TESTER_MONTHLY_SESSION_CAP=100,TESTER_DEVICE_IDS=,GEMINI_MODEL=gemini-2.5-flash-native-audio-latest'
       - '--allow-unauthenticated'
 
 images:

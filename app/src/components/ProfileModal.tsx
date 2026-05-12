@@ -44,6 +44,7 @@ export default function ProfileModal({
   const [selectedColor, setSelectedColor] = useState(currentColor);
   const [language, setLanguage] = useState(currentLanguage || 'en');
   const [saving, setSaving] = useState(false);
+  const [deviceId, setDeviceId] = useState<string>('');
   const dialog = useDialog();
 
   // Reset fields when modal opens with new props
@@ -53,6 +54,7 @@ export default function ProfileModal({
       setStylistName(currentStylistName);
       setSelectedColor(currentColor);
       setLanguage(currentLanguage || 'en');
+      api.getDeviceId().then(setDeviceId).catch(() => setDeviceId(''));
     }
   }, [visible, currentName, currentStylistName, currentColor, currentLanguage]);
 
@@ -210,6 +212,17 @@ export default function ProfileModal({
             </BubbleButton>
           </View>
 
+          {/* Device ID — long-press to copy. Used by the team to grant
+              tester / beta access without you having to pay. Read-only. */}
+          {deviceId ? (
+            <View style={styles.deviceIdBlock}>
+              <Text style={styles.deviceIdLabel}>Device ID (long-press to copy)</Text>
+              <Text selectable style={styles.deviceIdValue}>
+                {deviceId}
+              </Text>
+            </View>
+          ) : null}
+
           {/* Reset */}
           <TouchableOpacity onPress={handleDelete} style={styles.resetButton}>
             <Text style={styles.resetText}>Delete Account</Text>
@@ -323,6 +336,26 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FF4444' + '30',
     backgroundColor: '#FF4444' + '08',
+  },
+  deviceIdBlock: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: COLORS.pinkPale,
+  },
+  deviceIdLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textMid,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  deviceIdValue: {
+    fontSize: 12,
+    color: COLORS.textDark,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   resetText: {
     fontSize: 13,

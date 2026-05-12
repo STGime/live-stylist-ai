@@ -35,8 +35,13 @@ router.post('/start-session', sessionStartRateLimiter, async (req: Request, res:
       await sessionManager.endSession(existingSession.session_id, 'replaced');
     }
 
-    // 2. Check subscription tier
-    const tier = await revenuecatService.checkEntitlement(deviceId);
+    // 2. Check subscription tier — tester check first; falls back to
+    //    RevenueCat entitlement lookup. Tester bypasses the lifetime
+    //    trial gate and gets a separate (much higher) monthly cap.
+    const testerSecret = req.get('x-tester-secret') ?? undefined;
+    const tier = dbService.isTesterDevice(deviceId, testerSecret)
+      ? 'tester' as const
+      : await revenuecatService.checkEntitlement(deviceId);
 
     // 3. Load user profile
     const user = await dbService.getUser(deviceId);
@@ -45,7 +50,7 @@ router.post('/start-session', sessionStartRateLimiter, async (req: Request, res:
       return;
     }
 
-    // 4. Tier gate (lifetime trial for free, monthly cap for premium).
+    // 4. Tier gate (lifetime trial for free; monthly cap for tester/premium).
     const sessionCheck = await dbService.incrementSessionCount(deviceId, tier);
     if (!sessionCheck.allowed) {
       const message =

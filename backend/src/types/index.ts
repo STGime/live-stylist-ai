@@ -35,6 +35,11 @@ export interface UserProfile {
 
 export type Occasion = 'casual' | 'work' | 'date_night' | 'event' | 'going_out' | 'selfcare';
 
+// 'free' = lifetime trial (1 session). 'premium' = paid subscription
+// (monthly soft cap). 'tester' = internal / beta tester (higher monthly
+// cap, no trial gate — see TESTER_DEVICE_IDS / TESTER_SECRET in env).
+export type SubscriptionTier = 'free' | 'premium' | 'tester';
+
 // --- Session ---
 
 export interface SessionRecord {
@@ -42,7 +47,7 @@ export interface SessionRecord {
   start_time: string; // ISO 8601
   end_time?: string;  // ISO 8601
   duration_seconds?: number;
-  subscription_tier: 'free' | 'premium';
+  subscription_tier: SubscriptionTier;
   status: 'active' | 'completed' | 'expired';
 }
 
@@ -63,7 +68,7 @@ export interface ProductResult {
 export interface ActiveSession {
   session_id: string;
   device_id: string;
-  subscription_tier: 'free' | 'premium';
+  subscription_tier: SubscriptionTier;
   started_at: number; // Unix ms
   expires_at: number; // Unix ms
   occasion?: Occasion;
@@ -134,10 +139,6 @@ export interface SessionMemory {
   occasion?: Occasion;
   created_at: string; // ISO 8601
 }
-
-// --- Subscription ---
-
-export type SubscriptionTier = 'free' | 'premium';
 
 // --- Express augmentation ---
 

@@ -106,6 +106,24 @@ export async function updateUser(
   return fresh;
 }
 
+/**
+ * Tester gating — either the device's UUID is on the backend allowlist,
+ * or the request carries the `X-Tester-Secret` header value baked into
+ * preview/internal builds via EXPO_PUBLIC_TESTER_SECRET. Production
+ * builds don't ship the secret, so it can't be guessed without it.
+ */
+export function isTesterDevice(deviceId: string, headerSecret: string | undefined): boolean {
+  const env = getEnv();
+  if (env.TESTER_SECRET && headerSecret && headerSecret === env.TESTER_SECRET) {
+    return true;
+  }
+  if (env.TESTER_DEVICE_IDS) {
+    const ids = env.TESTER_DEVICE_IDS.split(',').map((s) => s.trim()).filter(Boolean);
+    if (ids.includes(deviceId)) return true;
+  }
+  return false;
+}
+
 export type TierGateReason = 'trial_used' | 'monthly_cap';
 
 export interface TierGateResult {
@@ -137,9 +155,10 @@ export async function incrementSessionCount(
     return { allowed: true };
   }
 
-  // Premium: count sessions started this calendar month (UTC).
+  // Tester + premium share the same monthly-cap logic, just with a
+  // different cap. Trial gate doesn't apply to either.
   const env = getEnv();
-  const cap = env.MONTHLY_PREMIUM_SESSION_CAP;
+  const cap = tier === 'tester' ? env.TESTER_MONTHLY_SESSION_CAP : env.MONTHLY_PREMIUM_SESSION_CAP;
   const monthStart = startOfMonthIso();
 
   const monthly = await eb.db

@@ -4,6 +4,11 @@ import type { UserProfile, StartSessionResponse, EndSessionResponse, Occasion, S
 
 const BASE_URL = 'https://livestylist-backend-833955805931.us-central1.run.app';
 const DEVICE_ID_KEY = '@livestylist_device_id';
+// Baked in at build time via eas.json env (preview / development profiles
+// only — production profile leaves it unset, so App Store / TestFlight
+// builds never identify as testers). When set, every request includes
+// `X-Tester-Secret` and the backend grants the tester monthly cap.
+const TESTER_SECRET: string | undefined = process.env.EXPO_PUBLIC_TESTER_SECRET;
 
 let cachedDeviceId: string | null = null;
 
@@ -36,6 +41,7 @@ async function apiRequest<T>(
     headers: {
       'Content-Type': 'application/json',
       'X-Device-ID': deviceId,
+      ...(TESTER_SECRET ? { 'X-Tester-Secret': TESTER_SECRET } : {}),
     },
     ...(body && { body: JSON.stringify(body) }),
   });
