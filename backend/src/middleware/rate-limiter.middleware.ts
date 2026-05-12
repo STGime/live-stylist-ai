@@ -54,3 +54,20 @@ export const followRespondRateLimiter = rateLimit({
     message: 'Too many responses. Please try again later.',
   },
 });
+
+// Block rate limit: looser than the follow-request limiter on purpose. The
+// follow limiter caps the offensive surface — capping blocks with the same
+// budget would mean a user under attack from many accounts hits the limit
+// while *defending* themselves. Defense should always be at least as
+// permissive as offense.
+export const blockRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  keyGenerator: (req) => req.deviceId || req.ip || 'unknown',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'rate_limit_exceeded',
+    message: 'Too many block requests. Please try again later.',
+  },
+});

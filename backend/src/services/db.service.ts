@@ -727,6 +727,10 @@ export async function isBlocked(
  * row already exists we return it unchanged. As a side effect, any follow
  * edge between the two parties (in either direction) is removed so the
  * blocker no longer appears in the blocked user's feed and vice versa.
+ *
+ * The race between the existence check and the INSERT (double-tap on Block,
+ * client retry, etc.) is handled by treating a `blocks_pair_uniq` violation
+ * as success — we re-fetch the row that won the race and return it.
  */
 export async function createBlock(
   blockerDeviceId: string,
@@ -737,21 +741,36 @@ export async function createBlock(
   }
   const eb = getEurobase();
 
-  const existing = await eb.db
-    .from<BlockRow>(BLOCKS_TABLE)
-    .eq('blocker_device_id', blockerDeviceId)
-    .eq('blocked_device_id', targetDeviceId)
-    .single();
-  if (!existing.error && existing.data) {
+  async function fetchExisting(): Promise<BlockRow | null> {
+    const existing = await eb.db
+      .from<BlockRow>(BLOCKS_TABLE)
+      .eq('blocker_device_id', blockerDeviceId)
+      .eq('blocked_device_id', targetDeviceId)
+      .single();
+    if (existing.error) return null;
     const row = Array.isArray(existing.data) ? existing.data[0] : existing.data;
-    if (row) return { row, created: false };
+    return row ?? null;
   }
+
+  const preExisting = await fetchExisting();
+  if (preExisting) return { row: preExisting, created: false };
 
   const { data, error } = await eb.db.from<BlockRow>(BLOCKS_TABLE).insert({
     blocker_device_id: blockerDeviceId,
     blocked_device_id: targetDeviceId,
   });
-  if (error || !data) throw new Error(`createBlock failed: ${error ?? 'no data'}`);
+  if (error || !data) {
+    // Lost the race against a concurrent block from the same user — the row
+    // is in place, that's the desired end state. Re-fetch and return idempotently.
+    if (error && /blocks_pair_uniq|unique|duplicate/i.test(String(error))) {
+      const winner = await fetchExisting();
+      if (winner) {
+        logger.info({ blockerDeviceId, targetDeviceId }, 'createBlock raced, treating as idempotent success');
+        return { row: winner, created: false };
+      }
+    }
+    throw new Error(`createBlock failed: ${error ?? 'no data'}`);
+  }
   const row = Array.isArray(data) ? (data[0] as BlockRow) : (data as BlockRow);
 
   // Sever any existing follow edges in either direction. Each side's UI

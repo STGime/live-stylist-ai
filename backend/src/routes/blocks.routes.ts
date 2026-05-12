@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { deviceIdMiddleware } from '../middleware/device-id.middleware.js';
-import { followRequestRateLimiter } from '../middleware/rate-limiter.middleware.js';
+import { blockRateLimiter } from '../middleware/rate-limiter.middleware.js';
 import * as dbService from '../services/db.service.js';
 import { isValidMagicId, normalizeMagicId } from '../services/magic-id.service.js';
 import { logger } from '../utils/logger.js';
@@ -34,9 +34,10 @@ router.get('/blocks', async (req: Request, res: Response, next: NextFunction) =>
 });
 
 // POST /blocks — body { magic_id } OR { follow_id }. Idempotent.
-// Reuses followRequestRateLimiter because both paths go through the same
-// "act on another user keyed by magic_id" surface area.
-router.post('/blocks', followRequestRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
+// Uses blockRateLimiter (30/hr) rather than the follow-request limiter so
+// defending against many simultaneous attackers isn't capped by the same
+// budget that limits the offensive surface.
+router.post('/blocks', blockRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = CreateBlockBody.parse(req.body);
 
