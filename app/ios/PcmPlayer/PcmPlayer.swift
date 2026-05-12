@@ -43,15 +43,19 @@ final class PcmPlayer: NSObject {
       }
 
       // Audio session — share with the mic (which uses .playAndRecord).
-      // `.videoChat` is hands-free (routes to the loudspeaker and plays at
-      // media volume); `.voiceChat` historically prefers the iPhone receiver
-      // and uses the call-volume bus, which can leave playback inaudible
-      // even with `.defaultToSpeaker` + `overrideOutputAudioPort(.speaker)`.
-      // Both modes enable hardware AEC the mic library relies on.
+      // Device logs from a previous build proved both `.voiceChat` AND
+      // `.videoChat` keep the system's volume bus as "PhoneCall" — the
+      // user's side-volume buttons control media volume, so playback was
+      // routed to the loudspeaker correctly but was effectively muted on
+      // a different volume bus. `.default` mode puts playback back on the
+      // Audio/Video bus. Hardware AEC is lost — but we never had it,
+      // because react-native-live-audio-stream uses AudioQueue (not
+      // AVAudioEngine input node) for mic capture, and only the latter
+      // wires into iOS's voice-processing pipeline.
       let session = AVAudioSession.sharedInstance()
       do {
         try session.setCategory(.playAndRecord,
-                                mode: .videoChat,
+                                mode: .default,
                                 options: [.defaultToSpeaker, .allowBluetooth, .allowAirPlay])
         // Ask iOS to run hardware at 24kHz to avoid AVAudioEngine resample
         // surprises. Falls back to nearest supported rate.
@@ -161,12 +165,12 @@ final class PcmPlayer: NSObject {
       do {
         // Re-apply the FULL preferred config — the mic library calls
         // setCategory(.playAndRecord, mode: .voiceChat, ...) on start
-        // *after* our PcmPlayer.start(), which silently moves playback
-        // onto the call-volume bus (audio plays but is inaudible at any
-        // media-volume setting). Reset category+mode+options to .videoChat
-        // so playback lives on the media-volume bus.
+        // *after* our PcmPlayer.start(), which puts playback on the
+        // PhoneCall volume bus (audio plays but is inaudible at any
+        // media-volume setting). Reset category+mode+options to .default
+        // so playback lives on the Audio/Video media-volume bus.
         try session.setCategory(.playAndRecord,
-                                mode: .videoChat,
+                                mode: .default,
                                 options: [.defaultToSpeaker, .allowBluetooth, .allowAirPlay])
         try session.setActive(true, options: [])
         try session.overrideOutputAudioPort(.speaker)
@@ -180,8 +184,20 @@ final class PcmPlayer: NSObject {
 
   @objc private func handleRouteChange(_ notification: Notification) {
     // Re-assert speaker output whenever the route changes (e.g. the mic
-    // module reconfigures the audio session). Skips the override when the
-    // user has a Bluetooth headset connected.
+    // module reconfigures the audio session). Skips:
+    //  - external audio routes (the user *wants* the headphones)
+    //  - notifications that we triggered ourselves via overrideOutputAudioPort
+    //    (otherwise calling override fires another notification → infinite
+    //     loop of overrides).
+    guard
+      let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+      let reason = AVAudioSession.RouteChangeReason(rawValue: raw)
+    else { return }
+
+    if reason == .override {
+      return
+    }
+
     workQueue.async {
       let session = AVAudioSession.sharedInstance()
       let usingExternal = session.currentRoute.outputs.contains { output in
@@ -192,13 +208,13 @@ final class PcmPlayer: NSObject {
         output.portType == .airPlay
       }
       if usingExternal {
-        NSLog("[PcmPlayer] route change — external audio device present, skipping override")
+        NSLog("[PcmPlayer] route change (reason=\(reason.rawValue)) — external audio device present, skipping override")
         return
       }
       do {
         try session.overrideOutputAudioPort(.speaker)
         let outputs = session.currentRoute.outputs.map { $0.portType.rawValue }
-        NSLog("[PcmPlayer] route change — re-applied speaker; outputs=\(outputs)")
+        NSLog("[PcmPlayer] route change (reason=\(reason.rawValue)) — re-applied speaker; outputs=\(outputs)")
       } catch {
         NSLog("[PcmPlayer] route change — override failed: \(error)")
       }
