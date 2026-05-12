@@ -75,6 +75,17 @@ final class PcmPlayer: NSObject {
         name: AVAudioSession.routeChangeNotification,
         object: session)
 
+      // AVAudioEngine loses its connection to the audio hardware whenever
+      // the session category/mode changes — and the mic library does
+      // exactly that on every start. Without this observer the engine
+      // ends up in a "Stopped" Remote IO state forever and no buffers
+      // reach the speaker, even though we re-apply the session correctly.
+      NotificationCenter.default.addObserver(
+        self,
+        selector: #selector(self.handleEngineConfigurationChange(_:)),
+        name: .AVAudioEngineConfigurationChange,
+        object: engine)
+
       // AVAudioPlayerNode's output bus only accepts float32/float64 — using
       // pcmFormatInt16 here throws "format.sampleRate == hwFormat.sampleRate"
       // from AUInterfaceBaseV3::SetFormat and crashes the dispatch queue.
@@ -182,6 +193,29 @@ final class PcmPlayer: NSObject {
     }
   }
 
+  @objc private func handleEngineConfigurationChange(_ notification: Notification) {
+    // Fires whenever iOS reconfigures the audio engine — typically because
+    // the session category/mode changed (e.g. the mic library setting
+    // .voiceChat after our start). The engine stops automatically; we have
+    // to manually restart it and re-call play() on the player node.
+    workQueue.async { [weak self] in
+      guard let self = self, self.isStarted else { return }
+      if self.engine.isRunning {
+        NSLog("[PcmPlayer] engine config change — already running, no action")
+        return
+      }
+      do {
+        try self.engine.start()
+        if !self.playerNode.isPlaying {
+          self.playerNode.play()
+        }
+        NSLog("[PcmPlayer] engine config change — restarted engine")
+      } catch {
+        NSLog("[PcmPlayer] engine config change — restart failed: \(error)")
+      }
+    }
+  }
+
   @objc private func handleRouteChange(_ notification: Notification) {
     // Re-assert speaker output whenever the route changes (e.g. the mic
     // module reconfigures the audio session). Skips:
@@ -226,6 +260,7 @@ final class PcmPlayer: NSObject {
     workQueue.async { [weak self] in
       guard let self = self else { return }
       NotificationCenter.default.removeObserver(self, name: AVAudioSession.routeChangeNotification, object: nil)
+      NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
       self.playerNode.stop()
       self.engine.stop()
       self.engine.disconnectNodeOutput(self.playerNode)
