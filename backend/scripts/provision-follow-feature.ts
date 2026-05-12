@@ -35,6 +35,7 @@ async function main(): Promise<void> {
       { name: 'follower_device_id', type: 'text' },
       { name: 'followee_device_id', type: 'text' },
       { name: 'status', type: 'text' },
+      { name: 'follower_alias', type: 'text', nullable: true },
       { name: 'created_at', type: 'timestamptz', default_value: 'now()' },
       { name: 'responded_at', type: 'timestamptz', nullable: true },
     ],

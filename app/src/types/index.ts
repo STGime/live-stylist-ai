@@ -20,6 +20,8 @@ export interface FollowSummary {
   follower_magic_id?: string;
   followee_name?: string;
   followee_magic_id?: string;
+  /** Nickname the follower set for the followee. May be null. */
+  follower_alias?: string | null;
   created_at: string;
   responded_at?: string | null;
 }
@@ -28,6 +30,7 @@ export interface FeedItem {
   session_id: string;
   followee_device_id: string;
   followee_name?: string;
+  follower_alias?: string | null;
   summary: string;
   tips?: string[];
   occasion?: Occasion;
@@ -40,6 +43,7 @@ export interface FollowedSessionDetail {
   session_id: string;
   followee_device_id: string;
   followee_name?: string;
+  follower_alias?: string | null;
   summary: string;
   tips: string[];
   products: ProductResult[];

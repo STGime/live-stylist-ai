@@ -12,6 +12,7 @@ router.use(deviceIdMiddleware);
 
 const FollowRequestBody = z.object({
   magic_id: z.string().min(1).max(40),
+  alias: z.string().max(60).optional().nullable(),
 });
 
 const RespondBody = z.object({
@@ -20,6 +21,10 @@ const RespondBody = z.object({
 
 const PushTokenBody = z.object({
   token: z.string().min(1).max(200),
+});
+
+const AliasBody = z.object({
+  alias: z.string().max(60).nullable(),
 });
 
 // GET /me/magic-id — current user's shareable ID.
@@ -84,7 +89,7 @@ router.post('/follows/request', async (req: Request, res: Response, next: NextFu
       return;
     }
 
-    const { row } = await dbService.createFollowRequest(req.deviceId!, target.deviceId);
+    const { row } = await dbService.createFollowRequest(req.deviceId!, target.deviceId, body.alias ?? null);
     const me = await dbService.getUser(req.deviceId!);
 
     push.sendPush(
@@ -127,6 +132,20 @@ router.post('/follows/:id/respond', async (req: Request, res: Response, next: Ne
     }
 
     res.json({ id: updated.id, status: updated.status });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PATCH /follows/:id/alias — follower renames the user they're following.
+// Pass { alias: null } to clear it (falls back to the followee's profile name
+// in the UI).
+router.patch('/follows/:id/alias', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = req.params.id as string;
+    const body = AliasBody.parse(req.body);
+    const updated = await dbService.updateFollowerAlias(id, req.deviceId!, body.alias);
+    res.json({ id: updated.id, follower_alias: updated.follower_alias ?? null });
   } catch (error) {
     next(error);
   }

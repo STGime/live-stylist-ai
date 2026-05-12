@@ -386,6 +386,8 @@ export interface FollowSummary {
   follower_magic_id?: string;
   followee_name?: string;
   followee_magic_id?: string;
+  /** Nickname the follower assigned to the followee. Null if not set. */
+  follower_alias?: string | null;
   created_at: string;
   responded_at?: string | null;
 }
@@ -423,6 +425,7 @@ async function joinUserSummaries(rows: FollowRow[]): Promise<FollowSummary[]> {
       ...(follower?.magic_id && { follower_magic_id: follower.magic_id }),
       ...(followee?.name && { followee_name: followee.name }),
       ...(followee?.magic_id && { followee_magic_id: followee.magic_id }),
+      follower_alias: r.follower_alias ?? null,
       created_at: r.created_at,
       responded_at: r.responded_at ?? null,
     };
@@ -432,11 +435,14 @@ async function joinUserSummaries(rows: FollowRow[]): Promise<FollowSummary[]> {
 export async function createFollowRequest(
   followerDeviceId: string,
   followeeDeviceId: string,
+  alias?: string | null,
 ): Promise<{ row: FollowRow; created: boolean }> {
   if (followerDeviceId === followeeDeviceId) {
     throw new ConflictError('Cannot follow yourself');
   }
   const eb = getEurobase();
+
+  const trimmedAlias = alias?.trim() ? alias.trim() : null;
 
   const existing = await eb.db
     .from<FollowRow>(FOLLOWS_TABLE)
@@ -447,6 +453,12 @@ export async function createFollowRequest(
     const row = Array.isArray(existing.data) ? existing.data[0] : existing.data;
     if (row) {
       if (row.status === 'accepted') {
+        // Already accepted — still let the follower update their nickname.
+        if (trimmedAlias !== null && row.follower_alias !== trimmedAlias) {
+          const upd = await eb.db.from(FOLLOWS_TABLE).update(row.id, { follower_alias: trimmedAlias });
+          if (upd.error) throw new Error(`createFollowRequest alias update failed: ${upd.error}`);
+          return { row: { ...row, follower_alias: trimmedAlias }, created: false };
+        }
         throw new ConflictError('Already following this user');
       }
       // pending or denied: re-open as pending and bump created_at
@@ -454,9 +466,18 @@ export async function createFollowRequest(
         status: 'pending',
         responded_at: null,
         created_at: new Date().toISOString(),
+        ...(trimmedAlias !== null && { follower_alias: trimmedAlias }),
       });
       if (upd.error) throw new Error(`createFollowRequest update failed: ${upd.error}`);
-      return { row: { ...row, status: 'pending', responded_at: null }, created: false };
+      return {
+        row: {
+          ...row,
+          status: 'pending',
+          responded_at: null,
+          follower_alias: trimmedAlias ?? row.follower_alias ?? null,
+        },
+        created: false,
+      };
     }
   }
 
@@ -464,10 +485,28 @@ export async function createFollowRequest(
     follower_device_id: followerDeviceId,
     followee_device_id: followeeDeviceId,
     status: 'pending' as FollowStatus,
+    ...(trimmedAlias !== null && { follower_alias: trimmedAlias }),
   });
   if (error || !data) throw new Error(`createFollowRequest failed: ${error ?? 'no data'}`);
   const row = Array.isArray(data) ? (data[0] as FollowRow) : (data as FollowRow);
   return { row, created: true };
+}
+
+export async function updateFollowerAlias(
+  id: string,
+  followerDeviceId: string,
+  alias: string | null,
+): Promise<FollowRow> {
+  const eb = getEurobase();
+  const row = await getFollowById(id);
+  if (!row) throw new NotFoundError('Follow not found');
+  if (row.follower_device_id !== followerDeviceId) {
+    throw new NotFoundError('Follow not found');
+  }
+  const trimmed = alias?.trim() ? alias.trim() : null;
+  const { error } = await eb.db.from(FOLLOWS_TABLE).update(row.id, { follower_alias: trimmed });
+  if (error) throw new Error(`updateFollowerAlias failed: ${error}`);
+  return { ...row, follower_alias: trimmed };
 }
 
 export async function getFollowById(id: string): Promise<FollowRow | null> {
@@ -642,12 +681,22 @@ export async function purgeExpiredSessionImages(): Promise<number> {
 export async function getFollowedSessionFeed(
   followerDeviceId: string,
   limit = 30,
-): Promise<Array<SessionMemory & { followee_device_id: string; followee_name?: string; image_urls: string[] }>> {
+): Promise<Array<SessionMemory & {
+  followee_device_id: string;
+  followee_name?: string;
+  follower_alias?: string | null;
+  image_urls: string[];
+}>> {
   const following = await listFollowing(followerDeviceId);
   if (following.length === 0) return [];
 
   const eb = getEurobase();
-  const results: Array<SessionMemory & { followee_device_id: string; followee_name?: string; image_urls: string[] }> = [];
+  const results: Array<SessionMemory & {
+    followee_device_id: string;
+    followee_name?: string;
+    follower_alias?: string | null;
+    image_urls: string[];
+  }> = [];
 
   // Pull recent memories for each followee, then merge. Eurobase SDK doesn't
   // expose IN(...) here, so we fan out — bounded by the number of follows.
@@ -669,6 +718,7 @@ export async function getFollowedSessionFeed(
         ...memory,
         followee_device_id: f.followee_device_id,
         ...(f.followee_name && { followee_name: f.followee_name }),
+        follower_alias: f.follower_alias ?? null,
         image_urls: images.map(i => i.storage_url),
       });
     }
