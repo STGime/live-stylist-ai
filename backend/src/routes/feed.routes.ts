@@ -22,34 +22,42 @@ router.get('/feed/sessions/:sessionId', async (req: Request, res: Response, next
   try {
     const sessionId = req.params.sessionId as string;
 
-    // Walk follows: find an accepted edge whose followee owns this session_id.
-    const following = await dbService.listFollowing(req.deviceId!);
-    let memory: Awaited<ReturnType<typeof dbService.getSessionMemory>> | null = null;
-    let ownerDeviceId: string | null = null;
-    let ownerName: string | undefined;
-    let followerAlias: string | null = null;
-    for (const f of following) {
-      const candidate = await dbService.getSessionMemory(f.followee_device_id, sessionId);
-      if (candidate) {
-        memory = candidate;
-        ownerDeviceId = f.followee_device_id;
-        ownerName = f.followee_name;
-        followerAlias = f.follower_alias ?? null;
-        break;
+    const found = await dbService.findSessionMemoryWithOwner(sessionId);
+    if (!found) {
+      res.status(404).json({ error: 'not_found', message: 'Session not found' });
+      return;
+    }
+    const { memory, ownerDeviceId } = found;
+
+    // Owner is always allowed to read their own session; otherwise require an
+    // accepted follow. Returning 404 (rather than 403) for non-followers keeps
+    // session existence out of the response.
+    if (ownerDeviceId !== req.deviceId) {
+      const ok = await dbService.isAcceptedFollower(req.deviceId!, ownerDeviceId);
+      if (!ok) {
+        res.status(404).json({ error: 'not_found', message: 'Session not visible' });
+        return;
       }
     }
 
-    if (!memory || !ownerDeviceId) {
-      res.status(404).json({ error: 'not_found', message: 'Session not visible' });
-      return;
+    // Look up the follower's alias for the owner (if any) — only meaningful
+    // when the requester isn't the owner themselves.
+    let followerAlias: string | null = null;
+    let ownerName: string | undefined;
+    if (ownerDeviceId !== req.deviceId) {
+      const following = await dbService.listFollowing(req.deviceId!);
+      const match = following.find((f) => f.followee_device_id === ownerDeviceId);
+      if (match) {
+        followerAlias = match.follower_alias ?? null;
+        ownerName = match.followee_name;
+      }
     }
 
     const images = await dbService.getSessionImages(sessionId);
 
-    const ownerId: string = ownerDeviceId;
     res.json({
       session_id: memory.session_id,
-      followee_device_id: ownerId,
+      followee_device_id: ownerDeviceId,
       followee_name: ownerName,
       follower_alias: followerAlias,
       summary: memory.summary,

@@ -58,7 +58,9 @@ export async function sendPush(
   const user = await dbService.getUser(deviceId).catch(() => null);
   const token = user?.expo_push_token;
   if (!token) {
-    logger.info({ deviceId, category }, 'Skipping push: no token');
+    // Demoted from info: very common (any user who hasn't granted
+    // notifications) and would otherwise dominate log volume.
+    logger.debug({ deviceId, category }, 'Skipping push: no token');
     return;
   }
   await sendRaw([

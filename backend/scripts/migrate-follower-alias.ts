@@ -3,6 +3,9 @@
 // provision-follow-feature.ts.
 //
 //   npx tsx scripts/migrate-follower-alias.ts
+//
+// Uses the SDK's schema.addColumn, which is idempotent (already-exists errors
+// are logged but don't crash).
 
 import 'dotenv/config';
 import { createClient } from '@eurobase/sdk';
@@ -13,12 +16,12 @@ const eb = createClient({
 });
 
 async function main(): Promise<void> {
-  const sql = eb.db.sql ?? eb.db.raw ?? null;
-  if (!sql) {
-    throw new Error('Eurobase SDK does not expose a raw SQL helper on this version');
-  }
-  await sql(`ALTER TABLE follows ADD COLUMN IF NOT EXISTS follower_alias TEXT`);
-  console.log('follows.follower_alias added (or already present)');
+  const result = await eb.db.schema.addColumn('follows', {
+    name: 'follower_alias',
+    type: 'text',
+    nullable: true,
+  });
+  console.log('follows.follower_alias:', result.error ?? 'ok');
 }
 
 main().catch((err) => {
