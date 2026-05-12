@@ -150,7 +150,20 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
           // Flush queued playback the moment the agent stops speaking
           // (turn-complete or interruption) so we don't keep playing
           // chunks after the user has the floor.
-          if (aiStateRef.current === 'speaking' && state === 'listening') {
+          //
+          // iOS exception: react-native-live-audio-stream uses AudioQueue
+          // for mic capture, which bypasses the AVAudioSession voice-chat
+          // AEC pipeline (that pipeline only runs for AVAudioEngine input
+          // nodes). The agent's voice from the loudspeaker bleeds into the
+          // mic, Gemini server-side detects it as user speech, and emits a
+          // spurious "listening" state — flushing here would cut the agent
+          // off mid-sentence. On iOS we let the buffers drain naturally
+          // until we have a real fix (input via AVAudioEngine).
+          if (
+            Platform.OS !== 'ios' &&
+            aiStateRef.current === 'speaking' &&
+            state === 'listening'
+          ) {
             playerRef.current?.flush();
             amplitudeRef.current = 0;
           }
@@ -264,12 +277,24 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
         // will detect the overlap and emit `interrupted`.
         if (mutedRef.current || !clientRef.current?.isConnected) return;
 
+        // iOS half-duplex: while the agent is speaking, drop mic chunks so
+        // Gemini's server-side VAD doesn't interrupt the agent over its own
+        // echo. (AEC isn't wired between AudioQueue mic + AVAudioEngine
+        // speaker — see onStateChange.) The trade-off is that the user
+        // can't barge in until the agent finishes; that's a v1 limitation
+        // we'll revisit when we move the mic onto AVAudioEngine.
+        if (Platform.OS === 'ios' && aiStateRef.current === 'speaking') return;
+
         // Local VAD: if the user is clearly speaking while the agent is
         // speaking, drain the playback queue immediately so the cut-off
         // feels instant rather than waiting for Gemini's `interrupted`
         // signal (which adds 200-500ms RTT). The threshold is intentionally
         // generous to avoid false positives from background noise.
-        if (aiStateRef.current === 'speaking') {
+        //
+        // Disabled on iOS — see onStateChange comment. Without AEC on the
+        // mic input, the loudspeaker audio that bleeds into the mic would
+        // constantly trip the threshold and cut the agent off.
+        if (Platform.OS !== 'ios' && aiStateRef.current === 'speaking') {
           const userRms = computeRmsAmplitude(base64Chunk);
           if (userRms > USER_BARGE_IN_RMS_THRESHOLD) {
             playerRef.current?.flush();
