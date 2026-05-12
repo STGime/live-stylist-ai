@@ -1,0 +1,6 @@
+{
+  "name": "pcm-player-local",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local iOS-only React Native module — referenced from app/react-native.config.js. The Android counterpart lives in app/android/app/src/main/java/com/livestylist/PcmPlayer*. This stub package.json exists only so @react-native-community/cli's config walker doesn't complain when it traverses local dependencies during Android Gradle builds."
+}

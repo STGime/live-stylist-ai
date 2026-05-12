@@ -39,7 +39,8 @@
     "plugins": [
       "react-native-vision-camera",
       "expo-splash-screen",
-      "expo-notifications"
+      "expo-notifications",
+      "@sentry/react-native"
     ],
     "extra": {
       "eas": {
