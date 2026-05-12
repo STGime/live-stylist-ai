@@ -66,10 +66,17 @@ final class PcmPlayer: NSObject {
         name: AVAudioSession.routeChangeNotification,
         object: session)
 
-      let fmt = AVAudioFormat(commonFormat: .pcmFormatInt16,
-                              sampleRate: PcmPlayer.sampleRate,
-                              channels: 1,
-                              interleaved: true)
+      // AVAudioPlayerNode's output bus only accepts float32/float64 — using
+      // pcmFormatInt16 here throws "format.sampleRate == hwFormat.sampleRate"
+      // from AUInterfaceBaseV3::SetFormat and crashes the dispatch queue.
+      // We accept int16 PCM from the agent and convert to float32 on enqueue.
+      guard let fmt = AVAudioFormat(commonFormat: .pcmFormatFloat32,
+                                    sampleRate: PcmPlayer.sampleRate,
+                                    channels: 1,
+                                    interleaved: false) else {
+        NSLog("[PcmPlayer] failed to create AVAudioFormat")
+        return
+      }
       self.format = fmt
 
       self.engine.attach(self.playerNode)
@@ -109,11 +116,15 @@ final class PcmPlayer: NSObject {
       }
       buffer.frameLength = frameCount
 
-      // Copy raw PCM bytes into the buffer's int16 channel data.
+      // Convert int16 PCM samples → normalized float32 in [-1.0, 1.0].
+      // AVAudioPlayerNode only accepts float32/float64 buffers.
       data.withUnsafeBytes { (rawBuffer: UnsafeRawBufferPointer) in
-        guard let src = rawBuffer.baseAddress,
-              let dst = buffer.int16ChannelData?[0] else { return }
-        memcpy(dst, src, data.count)
+        guard let int16Ptr = rawBuffer.baseAddress?.assumingMemoryBound(to: Int16.self),
+              let dst = buffer.floatChannelData?[0] else { return }
+        let scale: Float = 1.0 / 32768.0
+        for i in 0..<Int(frameCount) {
+          dst[i] = Float(int16Ptr[i]) * scale
+        }
       }
 
       self.playerNode.scheduleBuffer(buffer, completionHandler: nil)

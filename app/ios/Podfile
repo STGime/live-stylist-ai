@@ -21,8 +21,9 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 prepare_react_native_project!
 
 target 'LiveStylist' do
-  # Local pod: iOS counterpart to the Android PcmPlayerModule.
-  pod 'PcmPlayer', :path => './PcmPlayer'
+  # PcmPlayer is autolinked via ../react-native.config.js so it registers
+  # with RN's Bridgeless interop. Don't add `pod 'PcmPlayer'` here — it
+  # would clash with the autolinked version.
 
   use_expo_modules!
 
