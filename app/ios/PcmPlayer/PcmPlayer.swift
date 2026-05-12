@@ -190,26 +190,56 @@ final class PcmPlayer: NSObject {
       } catch {
         NSLog("[PcmPlayer] overrideOutputAudioPort(.speaker) failed: \(error)")
       }
+
+      // Belt-and-suspenders: if the engine stopped during the session
+      // category change and AVAudioEngineConfigurationChange somehow
+      // didn't fire (or fired before our observer was wired up), the
+      // explicit JS-side routeToSpeaker call after mic.start() gives us
+      // a second chance to recover. Idempotent — guarded by isRunning.
+      if self.isStarted && !self.engine.isRunning {
+        if let fmt = self.format {
+          self.engine.connect(self.playerNode, to: self.engine.mainMixerNode, format: fmt)
+        }
+        do {
+          try self.engine.start()
+          if !self.playerNode.isPlaying {
+            self.playerNode.play()
+          }
+          NSLog("[PcmPlayer] routeToSpeaker — engine had stopped, restarted")
+        } catch {
+          NSLog("[PcmPlayer] routeToSpeaker — engine restart failed: \(error)")
+        }
+      }
     }
   }
 
   @objc private func handleEngineConfigurationChange(_ notification: Notification) {
     // Fires whenever iOS reconfigures the audio engine — typically because
     // the session category/mode changed (e.g. the mic library setting
-    // .voiceChat after our start). The engine stops automatically; we have
-    // to manually restart it and re-call play() on the player node.
+    // .voiceChat after our start). The engine stops automatically and any
+    // scheduled buffers are purged; new ones arriving via enqueue() after
+    // the restart play normally.
+    //
+    // Apple's canonical pattern (per AVAEGamingExample-Swift /
+    // AVAEMixerSample) is to call `makeEngineConnections()` AND
+    // `startEngine()` — re-wire the player-node-to-mixer connection
+    // *before* restarting. Just calling `engine.start()` works in simple
+    // cases but the reconnect is what the official samples do.
     workQueue.async { [weak self] in
       guard let self = self, self.isStarted else { return }
       if self.engine.isRunning {
         NSLog("[PcmPlayer] engine config change — already running, no action")
         return
       }
+      if let fmt = self.format {
+        self.engine.connect(self.playerNode, to: self.engine.mainMixerNode, format: fmt)
+      }
       do {
         try self.engine.start()
         if !self.playerNode.isPlaying {
           self.playerNode.play()
         }
-        NSLog("[PcmPlayer] engine config change — restarted engine")
+        NSLog("[PcmPlayer] engine config change — reconnected + restarted engine")
       } catch {
         NSLog("[PcmPlayer] engine config change — restart failed: \(error)")
       }
