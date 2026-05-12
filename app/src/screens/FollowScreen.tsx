@@ -24,11 +24,14 @@ export default function FollowScreen({ navigation }: Props) {
   const dialog = useDialog();
   const [myMagicId, setMyMagicId] = useState<string | null>(null);
   const [input, setInput] = useState('');
+  const [aliasInput, setAliasInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<FollowSummary[]>([]);
   const [following, setFollowing] = useState<FollowSummary[]>([]);
   const [followers, setFollowers] = useState<FollowSummary[]>([]);
+  const [editingAliasId, setEditingAliasId] = useState<string | null>(null);
+  const [aliasDraft, setAliasDraft] = useState('');
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -70,8 +73,10 @@ export default function FollowScreen({ navigation }: Props) {
     if (!cleaned) return;
     setSubmitting(true);
     try {
-      await api.requestFollow(cleaned);
+      const aliasTrimmed = aliasInput.trim();
+      await api.requestFollow(cleaned, aliasTrimmed ? aliasTrimmed : null);
       setInput('');
+      setAliasInput('');
       await dialog.alert({
         title: 'Request sent',
         message: "We'll let you know once they accept.",
@@ -94,6 +99,28 @@ export default function FollowScreen({ navigation }: Props) {
     }
   };
 
+  const startRename = (item: FollowSummary) => {
+    setEditingAliasId(item.id);
+    setAliasDraft(item.follower_alias ?? item.followee_name ?? '');
+  };
+
+  const cancelRename = () => {
+    setEditingAliasId(null);
+    setAliasDraft('');
+  };
+
+  const saveRename = async (id: string) => {
+    const trimmed = aliasDraft.trim();
+    try {
+      await api.updateFollowAlias(id, trimmed ? trimmed : null);
+      setEditingAliasId(null);
+      setAliasDraft('');
+      refresh();
+    } catch (err: any) {
+      await dialog.alert({ title: 'Try again', message: err?.message ?? 'Could not save name.' });
+    }
+  };
+
   const handleRespond = async (id: string, action: 'accept' | 'deny') => {
     try {
       await api.respondToFollow(id, action);
@@ -104,7 +131,9 @@ export default function FollowScreen({ navigation }: Props) {
   };
 
   const handleUnfollow = async (item: FollowSummary, side: 'following' | 'follower') => {
-    const label = side === 'following' ? item.followee_name : item.follower_name;
+    const label = side === 'following'
+      ? (item.follower_alias ?? item.followee_name)
+      : item.follower_name;
     const ok = await dialog.confirm({
       title: side === 'following' ? `Unfollow ${label ?? 'this user'}?` : `Remove ${label ?? 'this follower'}?`,
       message: 'You can re-add them later if you change your mind.',
@@ -164,6 +193,18 @@ export default function FollowScreen({ navigation }: Props) {
               autoCapitalize="characters"
               autoCorrect={false}
             />
+            <TextInput
+              style={[styles.input, styles.aliasInput]}
+              value={aliasInput}
+              onChangeText={setAliasInput}
+              placeholder="Name them (e.g. Mom, Maya from work)"
+              placeholderTextColor={COLORS.textMuted}
+              autoCapitalize="words"
+              maxLength={60}
+            />
+            <Text style={styles.aliasHint}>
+              Optional — a label only you see, so you remember who's behind the magic ID.
+            </Text>
             <TouchableOpacity
               onPress={handleSend}
               disabled={submitting || input.trim().length === 0}
@@ -210,21 +251,66 @@ export default function FollowScreen({ navigation }: Props) {
             {following.length === 0 ? (
               <Text style={styles.emptyHint}>Nobody yet. Paste a magic ID above to follow a friend.</Text>
             ) : (
-              following.map((f) => (
-                <View key={f.id} style={styles.row}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.rowName}>{f.followee_name ?? 'Someone'}</Text>
-                    {f.followee_magic_id && (
-                      <Text style={styles.rowMeta}>{f.followee_magic_id}</Text>
+              following.map((f) => {
+                const displayName = f.follower_alias ?? f.followee_name ?? 'Someone';
+                const isEditing = editingAliasId === f.id;
+                return (
+                  <View key={f.id} style={styles.row}>
+                    {isEditing ? (
+                      <View style={{ flex: 1, gap: 6 }}>
+                        <TextInput
+                          style={styles.inlineInput}
+                          value={aliasDraft}
+                          onChangeText={setAliasDraft}
+                          placeholder="Their nickname"
+                          placeholderTextColor={COLORS.textMuted}
+                          autoFocus
+                          maxLength={60}
+                        />
+                        <Text style={styles.rowMeta}>
+                          {f.followee_name ? `${f.followee_name} · ` : ''}{f.followee_magic_id ?? ''}
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.rowName}>{displayName}</Text>
+                        <Text style={styles.rowMeta}>
+                          {f.follower_alias && f.followee_name ? `aka ${f.followee_name}` : null}
+                          {f.follower_alias && f.followee_name && f.followee_magic_id ? ' · ' : null}
+                          {f.followee_magic_id ?? ''}
+                        </Text>
+                      </View>
+                    )}
+                    {isEditing ? (
+                      <>
+                        <TouchableOpacity
+                          onPress={() => saveRename(f.id)}
+                          style={[styles.smallButton, styles.acceptButton]}>
+                          <Text style={styles.acceptText}>Save</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={cancelRename}
+                          style={[styles.smallButton, styles.denyButton]}>
+                          <Text style={styles.denyText}>Cancel</Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <>
+                        <TouchableOpacity
+                          onPress={() => startRename(f)}
+                          style={[styles.smallButton, styles.ghostButton]}>
+                          <Text style={styles.ghostText}>Rename</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => handleUnfollow(f, 'following')}
+                          style={[styles.smallButton, styles.denyButton]}>
+                          <Text style={styles.denyText}>Unfollow</Text>
+                        </TouchableOpacity>
+                      </>
                     )}
                   </View>
-                  <TouchableOpacity
-                    onPress={() => handleUnfollow(f, 'following')}
-                    style={[styles.smallButton, styles.denyButton]}>
-                    <Text style={styles.denyText}>Unfollow</Text>
-                  </TouchableOpacity>
-                </View>
-              ))
+                );
+              })
             )}
           </View>
 
@@ -319,6 +405,28 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginBottom: 12,
   },
+  aliasInput: {
+    letterSpacing: 0,
+    fontWeight: '600',
+    fontSize: 15,
+    marginBottom: 4,
+  },
+  aliasHint: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textMuted,
+    marginBottom: 8,
+    lineHeight: 14,
+  },
+  inlineInput: {
+    backgroundColor: COLORS.pinkPale,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textDark,
+  },
   primaryButton: {
     backgroundColor: COLORS.pink,
     paddingVertical: 14,
@@ -381,6 +489,14 @@ const styles = StyleSheet.create({
   },
   denyText: {
     color: COLORS.textMid,
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  ghostButton: {
+    backgroundColor: COLORS.pinkSoft,
+  },
+  ghostText: {
+    color: COLORS.pink,
     fontWeight: '800',
     fontSize: 13,
   },

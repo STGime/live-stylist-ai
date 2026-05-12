@@ -137,11 +137,21 @@ export function clearPushToken() {
 }
 
 // Follow graph
-export function requestFollow(magicId: string) {
+export function requestFollow(magicId: string, alias?: string | null) {
+  const body: Record<string, unknown> = { magic_id: magicId };
+  if (alias !== undefined) body.alias = alias;
   return apiRequest<{ id: string; status: 'pending' | 'accepted' | 'denied'; followee: { name: string; magic_id?: string } }>(
     'POST',
     '/follows/request',
-    { magic_id: magicId },
+    body,
+  );
+}
+
+export function updateFollowAlias(id: string, alias: string | null) {
+  return apiRequest<{ id: string; follower_alias: string | null }>(
+    'PATCH',
+    `/follows/${id}/alias`,
+    { alias },
   );
 }
 

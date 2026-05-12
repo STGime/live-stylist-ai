@@ -27,12 +27,14 @@ router.get('/feed/sessions/:sessionId', async (req: Request, res: Response, next
     let memory: Awaited<ReturnType<typeof dbService.getSessionMemory>> | null = null;
     let ownerDeviceId: string | null = null;
     let ownerName: string | undefined;
+    let followerAlias: string | null = null;
     for (const f of following) {
       const candidate = await dbService.getSessionMemory(f.followee_device_id, sessionId);
       if (candidate) {
         memory = candidate;
         ownerDeviceId = f.followee_device_id;
         ownerName = f.followee_name;
+        followerAlias = f.follower_alias ?? null;
         break;
       }
     }
@@ -49,6 +51,7 @@ router.get('/feed/sessions/:sessionId', async (req: Request, res: Response, next
       session_id: memory.session_id,
       followee_device_id: ownerId,
       followee_name: ownerName,
+      follower_alias: followerAlias,
       summary: memory.summary,
       tips: memory.tips ?? [],
       products: memory.products ?? [],

@@ -66,7 +66,9 @@ export default function FeedScreen({ navigation }: Props) {
       onPress={() => navigation.navigate('FollowedSessionDetail', { sessionId: item.session_id })}>
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.cardName}>{item.followee_name ?? 'A friend'}</Text>
+          <Text style={styles.cardName}>
+            {item.follower_alias ?? item.followee_name ?? 'A friend'}
+          </Text>
           <Text style={styles.cardMeta}>
             {formatRelative(item.created_at)}
             {item.occasion ? ` · ${OCCASION_LABELS[item.occasion] ?? item.occasion}` : ''}

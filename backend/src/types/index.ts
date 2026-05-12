@@ -42,6 +42,7 @@ export interface FollowRow {
   follower_device_id: string;
   followee_device_id: string;
   status: FollowStatus;
+  follower_alias?: string | null;
   created_at: string;
   responded_at?: string | null;
 }

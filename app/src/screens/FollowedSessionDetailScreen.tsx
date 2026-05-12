@@ -60,7 +60,10 @@ export default function FollowedSessionDetailScreen({ route, navigation }: Props
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>
-          {detail?.followee_name ? `${detail.followee_name}'s session` : 'Session'}
+          {(() => {
+            const name = detail?.follower_alias ?? detail?.followee_name;
+            return name ? `${name}'s session` : 'Session';
+          })()}
         </Text>
         <View style={styles.backButton} />
       </View>
