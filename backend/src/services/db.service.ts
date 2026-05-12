@@ -10,6 +10,7 @@ import type {
   FollowRow,
   FollowStatus,
   SessionImageRow,
+  BlockRow,
 } from '../types/index.js';
 
 // 'users' is reserved by the Eurobase platform auth users table, so device-keyed
@@ -19,6 +20,7 @@ const SESSIONS_TABLE = 'sessions';
 const MEMORIES_TABLE = 'session_memories';
 const FOLLOWS_TABLE = 'follows';
 const SESSION_IMAGES_TABLE = 'session_images';
+const BLOCKS_TABLE = 'blocks';
 
 const IMAGE_TTL_HOURS = 24;
 
@@ -388,6 +390,19 @@ export async function deleteUserAndAllData(deviceId: string): Promise<void> {
     if (row?.id) await eb.db.from(FOLLOWS_TABLE).delete(row.id);
   }
 
+  // Block rows on either side. We drop both directions so an account
+  // deletion fully erases the user's footprint from the graph.
+  const asBlocker = await eb.db.from<BlockRow>(BLOCKS_TABLE).select('id').eq('blocker_device_id', deviceId);
+  const asBlockerRows = Array.isArray(asBlocker.data) ? asBlocker.data : asBlocker.data ? [asBlocker.data] : [];
+  for (const row of asBlockerRows) {
+    if (row?.id) await eb.db.from(BLOCKS_TABLE).delete(row.id);
+  }
+  const asBlocked = await eb.db.from<BlockRow>(BLOCKS_TABLE).select('id').eq('blocked_device_id', deviceId);
+  const asBlockedRows = Array.isArray(asBlocked.data) ? asBlocked.data : asBlocked.data ? [asBlocked.data] : [];
+  for (const row of asBlockedRows) {
+    if (row?.id) await eb.db.from(BLOCKS_TABLE).delete(row.id);
+  }
+
   const user = await eb.db.from<UserRow>(USERS_TABLE).select('id').eq('device_id', deviceId).single();
   const userRow = Array.isArray(user.data) ? user.data[0] : user.data;
   if (userRow?.id) {
@@ -401,6 +416,7 @@ export async function deleteUserAndAllData(deviceId: string): Promise<void> {
       memoriesDeleted: memoryRows.length,
       imagesDeleted: imageRows.length,
       followsDeleted: asFollowerRows.length + asFolloweeRows.length,
+      blocksDeleted: asBlockerRows.length + asBlockedRows.length,
     },
     'Account deleted',
   );
@@ -464,15 +480,15 @@ async function joinUserSummaries(rows: FollowRow[]): Promise<FollowSummary[]> {
 }
 
 export interface CreateFollowResult {
-  row: FollowRow;
+  row: FollowRow | null;
   /** True if we created a brand-new row, false if we updated an existing one. */
   created: boolean;
   /**
-   * True when the existing row was already in `denied` state and we
-   * intentionally did NOT change anything. Callers should return success to
-   * the requester (so the deny status isn't leaked) and skip the push.
+   * True when the request was silently dropped because the requester is
+   * blocked by the target. Callers should return a successful-looking shape
+   * to the requester (so the block status isn't leaked) and skip the push.
    */
-  silently_denied: boolean;
+  blocked: boolean;
 }
 
 export async function createFollowRequest(
@@ -484,6 +500,14 @@ export async function createFollowRequest(
     throw new ConflictError('Cannot follow yourself');
   }
   const eb = getEurobase();
+
+  // Hard-block check. If the followee has blocked this follower, we don't
+  // touch the follows table at all and return a "pending-shaped" response
+  // upstream without sending a push. App Store-grade silent block.
+  const blocked = await isBlocked(followeeDeviceId, followerDeviceId);
+  if (blocked) {
+    return { row: null, created: false, blocked: true };
+  }
 
   const trimmedAlias = alias?.trim() ? alias.trim() : null;
 
@@ -500,17 +524,13 @@ export async function createFollowRequest(
         if (trimmedAlias !== null && row.follower_alias !== trimmedAlias) {
           const upd = await eb.db.from(FOLLOWS_TABLE).update(row.id, { follower_alias: trimmedAlias });
           if (upd.error) throw new Error(`createFollowRequest alias update failed: ${upd.error}`);
-          return { row: { ...row, follower_alias: trimmedAlias }, created: false, silently_denied: false };
+          return { row: { ...row, follower_alias: trimmedAlias }, created: false, blocked: false };
         }
         throw new ConflictError('Already following this user');
       }
-      if (row.status === 'denied') {
-        // Treat deny as terminal-but-silent: leave the row untouched, suppress
-        // the push, and report success to the requester. The followee can
-        // delete the row later if they want to re-allow.
-        return { row, created: false, silently_denied: true };
-      }
-      // pending: re-open with the latest alias and bump created_at
+      // pending OR denied → reopen as pending. denied is intentionally
+      // soft-snooze; the followee can hard-stop a requester by adding them
+      // to the blocks list.
       const upd = await eb.db.from(FOLLOWS_TABLE).update(row.id, {
         status: 'pending',
         responded_at: null,
@@ -526,7 +546,7 @@ export async function createFollowRequest(
           follower_alias: trimmedAlias ?? row.follower_alias ?? null,
         },
         created: false,
-        silently_denied: false,
+        blocked: false,
       };
     }
   }
@@ -539,7 +559,7 @@ export async function createFollowRequest(
   });
   if (error || !data) throw new Error(`createFollowRequest failed: ${error ?? 'no data'}`);
   const row = Array.isArray(data) ? (data[0] as FollowRow) : (data as FollowRow);
-  return { row, created: true, silently_denied: false };
+  return { row, created: true, blocked: false };
 }
 
 export async function updateFollowerAlias(
@@ -668,6 +688,140 @@ export async function isAcceptedFollower(
     throw new Error(`isAcceptedFollower failed: ${error}`);
   }
   return !!data;
+}
+
+// --- Blocks ---
+
+export interface BlockSummary {
+  id: string;
+  blocked_device_id: string;
+  blocked_name?: string;
+  blocked_magic_id?: string;
+  created_at: string;
+}
+
+/**
+ * Check whether `blockerDeviceId` has an active block against `blockedDeviceId`.
+ * Cheap single-row probe — call sites can fire-and-forget when soft-failing
+ * is acceptable.
+ */
+export async function isBlocked(
+  blockerDeviceId: string,
+  blockedDeviceId: string,
+): Promise<boolean> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<BlockRow>(BLOCKS_TABLE)
+    .eq('blocker_device_id', blockerDeviceId)
+    .eq('blocked_device_id', blockedDeviceId)
+    .single();
+  if (error) {
+    if (/not found/i.test(error)) return false;
+    throw new Error(`isBlocked failed: ${error}`);
+  }
+  return !!data;
+}
+
+/**
+ * Block `targetDeviceId` on behalf of `blockerDeviceId`. Idempotent — if the
+ * row already exists we return it unchanged. As a side effect, any follow
+ * edge between the two parties (in either direction) is removed so the
+ * blocker no longer appears in the blocked user's feed and vice versa.
+ */
+export async function createBlock(
+  blockerDeviceId: string,
+  targetDeviceId: string,
+): Promise<{ row: BlockRow; created: boolean }> {
+  if (blockerDeviceId === targetDeviceId) {
+    throw new ConflictError('Cannot block yourself');
+  }
+  const eb = getEurobase();
+
+  const existing = await eb.db
+    .from<BlockRow>(BLOCKS_TABLE)
+    .eq('blocker_device_id', blockerDeviceId)
+    .eq('blocked_device_id', targetDeviceId)
+    .single();
+  if (!existing.error && existing.data) {
+    const row = Array.isArray(existing.data) ? existing.data[0] : existing.data;
+    if (row) return { row, created: false };
+  }
+
+  const { data, error } = await eb.db.from<BlockRow>(BLOCKS_TABLE).insert({
+    blocker_device_id: blockerDeviceId,
+    blocked_device_id: targetDeviceId,
+  });
+  if (error || !data) throw new Error(`createBlock failed: ${error ?? 'no data'}`);
+  const row = Array.isArray(data) ? (data[0] as BlockRow) : (data as BlockRow);
+
+  // Sever any existing follow edges in either direction. Each side's UI
+  // refresh will see the relationship has gone away.
+  const edges = await Promise.all([
+    eb.db.from<FollowRow>(FOLLOWS_TABLE)
+      .select('id')
+      .eq('follower_device_id', blockerDeviceId)
+      .eq('followee_device_id', targetDeviceId),
+    eb.db.from<FollowRow>(FOLLOWS_TABLE)
+      .select('id')
+      .eq('follower_device_id', targetDeviceId)
+      .eq('followee_device_id', blockerDeviceId),
+  ]);
+  for (const result of edges) {
+    const rows = Array.isArray(result.data) ? result.data : result.data ? [result.data] : [];
+    for (const r of rows) {
+      if (r?.id) await eb.db.from(FOLLOWS_TABLE).delete(r.id);
+    }
+  }
+  logger.info({ blockerDeviceId, targetDeviceId, blockId: row.id }, 'Block created');
+  return { row, created: true };
+}
+
+export async function deleteBlock(id: string, blockerDeviceId: string): Promise<void> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db.from<BlockRow>(BLOCKS_TABLE).eq('id', id).single();
+  if (error) {
+    if (/not found/i.test(error)) throw new NotFoundError('Block not found');
+    throw new Error(`deleteBlock lookup failed: ${error}`);
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new NotFoundError('Block not found');
+  if (row.blocker_device_id !== blockerDeviceId) {
+    // 404 hides whether the row exists from anyone other than its owner.
+    throw new NotFoundError('Block not found');
+  }
+  const del = await eb.db.from(BLOCKS_TABLE).delete(row.id);
+  if (del.error) throw new Error(`deleteBlock failed: ${del.error}`);
+}
+
+export async function listBlocks(blockerDeviceId: string): Promise<BlockSummary[]> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<BlockRow>(BLOCKS_TABLE)
+    .eq('blocker_device_id', blockerDeviceId)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(`listBlocks failed: ${error}`);
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+
+  // Resolve target display info in parallel. Missing users (e.g. account
+  // deleted) still appear — name/magic_id just stay undefined.
+  const summaries = await Promise.all(
+    rows.map(async (r) => {
+      const { data: udata } = await eb.db
+        .from<{ device_id: string; name: string; magic_id?: string }>(USERS_TABLE)
+        .select('device_id,name,magic_id')
+        .eq('device_id', r.blocked_device_id)
+        .single();
+      const u = Array.isArray(udata) ? udata[0] : udata;
+      return {
+        id: r.id,
+        blocked_device_id: r.blocked_device_id,
+        ...(u?.name && { blocked_name: u.name }),
+        ...(u?.magic_id && { blocked_magic_id: u.magic_id }),
+        created_at: r.created_at,
+      } as BlockSummary;
+    }),
+  );
+  return summaries;
 }
 
 // --- Session Images (24h TTL) ---

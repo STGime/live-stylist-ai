@@ -10,6 +10,7 @@ import type {
   FollowSummary,
   FeedItem,
   FollowedSessionDetail,
+  BlockSummary,
 } from '../types';
 
 const BASE_URL = 'https://livestylist-backend-833955805931.us-central1.run.app';
@@ -182,4 +183,21 @@ export function getFeed() {
 
 export function getFollowedSession(sessionId: string) {
   return apiRequest<FollowedSessionDetail>('GET', `/feed/sessions/${sessionId}`);
+}
+
+// Blocks
+export function listBlocks() {
+  return apiRequest<BlockSummary[]>('GET', '/blocks');
+}
+
+export function blockByMagicId(magicId: string) {
+  return apiRequest<BlockSummary>('POST', '/blocks', { magic_id: magicId });
+}
+
+export function blockByFollowId(followId: string) {
+  return apiRequest<BlockSummary>('POST', '/blocks', { follow_id: followId });
+}
+
+export function unblock(id: string) {
+  return apiRequest<void>('DELETE', `/blocks/${id}`);
 }
