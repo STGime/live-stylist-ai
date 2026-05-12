@@ -42,11 +42,16 @@ final class PcmPlayer: NSObject {
         UIDevice.current.isProximityMonitoringEnabled = false
       }
 
-      // Audio session — share with the mic (which uses .playAndRecord/.voiceChat).
+      // Audio session — share with the mic (which uses .playAndRecord).
+      // `.videoChat` is hands-free (routes to the loudspeaker and plays at
+      // media volume); `.voiceChat` historically prefers the iPhone receiver
+      // and uses the call-volume bus, which can leave playback inaudible
+      // even with `.defaultToSpeaker` + `overrideOutputAudioPort(.speaker)`.
+      // Both modes enable hardware AEC the mic library relies on.
       let session = AVAudioSession.sharedInstance()
       do {
         try session.setCategory(.playAndRecord,
-                                mode: .voiceChat,
+                                mode: .videoChat,
                                 options: [.defaultToSpeaker, .allowBluetooth, .allowAirPlay])
         // Ask iOS to run hardware at 24kHz to avoid AVAudioEngine resample
         // surprises. Falls back to nearest supported rate.

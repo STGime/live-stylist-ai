@@ -13,7 +13,7 @@ import RNFS from 'react-native-fs';
 import type { Camera } from 'react-native-vision-camera';
 import { AdkSessionClient } from '../services/adk-client';
 import type { AdkAiState, SessionEvent, PreviewImageData, ProductResult } from '../services/adk-client';
-import { PcmAudioPlayer } from '../services/audio-player';
+import { PcmAudioPlayer, isPcmPlayerAvailable } from '../services/audio-player';
 import { cropFrame } from '../services/frame-cropper';
 import { computeRmsAmplitude } from '../utils/audio-amplitude';
 
@@ -120,6 +120,12 @@ export function useAdkSession(config: UseAdkSessionConfig): UseAdkSessionResult 
   }, []);
 
   useEffect(() => {
+    // Surface a visible error on iOS if the PcmPlayer native module isn't
+    // registered with React Native — without it, every audio-player call is
+    // a silent no-op and the agent appears mute.
+    if (!isPcmPlayerAvailable) {
+      setError('iOS audio module not loaded (PcmPlayer missing). Agent voice will be silent. Please report this build.');
+    }
     const player = new PcmAudioPlayer();
     player.start();
     playerRef.current = player;

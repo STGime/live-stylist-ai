@@ -4,9 +4,17 @@
  * it sequentially using a thin native Android AudioTrack module.
  */
 
-import { NativeModules } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 
 const { PcmPlayer } = NativeModules;
+
+/**
+ * `true` when JS-side could find the iOS native module. If `false` on
+ * iOS, calls below silently no-op and there will be no agent audio — the
+ * UI shows a visible warning so we don't get stuck wondering whether
+ * autolinking landed.
+ */
+export const isPcmPlayerAvailable: boolean = Platform.OS !== 'ios' || PcmPlayer != null;
 
 export class PcmAudioPlayer {
   start(): void {
