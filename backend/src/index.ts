@@ -12,6 +12,7 @@ import healthRoutes from './routes/health.routes.js';
 import userRoutes from './routes/user.routes.js';
 import sessionRoutes from './routes/session.routes.js';
 import followRoutes from './routes/follow.routes.js';
+import blocksRoutes from './routes/blocks.routes.js';
 import feedRoutes from './routes/feed.routes.js';
 import internalRoutes from './routes/internal.routes.js';
 import { setupWebSocket } from './ws/session-control.ws.js';
@@ -68,6 +69,7 @@ app.use(healthRoutes);
 app.use(userRoutes);
 app.use(sessionRoutes);
 app.use(followRoutes);
+app.use(blocksRoutes);
 app.use(feedRoutes);
 app.use(internalRoutes);
 

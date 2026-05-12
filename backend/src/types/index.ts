@@ -47,6 +47,15 @@ export interface FollowRow {
   responded_at?: string | null;
 }
 
+// --- Blocks ---
+
+export interface BlockRow {
+  id: string;
+  blocker_device_id: string;
+  blocked_device_id: string;
+  created_at: string;
+}
+
 // --- Session Images ---
 
 export interface SessionImageRow {

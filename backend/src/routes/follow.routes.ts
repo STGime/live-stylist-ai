@@ -104,14 +104,13 @@ router.post('/follows/request', followRequestRateLimiter, async (req: Request, r
 
     const result = await dbService.createFollowRequest(req.deviceId!, target.deviceId, body.alias ?? null);
 
-    // Already-denied: return a successful-looking response without changing
-    // the row, without sending a push. Hides the deny status from the
-    // requester (no harassment via spam) and stops repeat notifications to
-    // the target.
-    if (result.silently_denied) {
-      logger.info({ deviceId: req.deviceId, target: target.deviceId }, 'Follow re-request on denied row — suppressed');
+    // Hard-blocked: return a pending-shaped response, no push, no DB write.
+    // Indistinguishable from a normal request from the requester's side, so
+    // the block status never leaks. ID is empty since no row was created.
+    if (result.blocked) {
+      logger.info({ deviceId: req.deviceId, target: target.deviceId }, 'Follow request silently dropped by block');
       res.status(202).json({
-        id: result.row.id,
+        id: '',
         status: 'pending',
         followee: {
           name: target.profile.name,
@@ -121,6 +120,13 @@ router.post('/follows/request', followRequestRateLimiter, async (req: Request, r
       return;
     }
 
+    const row = result.row;
+    if (!row) {
+      // Defensive — createFollowRequest only returns row: null when blocked,
+      // which we handled above. Treat any other null as a server error.
+      throw new Error('createFollowRequest returned no row');
+    }
+
     const me = await dbService.getUser(req.deviceId!);
 
     push.sendPush(
@@ -128,12 +134,12 @@ router.post('/follows/request', followRequestRateLimiter, async (req: Request, r
       'follow_request',
       'New follow request',
       `${me?.name ?? 'Someone'} wants to follow your sessions`,
-      { follow_id: result.row.id },
+      { follow_id: row.id },
     ).catch((err) => logger.warn({ err }, 'follow request push failed'));
 
     res.status(201).json({
-      id: result.row.id,
-      status: result.row.status,
+      id: row.id,
+      status: row.status,
       followee: {
         name: target.profile.name,
         magic_id: target.profile.magic_id,

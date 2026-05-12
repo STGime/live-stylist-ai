@@ -16,7 +16,7 @@ import { COLORS } from '../theme/colors';
 import FloatingBubbles from '../components/FloatingBubbles';
 import { useDialog } from '../components/AppDialog';
 import * as api from '../services/api';
-import type { RootStackParamList, FollowSummary } from '../types';
+import type { RootStackParamList, FollowSummary, BlockSummary } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Follow'>;
 
@@ -30,22 +30,25 @@ export default function FollowScreen({ navigation }: Props) {
   const [pending, setPending] = useState<FollowSummary[]>([]);
   const [following, setFollowing] = useState<FollowSummary[]>([]);
   const [followers, setFollowers] = useState<FollowSummary[]>([]);
+  const [blocked, setBlocked] = useState<BlockSummary[]>([]);
   const [editingAliasId, setEditingAliasId] = useState<string | null>(null);
   const [aliasDraft, setAliasDraft] = useState('');
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [magic, p, fo, fr] = await Promise.all([
+      const [magic, p, fo, fr, bl] = await Promise.all([
         api.getMyMagicId().catch(() => null),
         api.listPendingFollows().catch(() => []),
         api.listFollowing().catch(() => []),
         api.listFollowers().catch(() => []),
+        api.listBlocks().catch(() => []),
       ]);
       setMyMagicId(magic?.magic_id ?? null);
       setPending(p);
       setFollowing(fo);
       setFollowers(fr);
+      setBlocked(bl);
     } finally {
       setLoading(false);
     }
@@ -127,6 +130,44 @@ export default function FollowScreen({ navigation }: Props) {
       refresh();
     } catch (err: any) {
       await dialog.alert({ title: 'Try again', message: err?.message ?? 'Something went wrong.' });
+    }
+  };
+
+  const handleBlock = async (item: FollowSummary, side: 'following' | 'follower') => {
+    const displayName =
+      side === 'following'
+        ? (item.follower_alias ?? item.followee_name ?? 'this user')
+        : (item.follower_name ?? 'this user');
+    const ok = await dialog.confirm({
+      title: `Block ${displayName}?`,
+      message:
+        "They won't be able to follow you or see your sessions, and any existing follow connection between you will be removed. They won't be notified.",
+      cancelLabel: 'Cancel',
+      confirmLabel: 'Block',
+    });
+    if (!ok) return;
+    try {
+      await api.blockByFollowId(item.id);
+      refresh();
+    } catch (err: any) {
+      await dialog.alert({ title: 'Try again', message: err?.message ?? 'Could not block.' });
+    }
+  };
+
+  const handleUnblock = async (item: BlockSummary) => {
+    const displayName = item.blocked_name ?? item.blocked_magic_id ?? 'this user';
+    const ok = await dialog.confirm({
+      title: `Unblock ${displayName}?`,
+      message: 'They\'ll be able to send follow requests again.',
+      cancelLabel: 'Cancel',
+      confirmLabel: 'Unblock',
+    });
+    if (!ok) return;
+    try {
+      await api.unblock(item.id);
+      refresh();
+    } catch (err: any) {
+      await dialog.alert({ title: 'Try again', message: err?.message ?? 'Could not unblock.' });
     }
   };
 
@@ -329,9 +370,40 @@ export default function FollowScreen({ navigation }: Props) {
                     )}
                   </View>
                   <TouchableOpacity
+                    onPress={() => handleBlock(f, 'follower')}
+                    style={[styles.smallButton, styles.dangerButton]}>
+                    <Text style={styles.dangerText}>Block</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
                     onPress={() => handleUnfollow(f, 'follower')}
                     style={[styles.smallButton, styles.denyButton]}>
                     <Text style={styles.denyText}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </View>
+
+          {/* Blocked users */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Blocked</Text>
+            {blocked.length === 0 ? (
+              <Text style={styles.emptyHint}>
+                Blocking someone stops them from following you and removes any existing follow connection.
+              </Text>
+            ) : (
+              blocked.map((b) => (
+                <View key={b.id} style={styles.row}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowName}>{b.blocked_name ?? 'Someone'}</Text>
+                    {b.blocked_magic_id && (
+                      <Text style={styles.rowMeta}>{b.blocked_magic_id}</Text>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleUnblock(b)}
+                    style={[styles.smallButton, styles.ghostButton]}>
+                    <Text style={styles.ghostText}>Unblock</Text>
                   </TouchableOpacity>
                 </View>
               ))
@@ -497,6 +569,16 @@ const styles = StyleSheet.create({
   },
   ghostText: {
     color: COLORS.pink,
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  dangerButton: {
+    backgroundColor: COLORS.red + '15',
+    borderWidth: 1,
+    borderColor: COLORS.red + '40',
+  },
+  dangerText: {
+    color: COLORS.red,
     fontWeight: '800',
     fontSize: 13,
   },

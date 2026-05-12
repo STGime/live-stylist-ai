@@ -26,6 +26,14 @@ export interface FollowSummary {
   responded_at?: string | null;
 }
 
+export interface BlockSummary {
+  id: string;
+  blocked_device_id: string;
+  blocked_name?: string;
+  blocked_magic_id?: string;
+  created_at: string;
+}
+
 export interface FeedItem {
   session_id: string;
   followee_device_id: string;
