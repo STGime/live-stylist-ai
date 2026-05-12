@@ -64,14 +64,20 @@ app.use(generalRateLimiter);
 // Trust proxy (Cloud Run sits behind a load balancer)
 app.set('trust proxy', 1);
 
-// Routes
+// Routes. Order matters: routers that don't use deviceIdMiddleware
+// (health, internal) must be mounted FIRST. The middleware is wired via
+// `router.use(...)` on each app-user-facing router, but because Express
+// runs every mounted router's middleware in order, that `router.use(...)`
+// applies to any subsequent router as well — so internalRoutes mounted
+// after userRoutes would 400 with "missing X-Device-ID" before its own
+// handler runs. Keeping internal first sidesteps that.
 app.use(healthRoutes);
+app.use(internalRoutes);
 app.use(userRoutes);
 app.use(sessionRoutes);
 app.use(followRoutes);
 app.use(blocksRoutes);
 app.use(feedRoutes);
-app.use(internalRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
