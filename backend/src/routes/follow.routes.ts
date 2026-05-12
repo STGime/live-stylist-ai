@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 import { deviceIdMiddleware } from '../middleware/device-id.middleware.js';
 import {
   followRequestRateLimiter,
@@ -104,13 +105,16 @@ router.post('/follows/request', followRequestRateLimiter, async (req: Request, r
 
     const result = await dbService.createFollowRequest(req.deviceId!, target.deviceId, body.alias ?? null);
 
-    // Hard-blocked: return a pending-shaped response, no push, no DB write.
-    // Indistinguishable from a normal request from the requester's side, so
-    // the block status never leaks. ID is empty since no row was created.
+    // Hard-blocked: return a response byte-identical in shape to a normal
+    // pending follow — same 201 status, same fields, a freshly-minted UUID
+    // for `id` (no row was actually created; the UUID is throwaway from the
+    // requester's perspective). Without this the blocked side could probe by
+    // comparing status codes or noticing an empty id and infer they've been
+    // silenced.
     if (result.blocked) {
       logger.info({ deviceId: req.deviceId, target: target.deviceId }, 'Follow request silently dropped by block');
-      res.status(202).json({
-        id: '',
+      res.status(201).json({
+        id: randomUUID(),
         status: 'pending',
         followee: {
           name: target.profile.name,

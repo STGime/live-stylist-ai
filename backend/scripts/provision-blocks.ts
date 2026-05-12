@@ -4,9 +4,19 @@
 //
 //   npx tsx scripts/provision-blocks.ts
 //
-// What this does, idempotently:
-//   - creates the `blocks` table via schema.createTable
-//   - prints CREATE INDEX SQL to apply manually via the admin console
+// ROLLOUT CHECKLIST (must be done in order):
+//   1. Run this script. It will create the `blocks` table and exit, printing
+//      the index SQL to stdout. Without step 2, isBlocked / listBlocks queries
+//      do full table scans — fine in dev, not fine after the table grows.
+//   2. Apply the following SQL via the Eurobase admin console (also printed
+//      at the end of step 1):
+//        CREATE UNIQUE INDEX IF NOT EXISTS blocks_pair_uniq
+//          ON blocks(blocker_device_id, blocked_device_id);
+//        CREATE INDEX IF NOT EXISTS blocks_blocker
+//          ON blocks(blocker_device_id);
+//        CREATE INDEX IF NOT EXISTS blocks_blocked
+//          ON blocks(blocked_device_id);
+//   3. Deploy the backend. /blocks endpoints + isBlocked checks become live.
 //
 // SECURITY NOTE: like `follows` and `session_images`, this table runs with
 // disableRLS: true — all access is through the backend with the eb_sk_*
