@@ -159,9 +159,19 @@ final class PcmPlayer: NSObject {
     workQueue.async {
       let session = AVAudioSession.sharedInstance()
       do {
+        // Re-apply the FULL preferred config — the mic library calls
+        // setCategory(.playAndRecord, mode: .voiceChat, ...) on start
+        // *after* our PcmPlayer.start(), which silently moves playback
+        // onto the call-volume bus (audio plays but is inaudible at any
+        // media-volume setting). Reset category+mode+options to .videoChat
+        // so playback lives on the media-volume bus.
+        try session.setCategory(.playAndRecord,
+                                mode: .videoChat,
+                                options: [.defaultToSpeaker, .allowBluetooth, .allowAirPlay])
+        try session.setActive(true, options: [])
         try session.overrideOutputAudioPort(.speaker)
         let outputs = session.currentRoute.outputs.map { $0.portType.rawValue }
-        NSLog("[PcmPlayer] routeToSpeaker applied; outputs=\(outputs)")
+        NSLog("[PcmPlayer] routeToSpeaker applied; mode=\(session.mode.rawValue) outputs=\(outputs)")
       } catch {
         NSLog("[PcmPlayer] overrideOutputAudioPort(.speaker) failed: \(error)")
       }
