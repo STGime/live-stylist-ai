@@ -25,3 +25,32 @@ export const sessionStartRateLimiter = rateLimit({
     message: 'Too many session requests. Please try again later.',
   },
 });
+
+// Follow-request rate limit: 10 per hour per device. Without this the magic
+// ID — which is designed to be shared widely — becomes a harassment vector
+// (every request fires a push notification at the target).
+export const followRequestRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => req.deviceId || req.ip || 'unknown',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'rate_limit_exceeded',
+    message: 'Too many follow requests. Please try again later.',
+  },
+});
+
+// Follow respond rate limit: looser, since the target initiates. Still useful
+// to block tight loops if a buggy client misfires.
+export const followRespondRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  keyGenerator: (req) => req.deviceId || req.ip || 'unknown',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'rate_limit_exceeded',
+    message: 'Too many responses. Please try again later.',
+  },
+});

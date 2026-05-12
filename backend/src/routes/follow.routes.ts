@@ -1,6 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { deviceIdMiddleware } from '../middleware/device-id.middleware.js';
+import {
+  followRequestRateLimiter,
+  followRespondRateLimiter,
+} from '../middleware/rate-limiter.middleware.js';
 import * as dbService from '../services/db.service.js';
 import { isValidMagicId, normalizeMagicId } from '../services/magic-id.service.js';
 import * as push from '../services/push.service.js';
@@ -19,8 +23,16 @@ const RespondBody = z.object({
   action: z.enum(['accept', 'deny']),
 });
 
+// Expo push tokens are documented as ExponentPushToken[...] (or ExpoPushToken[...]
+// on newer SDKs). Accepting anything is a hijack vector: knowing another
+// user's device_id (visible in their profile) would let an attacker plant
+// their own token and steal that user's notifications.
+const ExpoPushTokenSchema = z
+  .string()
+  .regex(/^Expo(?:nent)?PushToken\[.+\]$/, 'Invalid Expo push token format');
+
 const PushTokenBody = z.object({
-  token: z.string().min(1).max(200),
+  token: ExpoPushTokenSchema,
 });
 
 const AliasBody = z.object({
@@ -67,9 +79,10 @@ router.delete('/me/push-token', async (req: Request, res: Response, next: NextFu
 });
 
 // POST /follows/request — body { magic_id }. Sends a follow request to the
-// owner of that magic_id. Idempotent: re-requesting a pending or denied row
-// re-opens it; 409 if already accepted.
-router.post('/follows/request', async (req: Request, res: Response, next: NextFunction) => {
+// owner of that magic_id. Idempotent: re-requesting a pending row re-opens
+// it; 409 if already accepted; previously-denied rows return success without
+// changing state or notifying the target.
+router.post('/follows/request', followRequestRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = FollowRequestBody.parse(req.body);
     const normalized = normalizeMagicId(body.magic_id);
@@ -89,7 +102,25 @@ router.post('/follows/request', async (req: Request, res: Response, next: NextFu
       return;
     }
 
-    const { row } = await dbService.createFollowRequest(req.deviceId!, target.deviceId, body.alias ?? null);
+    const result = await dbService.createFollowRequest(req.deviceId!, target.deviceId, body.alias ?? null);
+
+    // Already-denied: return a successful-looking response without changing
+    // the row, without sending a push. Hides the deny status from the
+    // requester (no harassment via spam) and stops repeat notifications to
+    // the target.
+    if (result.silently_denied) {
+      logger.info({ deviceId: req.deviceId, target: target.deviceId }, 'Follow re-request on denied row — suppressed');
+      res.status(202).json({
+        id: result.row.id,
+        status: 'pending',
+        followee: {
+          name: target.profile.name,
+          magic_id: target.profile.magic_id,
+        },
+      });
+      return;
+    }
+
     const me = await dbService.getUser(req.deviceId!);
 
     push.sendPush(
@@ -97,12 +128,12 @@ router.post('/follows/request', async (req: Request, res: Response, next: NextFu
       'follow_request',
       'New follow request',
       `${me?.name ?? 'Someone'} wants to follow your sessions`,
-      { follow_id: row.id },
+      { follow_id: result.row.id },
     ).catch((err) => logger.warn({ err }, 'follow request push failed'));
 
     res.status(201).json({
-      id: row.id,
-      status: row.status,
+      id: result.row.id,
+      status: result.row.status,
       followee: {
         name: target.profile.name,
         magic_id: target.profile.magic_id,
@@ -114,7 +145,7 @@ router.post('/follows/request', async (req: Request, res: Response, next: NextFu
 });
 
 // POST /follows/:id/respond — accept or deny a pending follow request.
-router.post('/follows/:id/respond', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/follows/:id/respond', followRespondRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
     const body = RespondBody.parse(req.body);

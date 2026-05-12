@@ -62,7 +62,10 @@ export async function createUser(
     throw new ConflictError('User already registered');
   }
 
-  // Pick a magic_id, retrying if we hit the unique index.
+  // Pick a magic_id, retrying ONLY on its unique-index violation. Any other
+  // unique constraint (e.g. device_id) means a caller-side race or a genuine
+  // duplicate; retrying would hide that.
+  const MAGIC_ID_CONSTRAINT = 'app_users_magic_id_uniq';
   let inserted: UserRow | null = null;
   let lastError: string | null = null;
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -89,13 +92,18 @@ export async function createUser(
       break;
     }
     lastError = error ?? 'no data returned';
-    if (!/unique|duplicate/i.test(String(lastError))) {
+    const errString = String(lastError);
+    // Retry only when the error specifically mentions the magic_id index/column;
+    // anything else (device_id duplicate, FK error, …) bubbles up immediately.
+    const isMagicIdCollision =
+      errString.includes(MAGIC_ID_CONSTRAINT) || /magic[_-]?id/i.test(errString);
+    if (!isMagicIdCollision) {
       throw new Error(`createUser failed: ${lastError}`);
     }
-    logger.warn({ magicId }, 'magic_id collision, retrying');
+    logger.warn({ magicId, attempt, error: errString }, 'magic_id collision, retrying');
   }
   if (!inserted) {
-    throw new Error(`createUser failed: ${lastError}`);
+    throw new Error(`createUser failed after retries: ${lastError}`);
   }
   logger.info({ deviceId }, 'User created');
   return stripRow(inserted) as UserProfile;
@@ -313,6 +321,29 @@ export async function getSessionMemory(deviceId: string, sessionId: string): Pro
   return row ? (stripRow(row) as SessionMemory) : null;
 }
 
+/**
+ * Look up a session memory by session_id alone and return both the memory and
+ * the device_id of the owner. Used by the feed endpoint to authorize a
+ * follower's request in one round trip + one isAcceptedFollower call.
+ */
+export async function findSessionMemoryWithOwner(
+  sessionId: string,
+): Promise<{ memory: SessionMemory; ownerDeviceId: string } | null> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<MemoryRow>(MEMORIES_TABLE)
+    .eq('session_id', sessionId)
+    .single();
+  if (error) {
+    if (/not found/i.test(error)) return null;
+    throw new Error(`findSessionMemoryWithOwner failed: ${error}`);
+  }
+  if (!data) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return { memory: stripRow(row) as SessionMemory, ownerDeviceId: row.device_id };
+}
+
 // --- Account deletion (Apple compliance) ---
 
 /**
@@ -432,11 +463,23 @@ async function joinUserSummaries(rows: FollowRow[]): Promise<FollowSummary[]> {
   });
 }
 
+export interface CreateFollowResult {
+  row: FollowRow;
+  /** True if we created a brand-new row, false if we updated an existing one. */
+  created: boolean;
+  /**
+   * True when the existing row was already in `denied` state and we
+   * intentionally did NOT change anything. Callers should return success to
+   * the requester (so the deny status isn't leaked) and skip the push.
+   */
+  silently_denied: boolean;
+}
+
 export async function createFollowRequest(
   followerDeviceId: string,
   followeeDeviceId: string,
   alias?: string | null,
-): Promise<{ row: FollowRow; created: boolean }> {
+): Promise<CreateFollowResult> {
   if (followerDeviceId === followeeDeviceId) {
     throw new ConflictError('Cannot follow yourself');
   }
@@ -457,11 +500,17 @@ export async function createFollowRequest(
         if (trimmedAlias !== null && row.follower_alias !== trimmedAlias) {
           const upd = await eb.db.from(FOLLOWS_TABLE).update(row.id, { follower_alias: trimmedAlias });
           if (upd.error) throw new Error(`createFollowRequest alias update failed: ${upd.error}`);
-          return { row: { ...row, follower_alias: trimmedAlias }, created: false };
+          return { row: { ...row, follower_alias: trimmedAlias }, created: false, silently_denied: false };
         }
         throw new ConflictError('Already following this user');
       }
-      // pending or denied: re-open as pending and bump created_at
+      if (row.status === 'denied') {
+        // Treat deny as terminal-but-silent: leave the row untouched, suppress
+        // the push, and report success to the requester. The followee can
+        // delete the row later if they want to re-allow.
+        return { row, created: false, silently_denied: true };
+      }
+      // pending: re-open with the latest alias and bump created_at
       const upd = await eb.db.from(FOLLOWS_TABLE).update(row.id, {
         status: 'pending',
         responded_at: null,
@@ -477,6 +526,7 @@ export async function createFollowRequest(
           follower_alias: trimmedAlias ?? row.follower_alias ?? null,
         },
         created: false,
+        silently_denied: false,
       };
     }
   }
@@ -489,7 +539,7 @@ export async function createFollowRequest(
   });
   if (error || !data) throw new Error(`createFollowRequest failed: ${error ?? 'no data'}`);
   const row = Array.isArray(data) ? (data[0] as FollowRow) : (data as FollowRow);
-  return { row, created: true };
+  return { row, created: true, silently_denied: false };
 }
 
 export async function updateFollowerAlias(
@@ -691,35 +741,57 @@ export async function getFollowedSessionFeed(
   if (following.length === 0) return [];
 
   const eb = getEurobase();
+
+  // Fan out the memory fetches in parallel — Eurobase SDK has no IN(...)
+  // operator so this is the closest we can get to a single round trip.
+  const memoryFetches = await Promise.all(
+    following.map(async (f) => {
+      const { data, error } = await eb.db
+        .from<MemoryRow>(MEMORIES_TABLE)
+        .eq('device_id', f.followee_device_id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      if (error) {
+        logger.warn({ followee: f.followee_device_id, error }, 'feed: memory fetch failed');
+        return { follow: f, rows: [] as MemoryRow[] };
+      }
+      const rows = Array.isArray(data) ? data : data ? [data] : [];
+      return { follow: f, rows };
+    }),
+  );
+
+  // Collect every session_id we're about to surface, then fetch all live
+  // images in parallel and bucket them by session_id. One pass instead of
+  // (followees × memories) serial round trips.
+  const allSessionIds: string[] = [];
+  for (const { rows } of memoryFetches) {
+    for (const row of rows) allSessionIds.push(row.session_id);
+  }
+
+  const imagesBySession = new Map<string, SessionImageRow[]>();
+  await Promise.all(
+    allSessionIds.map(async (sessionId) => {
+      const imgs = await getSessionImages(sessionId).catch(() => [] as SessionImageRow[]);
+      imagesBySession.set(sessionId, imgs);
+    }),
+  );
+
   const results: Array<SessionMemory & {
     followee_device_id: string;
     followee_name?: string;
     follower_alias?: string | null;
     image_urls: string[];
   }> = [];
-
-  // Pull recent memories for each followee, then merge. Eurobase SDK doesn't
-  // expose IN(...) here, so we fan out — bounded by the number of follows.
-  for (const f of following) {
-    const { data, error } = await eb.db
-      .from<MemoryRow>(MEMORIES_TABLE)
-      .eq('device_id', f.followee_device_id)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-    if (error) {
-      logger.warn({ followee: f.followee_device_id, error }, 'feed: memory fetch failed');
-      continue;
-    }
-    const rows = Array.isArray(data) ? data : data ? [data] : [];
+  for (const { follow: f, rows } of memoryFetches) {
     for (const row of rows) {
       const memory = stripRow(row) as SessionMemory;
-      const images = await getSessionImages(memory.session_id);
+      const images = imagesBySession.get(memory.session_id) ?? [];
       results.push({
         ...memory,
         followee_device_id: f.followee_device_id,
         ...(f.followee_name && { followee_name: f.followee_name }),
         follower_alias: f.follower_alias ?? null,
-        image_urls: images.map(i => i.storage_url),
+        image_urls: images.map((i) => i.storage_url),
       });
     }
   }
