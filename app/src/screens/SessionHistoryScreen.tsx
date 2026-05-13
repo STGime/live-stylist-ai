@@ -60,7 +60,14 @@ export default function SessionHistoryScreen({ navigation }: Props) {
   };
 
   const renderItem = ({ item }: { item: SessionHistoryItem }) => (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.85}
+      onPress={() =>
+        navigation.navigate('FollowedSessionDetail', {
+          sessionId: item.session_id,
+        })
+      }>
       <View style={styles.cardTop}>
         <View style={styles.cardMeta}>
           <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
@@ -95,7 +102,7 @@ export default function SessionHistoryScreen({ navigation }: Props) {
           ))}
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 
   return (

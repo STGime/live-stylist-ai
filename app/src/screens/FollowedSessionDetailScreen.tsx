@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
+import ImageView from 'react-native-image-viewing';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
@@ -29,15 +30,31 @@ function hoursUntil(iso: string): string {
 export default function FollowedSessionDetailScreen({ route, navigation }: Props) {
   const { sessionId } = route.params;
   const [detail, setDetail] = useState<FollowedSessionDetail | null>(null);
+  const [myDeviceId, setMyDeviceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
+  const [zoomIndex, setZoomIndex] = useState<number | null>(null);
+
+  // Derived from the fetched detail, not the navigation params, so a
+  // hand-crafted navigate({ isOwner: true }) on a session that isn't
+  // actually yours can't fake the "Your session" header.
+  const isOwner = !!(detail && myDeviceId && detail.followee_device_id === myDeviceId);
+
+  const imageSources = useMemo(
+    () => (detail?.images ?? []).map((img) => ({ uri: img.url })),
+    [detail?.images],
+  );
 
   useEffect(() => {
     let active = true;
-    api.getFollowedSession(sessionId)
-      .then((data) => {
+    Promise.all([
+      api.getFollowedSession(sessionId),
+      api.getDeviceId(),
+    ])
+      .then(([data, deviceId]) => {
         if (!active) return;
         setDetail(data);
+        setMyDeviceId(deviceId);
         setLoading(false);
       })
       .catch((err) => {
@@ -61,6 +78,7 @@ export default function FollowedSessionDetailScreen({ route, navigation }: Props
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>
           {(() => {
+            if (isOwner) return 'Your session';
             const name = detail?.follower_alias ?? detail?.followee_name;
             return name ? `${name}'s session` : 'Session';
           })()}
@@ -85,11 +103,15 @@ export default function FollowedSessionDetailScreen({ route, navigation }: Props
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.gallery}>
-              {detail.images.map((img) => (
-                <View key={img.url} style={styles.galleryItem}>
+              {detail.images.map((img, idx) => (
+                <TouchableOpacity
+                  key={img.url}
+                  style={styles.galleryItem}
+                  activeOpacity={0.85}
+                  onPress={() => setZoomIndex(idx)}>
                   <Image source={{ uri: img.url }} style={styles.galleryImage} />
                   <Text style={styles.expires}>{hoursUntil(img.expires_at)}</Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </ScrollView>
           ) : (
@@ -120,6 +142,16 @@ export default function FollowedSessionDetailScreen({ route, navigation }: Props
           </Text>
         </ScrollView>
       )}
+
+      <ImageView
+        images={imageSources}
+        imageIndex={zoomIndex ?? 0}
+        visible={zoomIndex !== null}
+        onRequestClose={() => setZoomIndex(null)}
+        swipeToCloseEnabled
+        doubleTapToZoomEnabled
+        backgroundColor="#000"
+      />
     </LinearGradient>
   );
 }
