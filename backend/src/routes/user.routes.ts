@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { RegisterBodySchema, UpdateProfileBodySchema } from '../types/index.js';
+import { RegisterBodySchema, UpdateProfileBodySchema, LinkStableIdBodySchema } from '../types/index.js';
 import * as dbService from '../services/db.service.js';
 import { deviceIdMiddleware } from '../middleware/device-id.middleware.js';
 
@@ -8,10 +8,40 @@ const router = Router();
 router.use(deviceIdMiddleware);
 
 // POST /register
+//
+// If the body carries a `stable_device_id` that already exists on a user
+// row, we treat this as a recovery (post-reinstall): return the original
+// user with its original `device_id`, so the client can swap its
+// provisional uuid for the canonical one and pick up where the old
+// install left off. Status 200 vs the usual 201 signals "existing user".
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = RegisterBodySchema.parse(req.body);
-    const user = await dbService.createUser(req.deviceId!, body.name, body.favorite_color, body.stylist_name, body.language);
+
+    if (body.stable_device_id) {
+      const existing = await dbService.getUserByStableDeviceId(body.stable_device_id);
+      if (existing) {
+        res.status(200).json({
+          device_id: existing.deviceId,
+          name: existing.profile.name,
+          favorite_color: existing.profile.favorite_color,
+          stylist_name: existing.profile.stylist_name,
+          language: existing.profile.language,
+          created_at: existing.profile.created_at,
+          recovered: true,
+        });
+        return;
+      }
+    }
+
+    const user = await dbService.createUser(
+      req.deviceId!,
+      body.name,
+      body.favorite_color,
+      body.stylist_name,
+      body.language,
+      body.stable_device_id,
+    );
     res.status(201).json({
       device_id: req.deviceId,
       name: user.name,
@@ -20,6 +50,20 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       language: user.language,
       created_at: user.created_at,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /me/link-stable-id — retrofit a stable id onto the existing user.
+// Used by pre-existing clients on their first launch with the upgraded
+// app: they have a device_id already, just no stable_device_id yet, so
+// without this their *next* reinstall would still mint a new user.
+router.post('/me/link-stable-id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = LinkStableIdBodySchema.parse(req.body);
+    await dbService.linkStableDeviceId(req.deviceId!, body.stable_device_id);
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
@@ -45,6 +89,10 @@ router.get('/profile', async (req: Request, res: Response, next: NextFunction) =
       // Boolean shape rather than leaking the raw Expo token to the client —
       // the app only needs "is push currently on for this device?".
       notifications_enabled: !!user.expo_push_token,
+      // Tells pre-existing clients whether to fire the link-stable-id retrofit
+      // on this launch. Once true, the next reinstall recovers them via
+      // POST /register; until then, a reinstall still mints a new user row.
+      has_stable_device_id: !!user.stable_device_id,
     });
   } catch (error) {
     next(error);

@@ -2,12 +2,24 @@ import { z } from 'zod';
 
 // --- User ---
 
+// Format expected for stable_device_id: a UUID. iOS clients use a fresh
+// uuidv4 persisted in Keychain (survives uninstall). Android clients
+// derive a deterministic uuidv5 from Settings.Secure.ANDROID_ID + an
+// app-private namespace, so the raw OS identifier never leaves the device.
+const StableDeviceIdSchema = z.string().uuid().optional();
+
 export const RegisterBodySchema = z.object({
   name: z.string().min(1).max(50).regex(/^[a-zA-Z\s'-]+$/, 'Name contains invalid characters'),
   favorite_color: z.string().min(1).max(30).regex(/^[a-zA-Z\s]+$/, 'Color contains invalid characters'),
   stylist_name: z.string().min(1).max(50).regex(/^[a-zA-Z\s'-]+$/, 'Stylist name contains invalid characters').optional(),
   language: z.string().regex(/^[a-z]{2}$/, 'Language must be a 2-letter code').optional(),
+  stable_device_id: StableDeviceIdSchema,
 });
+
+export const LinkStableIdBodySchema = z.object({
+  stable_device_id: z.string().uuid(),
+});
+export type LinkStableIdBody = z.infer<typeof LinkStableIdBodySchema>;
 
 export type RegisterBody = z.infer<typeof RegisterBodySchema>;
 
@@ -31,6 +43,7 @@ export interface UserProfile {
   trial_used: boolean;
   magic_id?: string;
   expo_push_token?: string | null;
+  stable_device_id?: string | null;
 }
 
 // --- Follows ---

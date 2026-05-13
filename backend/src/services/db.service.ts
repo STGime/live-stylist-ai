@@ -56,6 +56,7 @@ export async function createUser(
   favoriteColor: string,
   stylistName?: string,
   language?: string,
+  stableDeviceId?: string,
 ): Promise<UserProfile> {
   const eb = getEurobase();
 
@@ -79,6 +80,7 @@ export async function createUser(
       magic_id: magicId,
       ...(stylistName && { stylist_name: stylistName }),
       ...(language && { language }),
+      ...(stableDeviceId && { stable_device_id: stableDeviceId }),
       trial_used: false,
       // Legacy NOT NULL columns from the old daily-quota tier model. Backend
       // no longer reads these — kept here only so the INSERT succeeds while
@@ -122,6 +124,51 @@ export async function getUserByMagicId(magicId: string): Promise<{ deviceId: str
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return null;
   return { deviceId: row.device_id, profile: stripRow(row) as UserProfile };
+}
+
+/** Lookup by the persistent client-side identifier. Used during register
+ *  to recover the original device_id after a reinstall instead of minting
+ *  a fresh user row (and a fresh free-trial entitlement). */
+export async function getUserByStableDeviceId(
+  stableDeviceId: string,
+): Promise<{ deviceId: string; profile: UserProfile } | null> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<UserRow>(USERS_TABLE)
+    .eq('stable_device_id', stableDeviceId)
+    .single();
+  if (error) {
+    if (/not found/i.test(error)) return null;
+    throw new Error(`getUserByStableDeviceId failed: ${error}`);
+  }
+  if (!data) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+  return { deviceId: row.device_id, profile: stripRow(row) as UserProfile };
+}
+
+/** Retrofit existing users: their first launch with the new client wires
+ *  their newly-computed stable id onto the row so the next reinstall
+ *  recovers them. Idempotent — if the row already carries the same
+ *  stable id, do nothing. If it carries a *different* stable id (the
+ *  user moved phones, for example), this fails with a conflict. */
+export async function linkStableDeviceId(
+  deviceId: string,
+  stableDeviceId: string,
+): Promise<void> {
+  const eb = getEurobase();
+  const lookup = await eb.db.from<UserRow>(USERS_TABLE).select('id,stable_device_id').eq('device_id', deviceId).single();
+  if (lookup.error || !lookup.data) {
+    throw new NotFoundError('User not found');
+  }
+  const row = Array.isArray(lookup.data) ? lookup.data[0] : lookup.data;
+  if (!row) throw new NotFoundError('User not found');
+  if (row.stable_device_id === stableDeviceId) return;
+  if (row.stable_device_id && row.stable_device_id !== stableDeviceId) {
+    throw new ConflictError('Stable id already set to a different value');
+  }
+  const { error } = await eb.db.from(USERS_TABLE).update(row.id, { stable_device_id: stableDeviceId });
+  if (error) throw new Error(`linkStableDeviceId failed: ${error}`);
 }
 
 export async function setExpoPushToken(deviceId: string, token: string | null): Promise<void> {
