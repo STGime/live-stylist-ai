@@ -16,6 +16,7 @@ import { COLORS } from '../theme/colors';
 import FloatingBubbles from '../components/FloatingBubbles';
 import { useDialog } from '../components/AppDialog';
 import * as api from '../services/api';
+import { registerForPushNotifications } from '../services/push';
 import type { RootStackParamList, FollowSummary, BlockSummary } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Follow'>;
@@ -62,6 +63,10 @@ export default function FollowScreen({ navigation }: Props) {
 
   const handleShareMagicId = async () => {
     if (!myMagicId) return;
+    // Sharing the ID is an explicit signal "I want followers". Ask for
+    // notification permission now so we can tell them when someone asks
+    // to follow. Fire-and-forget — Share still opens even if they decline.
+    registerForPushNotifications().catch(() => {});
     try {
       await Share.share({
         message: `Follow me on LiveStylist — my ID is ${myMagicId}`,
@@ -75,6 +80,10 @@ export default function FollowScreen({ navigation }: Props) {
     const cleaned = input.trim();
     if (!cleaned) return;
     setSubmitting(true);
+    // Sending a request implies they want to know when it's accepted.
+    // Run in parallel with the request itself; we don't block on the
+    // OS prompt outcome.
+    registerForPushNotifications().catch(() => {});
     try {
       const aliasTrimmed = aliasInput.trim();
       await api.requestFollow(cleaned, aliasTrimmed ? aliasTrimmed : null);
@@ -125,6 +134,12 @@ export default function FollowScreen({ navigation }: Props) {
   };
 
   const handleRespond = async (id: string, action: 'accept' | 'deny') => {
+    // Accepting a follow means the user opted into a social loop. Ask
+    // for notification permission now so future "X finished a session"
+    // pushes can land. Skip on deny — no notifications expected there.
+    if (action === 'accept') {
+      registerForPushNotifications().catch(() => {});
+    }
     try {
       await api.respondToFollow(id, action);
       refresh();

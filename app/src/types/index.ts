@@ -7,6 +7,8 @@ export interface UserProfile {
   trial_used?: boolean;
   created_at: string;
   magic_id?: string;
+  /** Whether the backend currently has a push token for this device. */
+  notifications_enabled?: boolean;
 }
 
 export type FollowStatus = 'pending' | 'accepted' | 'denied';

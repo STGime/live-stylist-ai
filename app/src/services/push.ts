@@ -5,6 +5,31 @@ import * as api from './api';
 
 let registered = false;
 
+export type PushPermissionStatus = 'granted' | 'denied' | 'undetermined' | 'unavailable';
+
+/** OS-level permission status, without prompting. Used by the Profile
+ *  toggle to decide whether "Turn on" can proceed or has to redirect the
+ *  user to system Settings. */
+export async function getPushPermissionStatus(): Promise<PushPermissionStatus> {
+  let Notifications: typeof import('expo-notifications');
+  try {
+    Notifications = await import('expo-notifications');
+  } catch {
+    return 'unavailable';
+  }
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status === 'granted') return 'granted';
+  if (status === 'denied') return 'denied';
+  return 'undetermined';
+}
+
+/** Stop sending push to this device. Clears the row server-side; the OS-level
+ *  permission stays as-is so the toggle can be re-flipped without another prompt. */
+export async function unregisterPushNotifications(): Promise<void> {
+  registered = false;
+  await api.clearPushToken();
+}
+
 // Show alerts and play sound while the app is foregrounded.
 async function configureHandler(Notifications: typeof import('expo-notifications')): Promise<void> {
   Notifications.setNotificationHandler({
@@ -18,8 +43,16 @@ async function configureHandler(Notifications: typeof import('expo-notifications
   });
 }
 
-export async function registerForPushNotifications(): Promise<void> {
-  if (registered) return;
+/**
+ * Register this device with the push backend.
+ *
+ * Idempotent — guarded by an in-memory flag so callers can sprinkle the call
+ * over any social action without worrying about re-prompting. Pass
+ * `{ force: true }` to bypass the cache (e.g. when the user explicitly flips
+ * the Profile "Notifications" toggle back on).
+ */
+export async function registerForPushNotifications(opts: { force?: boolean } = {}): Promise<void> {
+  if (registered && !opts.force) return;
   let Notifications: typeof import('expo-notifications');
   try {
     Notifications = await import('expo-notifications');

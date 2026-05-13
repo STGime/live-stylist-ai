@@ -24,7 +24,6 @@ import FloatingBubbles from '../components/FloatingBubbles';
 import ProfileModal from '../components/ProfileModal';
 import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
-import { registerForPushNotifications } from '../services/push';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
 import { useDialog } from '../components/AppDialog';
@@ -86,8 +85,9 @@ export default function HomeScreen({ navigation }: Props) {
         .then((rows) => setPendingFollowCount(rows.length))
         .catch(() => setPendingFollowCount(0));
 
-      // Push registration is idempotent after the first call.
-      registerForPushNotifications().catch(() => {});
+      // Push permission is asked just-in-time on the first social action
+      // (Follow screen: send / accept / share magic ID) rather than blindly
+      // on every Home mount. Way more likely to be granted that way.
     } catch (err: any) {
       if (err.status === 404) {
         navigation.replace('Onboarding');

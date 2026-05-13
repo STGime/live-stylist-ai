@@ -16,6 +16,11 @@ import { COLORS } from '../theme/colors';
 import BubbleButton from './BubbleButton';
 import ColorSwatchPicker from './ColorSwatchPicker';
 import * as api from '../services/api';
+import {
+  registerForPushNotifications,
+  unregisterPushNotifications,
+  getPushPermissionStatus,
+} from '../services/push';
 import { useDialog } from './AppDialog';
 
 interface Props {
@@ -45,6 +50,14 @@ export default function ProfileModal({
   const [language, setLanguage] = useState(currentLanguage || 'en');
   const [saving, setSaving] = useState(false);
   const [deviceId, setDeviceId] = useState<string>('');
+  /**
+   * Tri-state to keep the toggle from flickering on open:
+   *  - null   → still loading the current state, render disabled placeholder
+   *  - true   → backend has a push token for this device
+   *  - false  → no token (user never opted in, or opted out)
+   */
+  const [notifsOn, setNotifsOn] = useState<boolean | null>(null);
+  const [notifsBusy, setNotifsBusy] = useState(false);
   const dialog = useDialog();
 
   // Reset fields when modal opens with new props
@@ -55,8 +68,62 @@ export default function ProfileModal({
       setSelectedColor(currentColor);
       setLanguage(currentLanguage || 'en');
       api.getDeviceId().then(setDeviceId).catch(() => setDeviceId(''));
+      // Pull the current notification state from /profile rather than guessing
+      // from local storage — the backend is the source of truth.
+      setNotifsOn(null);
+      api.getProfile()
+        .then((p) => setNotifsOn(!!p.notifications_enabled))
+        .catch(() => setNotifsOn(false));
     }
   }, [visible, currentName, currentStylistName, currentColor, currentLanguage]);
+
+  const handleToggleNotifs = async () => {
+    if (notifsBusy || notifsOn === null) return;
+    setNotifsBusy(true);
+    try {
+      if (notifsOn) {
+        // Turn off — clear the backend token. OS-level permission stays
+        // granted so flipping back on is one tap.
+        await unregisterPushNotifications();
+        setNotifsOn(false);
+      } else {
+        // Turn on — re-register. If the OS already denied us, redirect
+        // the user to Settings instead of silently failing.
+        const status = await getPushPermissionStatus();
+        if (status === 'denied') {
+          await dialog.alert({
+            title: 'Notifications are blocked',
+            message:
+              Platform.OS === 'ios'
+                ? 'Open iOS Settings → LiveStylist → Notifications and turn them on, then come back here.'
+                : 'Open Settings → Apps → LiveStylist → Notifications and turn them on, then come back here.',
+          });
+          setNotifsOn(false);
+          return;
+        }
+        if (status === 'unavailable') {
+          await dialog.alert({
+            title: 'Not available',
+            message: 'Notifications aren’t supported on this build.',
+          });
+          setNotifsOn(false);
+          return;
+        }
+        await registerForPushNotifications({ force: true });
+        // Re-check the backend — if the OS prompt was just denied, the
+        // token never got saved and we should stay "off".
+        const p = await api.getProfile().catch(() => null);
+        setNotifsOn(!!p?.notifications_enabled);
+      }
+    } catch (err: any) {
+      await dialog.alert({
+        title: 'Could not change setting',
+        message: err?.message ?? 'Please try again.',
+      });
+    } finally {
+      setNotifsBusy(false);
+    }
+  };
 
   const handleNameChange = (text: string) => {
     setName(text.replace(/[^a-zA-Z\s'-]/g, ''));
@@ -203,6 +270,48 @@ export default function ProfileModal({
               onSelect={setSelectedColor}
               size={40}
             />
+
+            {/* Notifications toggle — explicit on/off, independent of OS
+                permission. Off here = backend stops sending, even if iOS
+                still has notifications allowed. */}
+            <Text style={[styles.label, { marginTop: 20 }]}>Notifications</Text>
+            <TouchableOpacity
+              onPress={handleToggleNotifs}
+              activeOpacity={0.7}
+              disabled={notifsBusy || notifsOn === null}
+              style={[
+                styles.notifRow,
+                notifsOn === true && styles.notifRowOn,
+              ]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.notifTitle}>
+                  {notifsOn === null
+                    ? 'Loading…'
+                    : notifsOn
+                    ? 'On'
+                    : 'Off'}
+                </Text>
+                <Text style={styles.notifHint}>
+                  Get pinged when friends finish a session or send you a follow request.
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.notifPill,
+                  notifsOn === true && styles.notifPillOn,
+                ]}>
+                {notifsBusy ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <View
+                    style={[
+                      styles.notifKnob,
+                      notifsOn === true && styles.notifKnobOn,
+                    ]}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
           </ScrollView>
 
           {/* Save */}
@@ -366,5 +475,52 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 28,
     right: 70,
+  },
+  notifRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: COLORS.pinkLight,
+    backgroundColor: COLORS.white,
+  },
+  notifRowOn: {
+    borderColor: COLORS.pink,
+    backgroundColor: COLORS.pinkPale,
+  },
+  notifTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.textDark,
+    marginBottom: 2,
+  },
+  notifHint: {
+    fontSize: 12,
+    color: COLORS.textMid,
+    lineHeight: 16,
+  },
+  notifPill: {
+    width: 52,
+    height: 30,
+    borderRadius: 50,
+    backgroundColor: COLORS.grayLight,
+    padding: 3,
+    justifyContent: 'center',
+    marginLeft: 12,
+  },
+  notifPillOn: {
+    backgroundColor: COLORS.pink,
+  },
+  notifKnob: {
+    width: 24,
+    height: 24,
+    borderRadius: 50,
+    backgroundColor: COLORS.white,
+    alignSelf: 'flex-start',
+  },
+  notifKnobOn: {
+    alignSelf: 'flex-end',
   },
 });

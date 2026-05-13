@@ -42,6 +42,9 @@ router.get('/profile', async (req: Request, res: Response, next: NextFunction) =
       trial_used: user.trial_used,
       created_at: user.created_at,
       magic_id: user.magic_id,
+      // Boolean shape rather than leaking the raw Expo token to the client —
+      // the app only needs "is push currently on for this device?".
+      notifications_enabled: !!user.expo_push_token,
     });
   } catch (error) {
     next(error);
