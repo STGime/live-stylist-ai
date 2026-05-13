@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "696749152983",
+    "project_id": "fejja-notifications",
+    "storage_bucket": "fejja-notifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696749152983:android:c35c44a7cd58dce2472e92",
+        "android_client_info": {
+          "package_name": "com.fejja.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiSgIA5MqytPPOlZOhiLlCd97neYYEajw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696749152983:android:e562400481576fda472e92",
+        "android_client_info": {
+          "package_name": "com.livestylist"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiSgIA5MqytPPOlZOhiLlCd97neYYEajw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

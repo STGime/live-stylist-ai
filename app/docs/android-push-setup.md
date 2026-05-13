@@ -24,9 +24,20 @@ key** uploaded to EAS:
 1. **Create a Firebase project** (if one doesn't already exist) at
    <https://console.firebase.google.com>. Project ID doesn't matter as
    long as the Android app inside it has the right package name.
-2. Add an Android app to it with package name `com.livestylist`. You can
-   skip the `google-services.json` download — it isn't needed for
-   Expo's push pipeline, only the service account key is.
+2. Add an Android app to it with package name `com.livestylist`.
+   **Download `google-services.json`** — this IS required (earlier
+   versions of this doc said otherwise; that was wrong). The FCM V1
+   service account key handles the **server** side (Expo's push
+   servers → FCM), but the **client** still needs the Firebase
+   project config to register with FCM and mint a device token. Without
+   it, `Notifications.getExpoPushTokenAsync()` throws silently on
+   Android and the Profile toggle stays Off.
+   - Place a copy at `app/google-services.json` (referenced by
+     `app.json` → `expo.android.googleServicesFile`) and also at
+     `app/android/app/google-services.json` (used directly by the
+     committed bare Android project).
+   - `android/build.gradle` declares the `com.google.gms:google-services`
+     plugin classpath; `android/app/build.gradle` applies it.
 3. **Generate a service-account key:** Firebase console → ⚙ Project
    settings → "Service accounts" tab → "Generate new private key" →
    download the JSON.
