@@ -32,20 +32,37 @@ const APP_NAMESPACE = '6f1c5b3a-2c9b-4e1f-9c3a-7a2e9d1f4a5b';
 
 const KEYCHAIN_KEY = 'livestylist.stable_device_id';
 
+// Concurrent callers (e.g. getDeviceId() racing register() during
+// onboarding) would otherwise both observe the missing Keychain entry,
+// each mint a different uuidv4, and the second setItemAsync would
+// overwrite the first — leaving them holding different "stable" ids
+// for this launch. Cache the in-flight promise so all callers await
+// the same resolution. Cleared after settle so a transient failure
+// (Keychain locked at startup) can be retried later.
+let inflight: Promise<string | null> | null = null;
+
 /**
  * Returns the stable device id for this install, creating it if missing.
  * Idempotent: subsequent calls return the same uuid for the same
  * physical device.
  */
 export async function getStableDeviceId(): Promise<string | null> {
-  if (Platform.OS === 'ios') {
-    return getOrCreateIosStableId();
-  }
-  if (Platform.OS === 'android') {
-    return getAndroidStableId();
-  }
-  // Web / other — no stable persistence path. Caller falls back.
-  return null;
+  if (inflight) return inflight;
+  inflight = (async () => {
+    try {
+      if (Platform.OS === 'ios') {
+        return await getOrCreateIosStableId();
+      }
+      if (Platform.OS === 'android') {
+        return await getAndroidStableId();
+      }
+      // Web / other — no stable persistence path. Caller falls back.
+      return null;
+    } finally {
+      inflight = null;
+    }
+  })();
+  return inflight;
 }
 
 async function getOrCreateIosStableId(): Promise<string | null> {

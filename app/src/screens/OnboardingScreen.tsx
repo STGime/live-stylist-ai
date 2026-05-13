@@ -59,7 +59,18 @@ export default function OnboardingScreen({ navigation }: Props) {
       await Camera.requestCameraPermission();
       await Camera.requestMicrophonePermission();
 
-      await api.register(name.trim(), selectedColor, stylistName.trim() || undefined, language);
+      const result = await api.register(name.trim(), selectedColor, stylistName.trim() || undefined, language);
+      // Recovery: the backend recognised our stable_device_id from a
+      // prior install on this device and returned the original profile.
+      // The name/color the user just typed are *not* persisted — the
+      // saved profile wins. Say so explicitly so they don't land on Home
+      // wondering why it's a different name.
+      if (result.recovered) {
+        await dialog.alert({
+          title: `Welcome back, ${result.name}!`,
+          message: "We recognised this device and restored your previous profile. Tap your name in the top right to edit anything you'd like to change.",
+        });
+      }
       navigation.replace('Home');
     } catch (err: any) {
       if (err.status === 409) {
