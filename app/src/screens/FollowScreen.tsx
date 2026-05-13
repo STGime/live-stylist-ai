@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Share,
+  AppState,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
@@ -35,8 +36,8 @@ export default function FollowScreen({ navigation }: Props) {
   const [editingAliasId, setEditingAliasId] = useState<string | null>(null);
   const [aliasDraft, setAliasDraft] = useState('');
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setLoading(true);
     try {
       const [magic, p, fo, fr, bl] = await Promise.all([
         api.getMyMagicId().catch(() => null),
@@ -51,7 +52,7 @@ export default function FollowScreen({ navigation }: Props) {
       setFollowers(fr);
       setBlocked(bl);
     } finally {
-      setLoading(false);
+      if (!opts.silent) setLoading(false);
     }
   }, []);
 
@@ -60,6 +61,41 @@ export default function FollowScreen({ navigation }: Props) {
       refresh();
     }, [refresh]),
   );
+
+  // Live-refresh while the screen is open: a follow-related push or the
+  // app coming back to foreground should reconcile the list silently
+  // (no spinner — the user is looking at content). Without this, an
+  // incoming follow request only appears after navigating away and back.
+  useEffect(() => {
+    let pushSub: { remove: () => void } | undefined;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const Notifications = await import('expo-notifications');
+        if (cancelled) return;
+        pushSub = Notifications.addNotificationReceivedListener((n) => {
+          const cat = (n.request.content.data as { category?: string } | undefined)?.category;
+          if (cat === 'follow_request' || cat === 'follow_accepted') {
+            refresh({ silent: true });
+          }
+        });
+      } catch {
+        // expo-notifications absent (tests, etc.) — fall through; the AppState
+        // path still gives us a refresh on resume.
+      }
+    })();
+
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refresh({ silent: true });
+    });
+
+    return () => {
+      cancelled = true;
+      pushSub?.remove();
+      appStateSub.remove();
+    };
+  }, [refresh]);
 
   const handleShareMagicId = async () => {
     if (!myMagicId) return;
