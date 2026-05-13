@@ -34,10 +34,18 @@ key** uploaded to EAS:
    ```bash
    eas credentials --platform android
    ```
-   …pick the profile (start with `preview`), then "Push Notifications:
-   Manage your Google Service Account Key for Push Notifications (FCM
-   V1)" → "Upload a new service account key" → point at the JSON from
-   step 3.
+   …pick **any** profile when prompted (the choice is just a routing
+   hint — FCM V1 keys are stored at the Android-app level in EAS,
+   keyed on the `expo.android.package` value in `app.json`. We use
+   `com.livestylist` for development / preview / production, so a
+   single upload covers all of them — no per-profile re-upload).
+   Then: "Push Notifications: Manage your Google Service Account Key
+   for Push Notifications (FCM V1)" → "Upload a new service account
+   key" → point at the JSON from step 3.
+
+   (If we ever ship a separate package name per env — e.g.
+   `com.livestylist.dev` — each one needs its own upload, since each
+   is a distinct Android app from EAS / Firebase's perspective.)
 
 After step 4 the next preview / production EAS build mints real
 `ExponentPushToken[...]` values on Android and pushes deliver. The
