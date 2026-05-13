@@ -3,6 +3,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Android 13+ (API 33+) needs runtime POST_NOTIFICATIONS. On older
+         Android versions it's a no-op; the toggle in Profile + the just-
+         in-time prompt from FollowScreen both call
+         Notifications.requestPermissionsAsync() which honours this. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
       android:name=".MainApplication"

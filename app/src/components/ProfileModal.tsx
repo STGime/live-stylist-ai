@@ -110,10 +110,27 @@ export default function ProfileModal({
           return;
         }
         await registerForPushNotifications({ force: true });
-        // Re-check the backend — if the OS prompt was just denied, the
-        // token never got saved and we should stay "off".
+        // Re-check the backend — if the OS prompt was just denied, or
+        // the platform couldn't issue a token (Android without FCM
+        // credentials in this build), no row got saved.
         const p = await api.getProfile().catch(() => null);
-        setNotifsOn(!!p?.notifications_enabled);
+        const enabled = !!p?.notifications_enabled;
+        setNotifsOn(enabled);
+        if (!enabled) {
+          // Could be: (a) user just tapped "Don't Allow" on the OS
+          // prompt — no further action needed, or (b) FCM/APNs isn't
+          // wired into this build. Re-check OS state to tell them apart
+          // so the message is actionable.
+          const after = await getPushPermissionStatus();
+          if (after === 'granted') {
+            await dialog.alert({
+              title: "Couldn't enable notifications",
+              message: Platform.OS === 'android'
+                ? 'Push delivery isn’t configured for this build (Android needs FCM credentials). The app will work without notifications; ask the team to finish push setup if you need them.'
+                : 'We couldn’t register this device for push. Try again later — the rest of the app still works.',
+            });
+          }
+        }
       }
     } catch (err: any) {
       await dialog.alert({
