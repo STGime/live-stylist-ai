@@ -76,7 +76,7 @@ export default function FollowScreen({ navigation }: Props) {
         if (cancelled) return;
         pushSub = Notifications.addNotificationReceivedListener((n) => {
           const cat = (n.request.content.data as { category?: string } | undefined)?.category;
-          if (cat === 'follow_request' || cat === 'follow_accepted' || cat === 'follow_denied') {
+          if (cat === 'follow_request' || cat === 'follow_accepted') {
             refresh({ silent: true });
           }
         });
