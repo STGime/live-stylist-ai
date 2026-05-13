@@ -66,7 +66,6 @@ export default function SessionHistoryScreen({ navigation }: Props) {
       onPress={() =>
         navigation.navigate('FollowedSessionDetail', {
           sessionId: item.session_id,
-          isOwner: true,
         })
       }>
       <View style={styles.cardTop}>

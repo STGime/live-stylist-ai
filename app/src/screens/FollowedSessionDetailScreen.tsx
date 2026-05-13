@@ -28,11 +28,17 @@ function hoursUntil(iso: string): string {
 }
 
 export default function FollowedSessionDetailScreen({ route, navigation }: Props) {
-  const { sessionId, isOwner } = route.params;
+  const { sessionId } = route.params;
   const [detail, setDetail] = useState<FollowedSessionDetail | null>(null);
+  const [myDeviceId, setMyDeviceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
   const [zoomIndex, setZoomIndex] = useState<number | null>(null);
+
+  // Derived from the fetched detail, not the navigation params, so a
+  // hand-crafted navigate({ isOwner: true }) on a session that isn't
+  // actually yours can't fake the "Your session" header.
+  const isOwner = !!(detail && myDeviceId && detail.followee_device_id === myDeviceId);
 
   const imageSources = useMemo(
     () => (detail?.images ?? []).map((img) => ({ uri: img.url })),
@@ -41,10 +47,14 @@ export default function FollowedSessionDetailScreen({ route, navigation }: Props
 
   useEffect(() => {
     let active = true;
-    api.getFollowedSession(sessionId)
-      .then((data) => {
+    Promise.all([
+      api.getFollowedSession(sessionId),
+      api.getDeviceId(),
+    ])
+      .then(([data, deviceId]) => {
         if (!active) return;
         setDetail(data);
+        setMyDeviceId(deviceId);
         setLoading(false);
       })
       .catch((err) => {

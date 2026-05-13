@@ -139,6 +139,6 @@ export type RootStackParamList = {
   SessionHistory: undefined;
   Follow: undefined;
   Feed: undefined;
-  FollowedSessionDetail: { sessionId: string; isOwner?: boolean };
+  FollowedSessionDetail: { sessionId: string };
   Paywall: { reason?: 'trial_used' | 'monthly_cap' | 'manual' } | undefined;
 };
