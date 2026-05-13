@@ -64,6 +64,13 @@ app.use(generalRateLimiter);
 // Trust proxy (Cloud Run sits behind a load balancer)
 app.set('trust proxy', 1);
 
+// Disable auto-ETag. iOS NSURLSession caches GET responses and sends
+// If-None-Match on subsequent calls; Express then returns 304 with no
+// body. Our apiRequest treats non-2xx as an error, so the pending-follows
+// list (and any other GET) silently appears empty after the first fetch.
+// This is a JSON API with frequently-changing data — ETags add no value.
+app.set('etag', false);
+
 // Routes. Order matters: routers that don't use deviceIdMiddleware
 // (health, internal) must be mounted FIRST. The middleware is wired via
 // `router.use(...)` on each app-user-facing router, but because Express
