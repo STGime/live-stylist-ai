@@ -1,6 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { RegisterBodySchema, UpdateProfileBodySchema, LinkStableIdBodySchema } from '../types/index.js';
 import * as dbService from '../services/db.service.js';
+import { ConflictError } from '../services/db.service.js';
+import { logger } from '../utils/logger.js';
 import { deviceIdMiddleware } from '../middleware/device-id.middleware.js';
 
 const router = Router();
@@ -21,6 +23,12 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     if (body.stable_device_id) {
       const existing = await dbService.getUserByStableDeviceId(body.stable_device_id);
       if (existing) {
+        // Recovery path: the user typed a fresh name/color in Onboarding
+        // (AsyncStorage was wiped on reinstall, so the app had no way to
+        // know we'd seen them before), but the *persisted* profile wins.
+        // We don't merge in the request body — "welcome back, original
+        // name" is the contract. The client surfaces this via the
+        // `recovered: true` flag.
         res.status(200).json({
           device_id: existing.deviceId,
           name: existing.profile.name,
@@ -65,6 +73,16 @@ router.post('/me/link-stable-id', async (req: Request, res: Response, next: Next
     await dbService.linkStableDeviceId(req.deviceId!, body.stable_device_id);
     res.status(204).send();
   } catch (error) {
+    // Log conflicts loudly: the client will keep retrying this every
+    // launch until /profile shows has_stable_device_id: true, so a
+    // stuck row produces N daily attempts per affected user. Surfacing
+    // it in logs lets us catch the pattern in prod.
+    if (error instanceof ConflictError) {
+      logger.warn(
+        { deviceId: req.deviceId, msg: error.message },
+        'link-stable-id conflict — row already has a different stable_device_id',
+      );
+    }
     next(error);
   }
 });

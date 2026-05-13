@@ -128,7 +128,23 @@ export async function getUserByMagicId(magicId: string): Promise<{ deviceId: str
 
 /** Lookup by the persistent client-side identifier. Used during register
  *  to recover the original device_id after a reinstall instead of minting
- *  a fresh user row (and a fresh free-trial entitlement). */
+ *  a fresh user row (and a fresh free-trial entitlement).
+ *
+ *  SECURITY: stable_device_id is effectively a credential here. Anyone
+ *  who can present it gets back the user's `device_id`, which is itself
+ *  the credential for every other endpoint. Threat model per platform:
+ *
+ *  - iOS: uuidv4 in Keychain. 122 bits of entropy, only accessible via
+ *    the app's own keychain entitlement. Hard to exfiltrate without
+ *    physical device access + a jailbreak.
+ *  - Android: uuidv5(ANDROID_ID, APP_NAMESPACE). APP_NAMESPACE is baked
+ *    into the APK (public). ANDROID_ID is per-app-signing-key since
+ *    Android 8, so a sibling app on the same device can't read it — but
+ *    ADB during debugging, malicious accessibility services, or unencrypted
+ *    backups can expose it. Strictly weaker than the iOS path; acceptable
+ *    in our threat model only because the per-signing-key gating holds.
+ *
+ *  Don't expose stable_device_id in any read endpoint. */
 export async function getUserByStableDeviceId(
   stableDeviceId: string,
 ): Promise<{ deviceId: string; profile: UserProfile } | null> {
