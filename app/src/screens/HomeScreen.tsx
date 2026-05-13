@@ -85,6 +85,17 @@ export default function HomeScreen({ navigation }: Props) {
         .then((rows) => setPendingFollowCount(rows.length))
         .catch(() => setPendingFollowCount(0));
 
+      // Retrofit the platform-stable id onto pre-existing users so the
+      // *next* reinstall recovers their row (same magic_id / trial /
+      // follows) instead of minting a fresh free-trial account. New
+      // users go through the stable-id path during /register already,
+      // so this fires only for users created before the upgrade.
+      if (p.has_stable_device_id === false) {
+        api.linkStableDeviceId().catch(() => {
+          // Non-fatal — we'll try again on the next mount.
+        });
+      }
+
       // Push permission is asked just-in-time on the first social action
       // (Follow screen: send / accept / share magic ID) rather than blindly
       // on every Home mount. Way more likely to be granted that way.

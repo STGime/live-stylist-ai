@@ -9,6 +9,13 @@ export interface UserProfile {
   magic_id?: string;
   /** Whether the backend currently has a push token for this device. */
   notifications_enabled?: boolean;
+  /** Whether this user row has been linked to a platform-stable id yet.
+   *  When false on a returning user, the client should fire
+   *  api.linkStableDeviceId() once so the next reinstall is recoverable. */
+  has_stable_device_id?: boolean;
+  /** Set by /register only when the backend recovered a prior install
+   *  via stable_device_id (instead of creating a new row). */
+  recovered?: boolean;
 }
 
 export type FollowStatus = 'pending' | 'accepted' | 'denied';
