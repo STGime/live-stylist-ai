@@ -42,7 +42,8 @@
       "react-native-vision-camera",
       "expo-splash-screen",
       "expo-notifications",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

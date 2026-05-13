@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
+import { getStableDeviceId } from './stable-id';
 import type {
   UserProfile,
   StartSessionResponse,
@@ -26,13 +27,31 @@ let cachedDeviceId: string | null = null;
 export async function getDeviceId(): Promise<string> {
   if (cachedDeviceId) return cachedDeviceId;
 
+  // Fast path: AsyncStorage. Stays authoritative for already-registered
+  // users so we don't change their device_id mid-flight.
   let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
   if (!deviceId) {
-    deviceId = uuidv4();
+    // First launch on this install. Use the platform-stable id directly
+    // as the provisional device_id so /register's stable-id lookup can
+    // recognise a prior install on the same device (post-reinstall) and
+    // hand us back the canonical id. If the stable id is unavailable
+    // (older Android with no ANDROID_ID, simulator without Keychain),
+    // fall back to a random uuid as before.
+    const stable = await getStableDeviceId();
+    deviceId = stable ?? uuidv4();
     await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
   }
   cachedDeviceId = deviceId;
   return deviceId;
+}
+
+/** Overwrite the cached device id (memory + AsyncStorage). Used after
+ *  /register reports a different canonical id — the server recovered an
+ *  existing user via stable_device_id, so we adopt that as ours. */
+async function adoptDeviceId(newId: string): Promise<void> {
+  if (cachedDeviceId === newId) return;
+  cachedDeviceId = newId;
+  await AsyncStorage.setItem(DEVICE_ID_KEY, newId);
 }
 
 export async function hasDeviceId(): Promise<boolean> {
@@ -84,13 +103,40 @@ export async function deleteAccount(): Promise<void> {
 }
 
 // User
-export function register(name: string, favoriteColor: string, stylistName?: string, language?: string) {
-  return apiRequest<UserProfile>('POST', '/register', {
-    name,
-    favorite_color: favoriteColor,
-    ...(stylistName && { stylist_name: stylistName }),
-    ...(language && { language }),
-  });
+export async function register(
+  name: string,
+  favoriteColor: string,
+  stylistName?: string,
+  language?: string,
+): Promise<UserProfile & { recovered?: boolean }> {
+  const stable = await getStableDeviceId();
+  const result = await apiRequest<UserProfile & { device_id?: string; recovered?: boolean }>(
+    'POST',
+    '/register',
+    {
+      name,
+      favorite_color: favoriteColor,
+      ...(stylistName && { stylist_name: stylistName }),
+      ...(language && { language }),
+      ...(stable && { stable_device_id: stable }),
+    },
+  );
+  // The backend may have recognised our stable_device_id from a prior
+  // install on this device and returned that user's canonical device_id.
+  // Swap our provisional id for it; the rest of the app uses
+  // getDeviceId() so this single rewrite propagates everywhere.
+  if (result.device_id && result.device_id !== cachedDeviceId) {
+    await adoptDeviceId(result.device_id);
+  }
+  return result;
+}
+
+/** Retrofit the stable id onto a pre-existing user row. Fire-and-forget
+ *  on app launch when profile.has_stable_device_id is false. */
+export async function linkStableDeviceId(): Promise<void> {
+  const stable = await getStableDeviceId();
+  if (!stable) return;
+  await apiRequest<void>('POST', '/me/link-stable-id', { stable_device_id: stable });
 }
 
 export function getProfile() {

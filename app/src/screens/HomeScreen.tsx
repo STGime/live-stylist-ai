@@ -28,6 +28,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
 import { useDialog } from '../components/AppDialog';
 
+// Per-launch latch for the stable-id retrofit. If /me/link-stable-id ever
+// returns 409 (the row already has a different stable_id, e.g. user moved
+// phones with the same iCloud account), without this we'd refire the
+// failing call on every Home-screen mount. One attempt per launch is
+// plenty; a real fix needs a backend / support intervention anyway.
+let stableIdRetrofitTriedThisLaunch = false;
+
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
@@ -84,6 +91,19 @@ export default function HomeScreen({ navigation }: Props) {
       api.listPendingFollows()
         .then((rows) => setPendingFollowCount(rows.length))
         .catch(() => setPendingFollowCount(0));
+
+      // Retrofit the platform-stable id onto pre-existing users so the
+      // *next* reinstall recovers their row (same magic_id / trial /
+      // follows) instead of minting a fresh free-trial account. New
+      // users go through the stable-id path during /register already,
+      // so this fires only for users created before the upgrade. Guard
+      // with a per-launch latch so a 409 doesn't loop on every focus.
+      if (p.has_stable_device_id === false && !stableIdRetrofitTriedThisLaunch) {
+        stableIdRetrofitTriedThisLaunch = true;
+        api.linkStableDeviceId().catch((err) => {
+          console.warn('[stable-id] retrofit failed', err?.status ?? '', err?.message ?? err);
+        });
+      }
 
       // Push permission is asked just-in-time on the first social action
       // (Follow screen: send / accept / share magic ID) rather than blindly
