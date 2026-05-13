@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-  <dict/>
+  <dict>
+    <!--
+      Push entitlement. iOS won't mint an APNs device token without it, so
+      Notifications.getExpoPushTokenAsync() silently returns nothing.
+      `development` covers preview / internal-distribution builds; EAS's
+      cloud build re-signs with whichever provisioning profile is active
+      and Apple maps this to the matching APNs environment.
+    -->
+    <key>aps-environment</key>
+    <string>development</string>
+  </dict>
 </plist>
