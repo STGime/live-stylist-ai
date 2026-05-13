@@ -614,11 +614,16 @@ export async function respondToFollow(
 }
 
 export async function deleteFollow(id: string, requesterDeviceId: string): Promise<void> {
+  // Idempotent: if the row is already gone, or the caller isn't a party,
+  // do nothing. The goal-state ("no such relationship from my POV") is
+  // already true, so returning success keeps the API in REST-norm DELETE
+  // semantics and avoids the common race where the other side
+  // unfollowed first and our caller's UI was stale.
   const eb = getEurobase();
   const row = await getFollowById(id);
-  if (!row) throw new NotFoundError('Follow not found');
+  if (!row) return;
   if (row.follower_device_id !== requesterDeviceId && row.followee_device_id !== requesterDeviceId) {
-    throw new NotFoundError('Follow not found');
+    return;
   }
   const { error } = await eb.db.from(FOLLOWS_TABLE).delete(row.id);
   if (error) throw new Error(`deleteFollow failed: ${error}`);
