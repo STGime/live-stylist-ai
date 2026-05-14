@@ -14,9 +14,11 @@ import type { PurchasesPackage, PurchasesOffering } from 'react-native-purchases
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import { useDialog } from '../components/AppDialog';
+import * as Sentry from '@sentry/react-native';
 import {
   configureBilling,
   getDefaultOffering,
+  getBillingFailure,
   isBillingConfigured,
   purchase,
   restore,
@@ -60,7 +62,24 @@ export default function PaywallScreen({ navigation, route }: Props) {
       } catch (e: any) {
         console.warn('[Paywall] load offerings failed:', e?.message || e);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          // Sentry breadcrumb on every Paywall open. Useful in TestFlight
+          // where console output is invisible — surfaces *why* the offer
+          // didn't load (no_key / configure_failed / no_offering / null=ok).
+          const f = getBillingFailure();
+          Sentry.addBreadcrumb({
+            category: 'billing',
+            message: 'Paywall loaded',
+            level: f.reason ? 'warning' : 'info',
+            data: {
+              reason: f.reason,
+              detail: f.message,
+              configured: isBillingConfigured(),
+              has_offering: !!offering,
+            },
+          });
+        }
       }
     })();
     return () => {
@@ -128,7 +147,19 @@ export default function PaywallScreen({ navigation, route }: Props) {
       ) : !isBillingConfigured() || !offering ? (
         <View style={styles.placeholder}>
           <Text style={styles.placeholderText}>
-            In-app purchases not yet available. Check back after launch.
+            {(() => {
+              const f = getBillingFailure();
+              switch (f.reason) {
+                case 'no_key':
+                  return 'In-app purchases not available in this build. Check back after launch.';
+                case 'configure_failed':
+                  return `Could not connect to the App Store. Try again in a minute, or use Restore Purchases if you've subscribed.\n\n(${f.message})`;
+                case 'no_offering':
+                  return 'Subscriptions are being set up. If you’ve subscribed already, tap Restore Purchases.';
+                default:
+                  return 'In-app purchases not yet available. Check back after launch.';
+              }
+            })()}
           </Text>
         </View>
       ) : (
