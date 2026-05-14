@@ -20,7 +20,8 @@
       "bundleIdentifier": "app.livestylist.ios",
       "infoPlist": {
         "NSCameraUsageDescription": "LiveStylist uses your camera to analyze your style and provide real-time fashion advice.",
-        "NSMicrophoneUsageDescription": "LiveStylist uses your microphone for voice conversations with your AI stylist."
+        "NSMicrophoneUsageDescription": "LiveStylist uses your microphone for voice conversations with your AI stylist.",
+        "NSLocationWhenInUseUsageDescription": "LiveStylist may use approximate location to suggest products available where you are. We never share or sell your location."
       },
       "buildNumber": "2"
     },
