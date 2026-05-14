@@ -22,8 +22,10 @@ import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import FloatingBubbles from '../components/FloatingBubbles';
 import ProfileModal from '../components/ProfileModal';
+import HelpOverlay from '../components/HelpOverlay';
 import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
+import { HELP_SEEN_KEY } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
 import { useDialog } from '../components/AppDialog';
@@ -47,6 +49,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [starting, setStarting] = useState(false);
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [helpVisible, setHelpVisible] = useState(false);
   const [productRegion, setProductRegion] = useState<ProductRegion>('us');
   const [showProducts, setShowProducts] = useState(true);
   const [pendingFollowCount, setPendingFollowCount] = useState(0);
@@ -140,6 +143,44 @@ export default function HomeScreen({ navigation }: Props) {
     const t = setInterval(() => setDailyPulseOn((p) => !p), 700);
     return () => clearInterval(t);
   }, []);
+
+  // First-launch tour. Run once after Home mounts; if the AsyncStorage flag
+  // is unset, show the overlay. Recovery (PR #11) pre-sets the flag so
+  // returning users on a fresh install don't see it again. Deferred a tick
+  // so it doesn't fight the navigation-into-Home animation.
+  useEffect(() => {
+    let cancelled = false;
+    requestAnimationFrame(async () => {
+      try {
+        const seen = await AsyncStorage.getItem(HELP_SEEN_KEY);
+        if (!cancelled && !seen) setHelpVisible(true);
+      } catch {
+        // Storage unreachable — don't pop the overlay; we'll try next launch.
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleHelpDismiss = async (dontShowAgain: boolean) => {
+    setHelpVisible(false);
+    try {
+      if (dontShowAgain) {
+        await AsyncStorage.setItem(HELP_SEEN_KEY, '1');
+      } else {
+        // User explicitly unchecked — let it pop next launch too.
+        await AsyncStorage.removeItem(HELP_SEEN_KEY);
+      }
+    } catch {
+      // Non-fatal — worst case, modal reappears next launch.
+    }
+  };
+
+  const handleShowHelpFromProfile = () => {
+    // ProfileModal closes first; iOS can't reliably present a Modal on
+    // top of another Modal (same workaround the delete-account path uses).
+    setProfileModalVisible(false);
+    setTimeout(() => setHelpVisible(true), 300);
+  };
 
   const dailyAccentColor = dailyPulseOn ? COLORS.gold : '#8a6a2c';
 
@@ -457,12 +498,15 @@ export default function HomeScreen({ navigation }: Props) {
             setProfileModalVisible(false);
             navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
           }}
+          onShowAppIntro={handleShowHelpFromProfile}
           currentName={profile.name}
           currentStylistName={profile.stylist_name ?? ''}
           currentColor={profile.favorite_color}
           currentLanguage={profile.language ?? 'en'}
         />
       )}
+
+      <HelpOverlay visible={helpVisible} onDismiss={handleHelpDismiss} />
     </LinearGradient>
   );
 }

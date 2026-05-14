@@ -16,6 +16,9 @@ import type {
 
 const BASE_URL = 'https://livestylist-backend-833955805931.us-central1.run.app';
 const DEVICE_ID_KEY = '@livestylist_device_id';
+/** AsyncStorage flag for "user has seen the first-launch tour". Exported
+ *  so HomeScreen and api.ts (recovery branch) reference the same string. */
+export const HELP_SEEN_KEY = '@livestylist_help_seen';
 // Baked in at build time via eas.json env (preview / development profiles
 // only — production profile leaves it unset, so App Store / TestFlight
 // builds never identify as testers). When set, every request includes
@@ -127,6 +130,13 @@ export async function register(
   // getDeviceId() so this single rewrite propagates everywhere.
   if (result.device_id && result.device_id !== cachedDeviceId) {
     await adoptDeviceId(result.device_id);
+  }
+  // Returning users have already seen the first-launch tour on their old
+  // install; AsyncStorage was wiped by the reinstall but their identity
+  // wasn't, so suppress the overlay for them by pre-setting the flag.
+  // (HomeScreen reads `@livestylist_help_seen` to decide whether to pop.)
+  if (result.recovered) {
+    await AsyncStorage.setItem(HELP_SEEN_KEY, '1');
   }
   return result;
 }
