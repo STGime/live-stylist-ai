@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { DialogProvider } from './src/components/AppDialog';
 import { attachNotificationTapHandler } from './src/services/push';
+import { configureBilling } from './src/services/billing';
 import type { RootStackParamList } from './src/types';
 
 // Sentry — required for the iOS startup-crash investigation. The DSN comes
@@ -38,6 +39,16 @@ function App() {
     return () => {
       detachRef.current?.();
     };
+  }, []);
+
+  // Initialise the RC SDK once at startup so isPremium() / Paywall don't
+  // each pay a configure round-trip on first call. configureBilling is
+  // a no-op when keys aren't set (Android until Play products land), so
+  // this safely runs on every launch regardless of platform.
+  useEffect(() => {
+    configureBilling().catch((err) => {
+      console.warn('[App] configureBilling failed', err);
+    });
   }, []);
 
   return (

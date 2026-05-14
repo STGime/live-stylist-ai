@@ -11,6 +11,7 @@ import {
   Switch,
   NativeModules,
   Platform,
+  AppState,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -26,6 +27,7 @@ import HelpOverlay from '../components/HelpOverlay';
 import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
 import { HELP_SEEN_KEY } from '../services/api';
+import * as billing from '../services/billing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
 import { useDialog } from '../components/AppDialog';
@@ -44,7 +46,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [sessionsRemaining, setSessionsRemaining] = useState(0);
   const [totalSessions, setTotalSessions] = useState(1);
-  const [isPremium] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
@@ -63,12 +65,10 @@ export default function HomeScreen({ navigation }: Props) {
       setLoading(true);
       const p = await api.getProfile();
       setProfile(p);
-      // Tier model: free = 1 lifetime trial, premium = 30/mo soft cap.
-      // The remaining-sessions UI is informational; the backend is the source of truth.
-      const limit = isPremium ? 30 : 1;
-      const used = !isPremium && p.trial_used ? 1 : 0;
-      setTotalSessions(limit);
-      setSessionsRemaining(Math.max(0, limit - used));
+      // Sessions-remaining math is derived from (profile, isPremium) in a
+      // separate effect below. Keeping it out of here means an isPremium
+      // flip (RC entitlement resolves a few hundred ms after profile load)
+      // doesn't invalidate loadProfile and refetch /profile a second time.
 
       // Load product preferences
       const savedRegion = await AsyncStorage.getItem('@livestylist_product_region');
@@ -120,7 +120,18 @@ export default function HomeScreen({ navigation }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [isPremium, navigation]);
+  }, [navigation]);
+
+  // Derived sessions-left math. Re-runs cheaply whenever either input
+  // changes — no extra HTTP — so the UI updates correctly when RC
+  // resolves Premium a tick after the initial profile load.
+  useEffect(() => {
+    if (!profile) return;
+    const limit = isPremium ? 30 : 1;
+    const used = !isPremium && profile.trial_used ? 1 : 0;
+    setTotalSessions(limit);
+    setSessionsRemaining(Math.max(0, limit - used));
+  }, [profile, isPremium]);
 
   useFocusEffect(
     useCallback(() => {
@@ -142,6 +153,35 @@ export default function HomeScreen({ navigation }: Props) {
     // bulletproof: re-renders every 700ms, instant snap between two gold shades.
     const t = setInterval(() => setDailyPulseOn((p) => !p), 700);
     return () => clearInterval(t);
+  }, []);
+
+  // Refresh the premium entitlement from RevenueCat. Runs on every Home
+  // focus AND on AppState 'active' so:
+  //   - returning from PaywallScreen catches a successful purchase
+  //   - users who buy via App Store Settings (out-of-app) see Premium next
+  //     time they bring the app forward
+  // billing.isPremium() returns false when configureBilling() never ran
+  // (no key for the platform), so this is a safe no-op on Android until
+  // Play Console products land.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      billing.isPremium()
+        .then((p) => { if (active) setIsPremium(p); })
+        .catch(() => {});
+      return () => { active = false; };
+    }, []),
+  );
+
+  useEffect(() => {
+    let active = true;
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      billing.isPremium()
+        .then((p) => { if (active) setIsPremium(p); })
+        .catch(() => {});
+    });
+    return () => { active = false; sub.remove(); };
   }, []);
 
   // First-launch tour. Run once after Home mounts; if the AsyncStorage flag
