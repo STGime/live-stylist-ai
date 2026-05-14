@@ -124,14 +124,18 @@ export default function HelpOverlay({ visible, onDismiss }: Props) {
           <View
             style={styles.card}
             onLayout={(e) => setPageWidth(e.nativeEvent.layout.width - 32)}>
-            {/* Header row: skip on the right */}
+            {/* Header row: skip on the right. Hide entirely on the last
+                card so the corner above the Don't-show-again toggle
+                isn't a hidden tap-to-dismiss target. */}
             <View style={styles.headerRow}>
               <View style={{ flex: 1 }} />
-              <TouchableOpacity
-                onPress={() => onDismiss(dontShowAgain)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Text style={styles.skipText}>{isLast ? '' : 'Skip'}</Text>
-              </TouchableOpacity>
+              {!isLast ? (
+                <TouchableOpacity
+                  onPress={() => onDismiss(dontShowAgain)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.skipText}>Skip</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
 
             <ScrollView
@@ -169,16 +173,22 @@ export default function HelpOverlay({ visible, onDismiss }: Props) {
             </View>
 
             {/* Don't-show-again — last card only. Showing it earlier would
-                tempt users to flip it before they've seen the content. */}
+                tempt users to flip it before they've seen the content.
+                Whole row is tappable, not just the Switch — matches the
+                standard mobile expectation that the label is part of the
+                hit target. */}
             {isLast ? (
-              <View style={styles.dontShowRow}>
+              <TouchableOpacity
+                style={styles.dontShowRow}
+                onPress={() => setDontShowAgain((v) => !v)}
+                activeOpacity={0.8}>
                 <Switch
                   value={dontShowAgain}
                   onValueChange={setDontShowAgain}
                   trackColor={{ false: COLORS.pinkLight, true: COLORS.pink }}
                 />
                 <Text style={styles.dontShowLabel}>Don’t show this again</Text>
-              </View>
+              </TouchableOpacity>
             ) : null}
 
             <TouchableOpacity onPress={handleNext} style={styles.nextButton}>

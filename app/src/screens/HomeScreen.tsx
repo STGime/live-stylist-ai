@@ -25,11 +25,10 @@ import ProfileModal from '../components/ProfileModal';
 import HelpOverlay from '../components/HelpOverlay';
 import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
+import { HELP_SEEN_KEY } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
 import { useDialog } from '../components/AppDialog';
-
-const HELP_SEEN_KEY = '@livestylist_help_seen';
 
 // Per-launch latch for the stable-id retrofit. If /me/link-stable-id ever
 // returns 409 (the row already has a different stable_id, e.g. user moved
