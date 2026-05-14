@@ -38,8 +38,24 @@ let configured = false;
 // settle so a transient failure can be retried by a later call.
 let configuring: Promise<void> | null = null;
 
+// Surfaced to PaywallScreen so the user sees *why* purchases are
+// unavailable rather than a generic "not yet available" message.
+// One of:
+//   'no_key'             — APPLE_KEY/GOOGLE_KEY empty in this build
+//   'configure_failed'   — Purchases.configure threw (network, invalid key, bundle mismatch)
+//   'no_offering'        — RC has no current offering, or product still
+//                          missing metadata in the store
+//   null                 — everything's fine
+export type BillingFailureReason = 'no_key' | 'configure_failed' | 'no_offering' | null;
+let lastFailure: BillingFailureReason = null;
+let lastFailureMessage = '';
+
 export function isBillingConfigured(): boolean {
   return configured;
+}
+
+export function getBillingFailure(): { reason: BillingFailureReason; message: string } {
+  return { reason: lastFailure, message: lastFailureMessage };
 }
 
 export async function configureBilling(): Promise<void> {
@@ -49,13 +65,24 @@ export async function configureBilling(): Promise<void> {
     try {
       const apiKey = Platform.OS === 'ios' ? APPLE_KEY : GOOGLE_KEY;
       if (!apiKey) {
+        lastFailure = 'no_key';
+        lastFailureMessage = `No RevenueCat ${Platform.OS} SDK key in build`;
         console.warn('[Billing] No RevenueCat API key set — purchases disabled.');
         return;
       }
       Purchases.setLogLevel(LOG_LEVEL.WARN);
       const appUserID = await getDeviceId();
-      await Purchases.configure({ apiKey, appUserID });
-      configured = true;
+      try {
+        await Purchases.configure({ apiKey, appUserID });
+        configured = true;
+        lastFailure = null;
+        lastFailureMessage = '';
+      } catch (err: any) {
+        lastFailure = 'configure_failed';
+        lastFailureMessage = err?.message ?? String(err);
+        console.warn('[Billing] Purchases.configure failed:', lastFailureMessage);
+        throw err;
+      }
     } finally {
       configuring = null;
     }
@@ -74,7 +101,23 @@ export async function getDefaultOffering(): Promise<PurchasesOffering | null> {
   await awaitConfiguration();
   if (!configured) return null;
   const offerings = await Purchases.getOfferings();
-  return offerings.current ?? null;
+  const current = offerings.current ?? null;
+  if (!current || current.availablePackages.length === 0) {
+    // Most common cause in production: the RC `default` offering hasn't
+    // been created OR the App Store Connect product is still pending
+    // metadata / review, so StoreKit hasn't returned a SKProduct for it.
+    lastFailure = 'no_offering';
+    lastFailureMessage = current
+      ? `Offering "${current.identifier}" has no packages`
+      : 'No "current" offering set in RevenueCat dashboard';
+  } else {
+    // Success path must clear any prior failure so /getBillingFailure
+    // doesn't keep reporting a stale `no_offering` after the RC dashboard
+    // is fixed mid-session.
+    lastFailure = null;
+    lastFailureMessage = '';
+  }
+  return current;
 }
 
 export async function purchase(pkg: PurchasesPackage): Promise<CustomerInfo> {

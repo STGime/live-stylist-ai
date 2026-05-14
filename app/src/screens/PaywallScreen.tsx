@@ -14,9 +14,11 @@ import type { PurchasesPackage, PurchasesOffering } from 'react-native-purchases
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import { useDialog } from '../components/AppDialog';
+import * as Sentry from '@sentry/react-native';
 import {
   configureBilling,
   getDefaultOffering,
+  getBillingFailure,
   isBillingConfigured,
   purchase,
   restore,
@@ -53,14 +55,41 @@ export default function PaywallScreen({ navigation, route }: Props) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      let off: PurchasesOffering | null = null;
       try {
         await configureBilling();
-        const off = await getDefaultOffering();
+        off = await getDefaultOffering();
         if (!cancelled) setOffering(off);
       } catch (e: any) {
         console.warn('[Paywall] load offerings failed:', e?.message || e);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (cancelled) return;
+        setLoading(false);
+        // Surface the cause to Sentry. A bare breadcrumb is only context
+        // for a *later* error event — if the user closes the app after
+        // seeing the failure message no event ever fires, so we'd never
+        // see the breadcrumb. captureMessage on the failure path actually
+        // shows up in the issue list. Success path still breadcrumbs so
+        // subsequent errors (e.g. a later session WS failure) have context.
+        const f = getBillingFailure();
+        if (f.reason) {
+          Sentry.captureMessage('Paywall offer failed to load', {
+            level: 'warning',
+            tags: { reason: f.reason },
+            extra: {
+              detail: f.message,
+              configured: isBillingConfigured(),
+              has_offering: !!off,
+            },
+          });
+        } else {
+          Sentry.addBreadcrumb({
+            category: 'billing',
+            message: 'Paywall loaded ok',
+            level: 'info',
+            data: { has_offering: !!off },
+          });
+        }
       }
     })();
     return () => {
@@ -128,7 +157,19 @@ export default function PaywallScreen({ navigation, route }: Props) {
       ) : !isBillingConfigured() || !offering ? (
         <View style={styles.placeholder}>
           <Text style={styles.placeholderText}>
-            In-app purchases not yet available. Check back after launch.
+            {(() => {
+              const f = getBillingFailure();
+              switch (f.reason) {
+                case 'no_key':
+                  return 'In-app purchases not available in this build. Check back after launch.';
+                case 'configure_failed':
+                  return `Could not connect to the App Store. Try again in a minute, or use Restore Purchases if you've subscribed.\n\n(${f.message})`;
+                case 'no_offering':
+                  return 'Subscriptions are being set up. If you’ve subscribed already, tap Restore Purchases.';
+                default:
+                  return 'In-app purchases not yet available. Check back after launch.';
+              }
+            })()}
           </Text>
         </View>
       ) : (
