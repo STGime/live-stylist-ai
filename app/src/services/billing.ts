@@ -17,11 +17,16 @@ import { getDeviceId } from './api';
 
 const ENTITLEMENT_ID = 'premium';
 
-// TODO: replace with real keys from RevenueCat dashboard once both stores
-// have the products live. Until then `Purchases.configure` will throw on
-// device — guarded by the `isBillingConfigured()` check below so the app
-// keeps working in dev without the keys.
-const APPLE_KEY = '';
+// Public SDK keys from the RevenueCat dashboard (Project settings → API
+// keys → "Apple SDK key" / "Google SDK key"). These are the public-facing
+// keys, intended to be embedded in client bundles — they're not secrets,
+// so committing them is fine. The matching server-side REST API key
+// lives on Cloud Run as the REVENUECAT_API_KEY env var (different key).
+//
+// Google key still empty until the Play Console product is live and
+// imported into the same RC project; configureBilling() guards against
+// it being absent on Android so the app degrades gracefully.
+const APPLE_KEY = 'appl_gAIokSuKhVsvHCvXtimKxBxLdcy';
 const GOOGLE_KEY = '';
 
 let configured = false;

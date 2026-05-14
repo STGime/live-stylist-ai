@@ -11,6 +11,7 @@ import {
   Switch,
   NativeModules,
   Platform,
+  AppState,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -26,6 +27,7 @@ import HelpOverlay from '../components/HelpOverlay';
 import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
 import { HELP_SEEN_KEY } from '../services/api';
+import * as billing from '../services/billing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
 import { useDialog } from '../components/AppDialog';
@@ -44,7 +46,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [sessionsRemaining, setSessionsRemaining] = useState(0);
   const [totalSessions, setTotalSessions] = useState(1);
-  const [isPremium] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [selectedOccasion, setSelectedOccasion] = useState<Occasion | null>(null);
@@ -142,6 +144,34 @@ export default function HomeScreen({ navigation }: Props) {
     // bulletproof: re-renders every 700ms, instant snap between two gold shades.
     const t = setInterval(() => setDailyPulseOn((p) => !p), 700);
     return () => clearInterval(t);
+  }, []);
+
+  // Refresh the premium entitlement from RevenueCat. Runs on every Home
+  // focus AND on AppState 'active' so:
+  //   - returning from PaywallScreen catches a successful purchase
+  //   - users who buy via App Store Settings (out-of-app) see Premium next
+  //     time they bring the app forward
+  // billing.isPremium() returns false when configureBilling() never ran
+  // (no key for the platform), so this is a safe no-op on Android until
+  // Play Console products land.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      billing.isPremium()
+        .then((p) => { if (active) setIsPremium(p); })
+        .catch(() => {});
+      return () => { active = false; };
+    }, []),
+  );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      billing.isPremium()
+        .then(setIsPremium)
+        .catch(() => {});
+    });
+    return () => sub.remove();
   }, []);
 
   // First-launch tour. Run once after Home mounts; if the AsyncStorage flag
