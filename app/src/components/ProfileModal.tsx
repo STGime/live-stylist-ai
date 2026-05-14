@@ -28,6 +28,9 @@ interface Props {
   onClose: () => void;
   onSaved: () => void;
   onReset: () => void;
+  /** Optional — when present, renders a "Show app intro" row that the
+   *  user can tap to re-open the first-launch help overlay. */
+  onShowAppIntro?: () => void;
   currentName: string;
   currentStylistName: string;
   currentColor: string;
@@ -39,6 +42,7 @@ export default function ProfileModal({
   onClose,
   onSaved,
   onReset,
+  onShowAppIntro,
   currentName,
   currentStylistName,
   currentColor,
@@ -349,6 +353,14 @@ export default function ProfileModal({
             </View>
           ) : null}
 
+          {/* Re-open the first-launch tour. Optional prop — parent screens
+              wire this up only when they own a HelpOverlay instance. */}
+          {onShowAppIntro ? (
+            <TouchableOpacity onPress={onShowAppIntro} style={styles.introButton}>
+              <Text style={styles.introText}>Show app intro</Text>
+            </TouchableOpacity>
+          ) : null}
+
           {/* Reset */}
           <TouchableOpacity onPress={handleDelete} style={styles.resetButton}>
             <Text style={styles.resetText}>Delete Account</Text>
@@ -462,6 +474,20 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FF4444' + '30',
     backgroundColor: '#FF4444' + '08',
+  },
+  introButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: COLORS.pinkLight + '50',
+    backgroundColor: COLORS.pinkPale,
+  },
+  introText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.pink,
   },
   deviceIdBlock: {
     marginTop: 20,

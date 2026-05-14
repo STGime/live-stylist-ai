@@ -128,6 +128,13 @@ export async function register(
   if (result.device_id && result.device_id !== cachedDeviceId) {
     await adoptDeviceId(result.device_id);
   }
+  // Returning users have already seen the first-launch tour on their old
+  // install; AsyncStorage was wiped by the reinstall but their identity
+  // wasn't, so suppress the overlay for them by pre-setting the flag.
+  // (HomeScreen reads `@livestylist_help_seen` to decide whether to pop.)
+  if (result.recovered) {
+    await AsyncStorage.setItem('@livestylist_help_seen', '1');
+  }
   return result;
 }
 
