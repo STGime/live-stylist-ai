@@ -236,19 +236,22 @@ export default function HomeScreen({ navigation }: Props) {
       <FloatingBubbles count={18} />
       {/* Header */}
       <View style={styles.header}>
-        <View
-          style={[
-            styles.tierBadge,
-            isPremium ? styles.tierBadgePremium : null,
-          ]}>
-          <Text
-            style={[
-              styles.tierText,
-              isPremium ? styles.tierTextPremium : null,
-            ]}>
-            {isPremium ? 'Premium' : 'Free'}
-          </Text>
-        </View>
+        {/* Tier badge. When the user is Free, the pill is tappable —
+            opens the paywall with reason: 'manual'. When already Premium
+            there's nothing useful to navigate to, so we keep it as a
+            static View (no accidental nav, no hit-target confusion). */}
+        {isPremium ? (
+          <View style={[styles.tierBadge, styles.tierBadgePremium]}>
+            <Text style={[styles.tierText, styles.tierTextPremium]}>Premium</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.tierBadge}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Paywall', { reason: 'manual' })}>
+            <Text style={styles.tierText}>Free</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           onPress={() => setProfileModalVisible(true)}
           style={styles.profileButton}>
