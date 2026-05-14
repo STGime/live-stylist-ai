@@ -30,6 +30,13 @@ const APPLE_KEY = 'appl_gAIokSuKhVsvHCvXtimKxBxLdcy';
 const GOOGLE_KEY = '';
 
 let configured = false;
+// Concurrent callers (e.g. App.tsx kicking configureBilling on startup
+// while HomeScreen's focus effect races to call isPremium) would
+// otherwise each observe configured=false and skip the configure step
+// — or worse, both call Purchases.configure twice. Cache the in-flight
+// promise so every caller awaits the same resolution. Cleared after
+// settle so a transient failure can be retried by a later call.
+let configuring: Promise<void> | null = null;
 
 export function isBillingConfigured(): boolean {
   return configured;
@@ -37,35 +44,54 @@ export function isBillingConfigured(): boolean {
 
 export async function configureBilling(): Promise<void> {
   if (configured) return;
-  const apiKey = Platform.OS === 'ios' ? APPLE_KEY : GOOGLE_KEY;
-  if (!apiKey) {
-    console.warn('[Billing] No RevenueCat API key set — purchases disabled.');
-    return;
-  }
-  Purchases.setLogLevel(LOG_LEVEL.WARN);
-  const appUserID = await getDeviceId();
-  await Purchases.configure({ apiKey, appUserID });
-  configured = true;
+  if (configuring) return configuring;
+  configuring = (async () => {
+    try {
+      const apiKey = Platform.OS === 'ios' ? APPLE_KEY : GOOGLE_KEY;
+      if (!apiKey) {
+        console.warn('[Billing] No RevenueCat API key set — purchases disabled.');
+        return;
+      }
+      Purchases.setLogLevel(LOG_LEVEL.WARN);
+      const appUserID = await getDeviceId();
+      await Purchases.configure({ apiKey, appUserID });
+      configured = true;
+    } finally {
+      configuring = null;
+    }
+  })();
+  return configuring;
+}
+
+/** If a configure is in flight, wait for it. Avoids cold-start races
+ *  where Home's first focus effect fires isPremium() before App.tsx's
+ *  configureBilling() has finished awaiting getDeviceId(). */
+async function awaitConfiguration(): Promise<void> {
+  if (configuring) await configuring;
 }
 
 export async function getDefaultOffering(): Promise<PurchasesOffering | null> {
+  await awaitConfiguration();
   if (!configured) return null;
   const offerings = await Purchases.getOfferings();
   return offerings.current ?? null;
 }
 
 export async function purchase(pkg: PurchasesPackage): Promise<CustomerInfo> {
+  await awaitConfiguration();
   if (!configured) throw new Error('Billing not configured');
   const { customerInfo } = await Purchases.purchasePackage(pkg);
   return customerInfo;
 }
 
 export async function restore(): Promise<CustomerInfo> {
+  await awaitConfiguration();
   if (!configured) throw new Error('Billing not configured');
   return Purchases.restorePurchases();
 }
 
 export async function isPremium(): Promise<boolean> {
+  await awaitConfiguration();
   if (!configured) return false;
   const info = await Purchases.getCustomerInfo();
   return info.entitlements.active[ENTITLEMENT_ID] != null;

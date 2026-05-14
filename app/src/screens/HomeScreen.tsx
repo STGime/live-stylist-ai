@@ -65,12 +65,10 @@ export default function HomeScreen({ navigation }: Props) {
       setLoading(true);
       const p = await api.getProfile();
       setProfile(p);
-      // Tier model: free = 1 lifetime trial, premium = 30/mo soft cap.
-      // The remaining-sessions UI is informational; the backend is the source of truth.
-      const limit = isPremium ? 30 : 1;
-      const used = !isPremium && p.trial_used ? 1 : 0;
-      setTotalSessions(limit);
-      setSessionsRemaining(Math.max(0, limit - used));
+      // Sessions-remaining math is derived from (profile, isPremium) in a
+      // separate effect below. Keeping it out of here means an isPremium
+      // flip (RC entitlement resolves a few hundred ms after profile load)
+      // doesn't invalidate loadProfile and refetch /profile a second time.
 
       // Load product preferences
       const savedRegion = await AsyncStorage.getItem('@livestylist_product_region');
@@ -122,7 +120,18 @@ export default function HomeScreen({ navigation }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [isPremium, navigation]);
+  }, [navigation]);
+
+  // Derived sessions-left math. Re-runs cheaply whenever either input
+  // changes — no extra HTTP — so the UI updates correctly when RC
+  // resolves Premium a tick after the initial profile load.
+  useEffect(() => {
+    if (!profile) return;
+    const limit = isPremium ? 30 : 1;
+    const used = !isPremium && profile.trial_used ? 1 : 0;
+    setTotalSessions(limit);
+    setSessionsRemaining(Math.max(0, limit - used));
+  }, [profile, isPremium]);
 
   useFocusEffect(
     useCallback(() => {
@@ -165,13 +174,14 @@ export default function HomeScreen({ navigation }: Props) {
   );
 
   useEffect(() => {
+    let active = true;
     const sub = AppState.addEventListener('change', (state) => {
       if (state !== 'active') return;
       billing.isPremium()
-        .then(setIsPremium)
+        .then((p) => { if (active) setIsPremium(p); })
         .catch(() => {});
     });
-    return () => sub.remove();
+    return () => { active = false; sub.remove(); };
   }, []);
 
   // First-launch tour. Run once after Home mounts; if the AsyncStorage flag
