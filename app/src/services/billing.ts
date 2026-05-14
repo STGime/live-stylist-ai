@@ -110,6 +110,12 @@ export async function getDefaultOffering(): Promise<PurchasesOffering | null> {
     lastFailureMessage = current
       ? `Offering "${current.identifier}" has no packages`
       : 'No "current" offering set in RevenueCat dashboard';
+  } else {
+    // Success path must clear any prior failure so /getBillingFailure
+    // doesn't keep reporting a stale `no_offering` after the RC dashboard
+    // is fixed mid-session.
+    lastFailure = null;
+    lastFailureMessage = '';
   }
   return current;
 }

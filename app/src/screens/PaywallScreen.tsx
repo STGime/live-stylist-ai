@@ -55,29 +55,39 @@ export default function PaywallScreen({ navigation, route }: Props) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      let off: PurchasesOffering | null = null;
       try {
         await configureBilling();
-        const off = await getDefaultOffering();
+        off = await getDefaultOffering();
         if (!cancelled) setOffering(off);
       } catch (e: any) {
         console.warn('[Paywall] load offerings failed:', e?.message || e);
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-          // Sentry breadcrumb on every Paywall open. Useful in TestFlight
-          // where console output is invisible — surfaces *why* the offer
-          // didn't load (no_key / configure_failed / no_offering / null=ok).
-          const f = getBillingFailure();
-          Sentry.addBreadcrumb({
-            category: 'billing',
-            message: 'Paywall loaded',
-            level: f.reason ? 'warning' : 'info',
-            data: {
-              reason: f.reason,
+        if (cancelled) return;
+        setLoading(false);
+        // Surface the cause to Sentry. A bare breadcrumb is only context
+        // for a *later* error event — if the user closes the app after
+        // seeing the failure message no event ever fires, so we'd never
+        // see the breadcrumb. captureMessage on the failure path actually
+        // shows up in the issue list. Success path still breadcrumbs so
+        // subsequent errors (e.g. a later session WS failure) have context.
+        const f = getBillingFailure();
+        if (f.reason) {
+          Sentry.captureMessage('Paywall offer failed to load', {
+            level: 'warning',
+            tags: { reason: f.reason },
+            extra: {
               detail: f.message,
               configured: isBillingConfigured(),
-              has_offering: !!offering,
+              has_offering: !!off,
             },
+          });
+        } else {
+          Sentry.addBreadcrumb({
+            category: 'billing',
+            message: 'Paywall loaded ok',
+            level: 'info',
+            data: { has_offering: !!off },
           });
         }
       }
