@@ -155,11 +155,19 @@ router.get('/session-history', async (req: Request, res: Response, next: NextFun
   try {
     const memories = await dbService.getSessionHistory(req.deviceId!);
     // Parallel image fetch per session — same pattern as
-    // getFollowedSessionFeed avoids n+1 sequential round-trips.
+    // getFollowedSessionFeed avoids n+1 sequential round-trips. Image
+    // failures are non-fatal (card just renders without the strip), but
+    // log them so a systemic Eurobase / schema issue doesn't go quiet.
     const imagesBySession = new Map<string, string[]>();
     await Promise.all(
       memories.map(async (m) => {
-        const imgs = await dbService.getSessionImages(m.session_id).catch(() => []);
+        const imgs = await dbService.getSessionImages(m.session_id).catch((err) => {
+          logger.warn(
+            { sessionId: m.session_id, err: err instanceof Error ? err.message : err },
+            '/session-history: image fetch failed',
+          );
+          return [];
+        });
         imagesBySession.set(m.session_id, imgs.map((i) => i.storage_url));
       }),
     );

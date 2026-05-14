@@ -254,11 +254,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: COLORS.textDark,
     lineHeight: 20,
-    marginTop: 10,
   },
   imageStrip: {
     flexDirection: 'row',
     gap: 8,
+    // Spacing lives on the strip (not on summary) so cards without an
+    // image strip stay pixel-identical to the pre-PR layout — only the
+    // ones that actually render a strip get the extra gap below.
+    marginBottom: 10,
   },
   thumb: {
     width: 80,
