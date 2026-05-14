@@ -145,9 +145,24 @@ router.delete('/account', async (req: Request, res: Response, next: NextFunction
 });
 
 // GET /session-history
+//
+// Returns the caller's own session memories newest-first, each enriched
+// with `image_urls` — up to the 24h-TTL captured previews. The thumbnail
+// strip on SessionHistoryScreen renders these inline, matching the
+// follower-feed card layout so the owner sees the same image-rich
+// summary of their own sessions instead of a text-only card.
 router.get('/session-history', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const memories = await dbService.getSessionHistory(req.deviceId!);
+    // Parallel image fetch per session — same pattern as
+    // getFollowedSessionFeed avoids n+1 sequential round-trips.
+    const imagesBySession = new Map<string, string[]>();
+    await Promise.all(
+      memories.map(async (m) => {
+        const imgs = await dbService.getSessionImages(m.session_id).catch(() => []);
+        imagesBySession.set(m.session_id, imgs.map((i) => i.storage_url));
+      }),
+    );
     const items = memories.map(m => ({
       session_id: m.session_id,
       summary: m.summary,
@@ -155,6 +170,7 @@ router.get('/session-history', async (req: Request, res: Response, next: NextFun
       duration_seconds: m.duration_seconds,
       occasion: m.occasion,
       created_at: m.created_at,
+      image_urls: imagesBySession.get(m.session_id) ?? [],
     }));
     res.json(items);
   } catch (error) {

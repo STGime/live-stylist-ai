@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
@@ -89,6 +90,19 @@ export default function SessionHistoryScreen({ navigation }: Props) {
           <Text style={styles.shareIcon}>↗</Text>
         </TouchableOpacity>
       </View>
+
+      {item.image_urls && item.image_urls.length > 0 && (
+        <View style={styles.imageStrip}>
+          {item.image_urls.slice(0, 3).map((url) => (
+            <Image key={url} source={{ uri: url }} style={styles.thumb} />
+          ))}
+          {item.image_urls.length > 3 && (
+            <View style={[styles.thumb, styles.thumbMore]}>
+              <Text style={styles.thumbMoreText}>+{item.image_urls.length - 3}</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       <Text style={styles.summary} numberOfLines={4}>{item.summary}</Text>
 
@@ -240,6 +254,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: COLORS.textDark,
     lineHeight: 20,
+    marginTop: 10,
+  },
+  imageStrip: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  thumb: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: COLORS.pinkPale,
+  },
+  thumbMore: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.pinkSoft,
+  },
+  thumbMoreText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.pink,
   },
   tipsContainer: {
     marginTop: 12,

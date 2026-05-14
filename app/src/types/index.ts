@@ -127,6 +127,10 @@ export interface SessionHistoryItem {
   duration_seconds?: number;
   occasion?: Occasion;
   created_at: string;
+  /** Storage URLs for the session's preview images while still within
+   *  the 24h TTL. Rendered as an inline thumbnail strip on the past-
+   *  sessions card, mirroring FeedScreen. */
+  image_urls?: string[];
 }
 
 export type RootStackParamList = {
