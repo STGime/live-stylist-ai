@@ -19,6 +19,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera } from 'react-native-vision-camera';
+import * as Application from 'expo-application';
 import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import FloatingBubbles from '../components/FloatingBubbles';
@@ -526,7 +527,9 @@ export default function HomeScreen({ navigation }: Props) {
             Privacy Policy
           </Text>
         </View>
-        <Text style={styles.version}>v1.0 (build 1)</Text>
+        <Text style={styles.version}>
+          {`v${Application.nativeApplicationVersion ?? '?'} (build ${Application.nativeBuildVersion ?? '?'})`}
+        </Text>
       </View>
 
       {profile && (
