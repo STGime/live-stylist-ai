@@ -21,7 +21,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "LiveStylist uses your camera to analyze your style and provide real-time fashion advice.",
         "NSMicrophoneUsageDescription": "LiveStylist uses your microphone for voice conversations with your AI stylist.",
-        "NSLocationWhenInUseUsageDescription": "Required by analytics and store frameworks linked into the app. LiveStylist itself does not request your location."
+        "NSLocationWhenInUseUsageDescription": "LiveStylist may use approximate region information for shopping and content suggestions. We never share or sell your location."
       },
       "buildNumber": "4"
     },
