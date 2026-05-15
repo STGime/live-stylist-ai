@@ -47,8 +47,6 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>LiveStylist uses your camera to analyze your style and provide real-time fashion advice.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>LiveStylist may use approximate region information for shopping and content suggestions. We never share or sell your location.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>LiveStylist uses your microphone for voice conversations with your AI stylist.</string>
 	<key>RCTNewArchEnabled</key>
