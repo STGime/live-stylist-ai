@@ -22,7 +22,7 @@
         "NSCameraUsageDescription": "LiveStylist uses your camera to analyze your style and provide real-time fashion advice.",
         "NSMicrophoneUsageDescription": "LiveStylist uses your microphone for voice conversations with your AI stylist."
       },
-      "buildNumber": "2"
+      "buildNumber": "3"
     },
     "android": {
       "package": "com.livestylist",
