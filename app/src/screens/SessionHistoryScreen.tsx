@@ -116,6 +116,19 @@ export default function SessionHistoryScreen({ navigation }: Props) {
           ))}
         </View>
       )}
+
+      {/* Tap affordance. The share icon at the top reads as "share" not
+          "open" — without this footer users don't realise the whole card
+          is tappable. Counts images so they know there's more behind
+          the tap than just the visible thumbnails. */}
+      <View style={styles.tapFooter}>
+        <Text style={styles.tapFooterText}>
+          {item.image_urls && item.image_urls.length > 0
+            ? `${item.image_urls.length} image${item.image_urls.length === 1 ? '' : 's'} · View details`
+            : 'View details'}
+          {' ›'}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -302,6 +315,16 @@ const styles = StyleSheet.create({
     color: COLORS.textMid,
     flex: 1,
     lineHeight: 18,
+  },
+  tapFooter: {
+    marginTop: 12,
+    alignItems: 'flex-end',
+  },
+  tapFooterText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.pink,
+    letterSpacing: 0.3,
   },
   emptyState: {
     flex: 1,
