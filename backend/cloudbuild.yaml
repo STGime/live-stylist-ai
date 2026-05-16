@@ -28,7 +28,12 @@ steps:
       - '--memory=512Mi'
       - '--cpu=1'
       - '--set-secrets=GEMINI_API_KEY=gemini-api-key:latest,REVENUECAT_API_KEY=revenuecat-api-key:latest,EUROBASE_SECRET_KEY=eurobase-secret-key:latest,FAL_AI_KEY=fal-ai-key:latest,TESTER_SECRET=tester-secret:latest,PURGE_SECRET=purge-secret:latest'
-      - '--set-env-vars=NODE_ENV=production,EUROBASE_URL=https://livestylist.eurobase.app,MONTHLY_PREMIUM_SESSION_CAP=30,TESTER_MONTHLY_SESSION_CAP=100,TESTER_DEVICE_IDS=,GEMINI_MODEL=gemini-2.5-flash-native-audio-latest'
+      # --update-env-vars (not --set-env-vars) so ad-hoc env vars set
+      # by operators via `gcloud run services update --update-env-vars=…`
+      # (e.g. TESTER_DEVICE_IDS) survive cloudbuild deploys. See #27.
+      # TESTER_DEVICE_IDS is intentionally omitted from the list — it's
+      # operator-managed at runtime, the code guards on its absence.
+      - '--update-env-vars=NODE_ENV=production,EUROBASE_URL=https://livestylist.eurobase.app,MONTHLY_PREMIUM_SESSION_CAP=30,TESTER_MONTHLY_SESSION_CAP=100,GEMINI_MODEL=gemini-2.5-flash-native-audio-latest'
       - '--allow-unauthenticated'
 
 images:
