@@ -300,6 +300,23 @@ export async function incrementSessionCount(
   return { allowed: true, sessionsUsedThisMonth: used + 1, remaining: cap - used - 1 };
 }
 
+/** Count sessions this user has started in the current calendar month
+ *  (UTC). Read-only counterpart to incrementSessionCount's monthly
+ *  count, used by /profile so the app can render an accurate
+ *  "X of Y sessions left" pill without having to start a session
+ *  to learn the number. */
+export async function getSessionsUsedThisMonth(deviceId: string): Promise<number> {
+  const eb = getEurobase();
+  const monthStart = startOfMonthIso();
+  const { data, error } = await eb.db
+    .from<SessionRow>(SESSIONS_TABLE)
+    .select('id')
+    .eq('device_id', deviceId)
+    .gte('start_time', monthStart);
+  if (error) throw new Error(`getSessionsUsedThisMonth failed: ${error}`);
+  return Array.isArray(data) ? data.length : data ? 1 : 0;
+}
+
 // --- Sessions ---
 
 export async function createSessionRecord(

@@ -123,11 +123,23 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }, [navigation]);
 
-  // Derived sessions-left math. Re-runs cheaply whenever either input
-  // changes — no extra HTTP — so the UI updates correctly when RC
-  // resolves Premium a tick after the initial profile load.
+  // Derived sessions-left math. Prefer the backend-supplied tier-aware
+  // numbers when /profile carries them; fall back to the client-side
+  // guess for backward compat with older backends. The backend pair
+  // (monthly_session_cap, sessions_used_this_month) is the source of
+  // truth — it counts real sessions this month so the pill decrements
+  // as the user starts sessions instead of always showing "30 of 30"
+  // for premium.
   useEffect(() => {
     if (!profile) return;
+    if (profile.monthly_session_cap != null && profile.sessions_used_this_month != null) {
+      setTotalSessions(profile.monthly_session_cap);
+      setSessionsRemaining(
+        Math.max(0, profile.monthly_session_cap - profile.sessions_used_this_month),
+      );
+      return;
+    }
+    // Legacy fallback (old backend without monthly_session_cap).
     const limit = isPremium ? 30 : 1;
     const used = !isPremium && profile.trial_used ? 1 : 0;
     setTotalSessions(limit);
@@ -374,9 +386,9 @@ export default function HomeScreen({ navigation }: Props) {
                   <Text style={[styles.sessionsText, { color: COLORS.gold }]}>
                     Upgrade for{' '}
                     <Text style={{ fontWeight: '800', color: dailyAccentColor }}>
-                      daily
+                      30
                     </Text>
-                    {' '}sessions
+                    {' '}sessions / month
                   </Text>
                 </TouchableOpacity>
               )}
@@ -493,11 +505,11 @@ export default function HomeScreen({ navigation }: Props) {
                   <View>
                     <Text style={styles.upgradeTitle}>Go Premium</Text>
                     <Text style={styles.upgradeSub}>
-                      Get{' '}
+                      Up to{' '}
                       <Text style={[styles.upgradeSubAccent, { color: dailyAccentColor }]}>
-                        daily
+                        30
                       </Text>
-                      {' '}styling tips
+                      {' '}sessions per month
                     </Text>
                   </View>
                   <LinearGradient

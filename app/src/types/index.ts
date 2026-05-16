@@ -16,6 +16,15 @@ export interface UserProfile {
   /** Set by /register only when the backend recovered a prior install
    *  via stable_device_id (instead of creating a new row). */
   recovered?: boolean;
+  /** Backend-resolved tier: tester allowlist first, then RevenueCat
+   *  entitlement. Optional for backward compat with older backends. */
+  tier?: 'free' | 'premium' | 'tester';
+  /** Monthly session cap derived from tier (1 for free trial, 30 for
+   *  premium, 100 for tester). */
+  monthly_session_cap?: number;
+  /** Sessions the user has started this calendar month. For free tier
+   *  this is 0 or 1 (trial_used as a number). */
+  sessions_used_this_month?: number;
 }
 
 export type FollowStatus = 'pending' | 'accepted' | 'denied';

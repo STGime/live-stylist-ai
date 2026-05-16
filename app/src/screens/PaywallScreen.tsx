@@ -35,22 +35,50 @@ const HEADLINES: Record<string, { title: string; subtitle: string }> = {
   },
   monthly_cap: {
     title: "You've hit this month's limit",
-    subtitle: 'Your monthly cap resets on the 1st. Upgrade tier or wait it out.',
+    // No "upgrade tier" — Premium is the only tier above free today.
+    subtitle: 'Subscribe for 30 sessions/mo, or wait until the 1st when the cap resets.',
   },
   manual: {
     title: 'Go Premium',
-    subtitle: 'Unlimited styling sessions, full preview generation, history that remembers.',
+    subtitle: 'Real-time styling, full preview generation, history that remembers.',
   },
+};
+
+// Different headline when the *premium* user hit the monthly cap.
+// They already paid; we can't sell them more — only inform.
+const PREMIUM_MONTHLY_CAP = {
+  title: "You've used this month's sessions",
+  subtitle: 'Your Premium plan gives you 30 sessions per calendar month. They reset on the 1st.',
 };
 
 export default function PaywallScreen({ navigation, route }: Props) {
   const reason = route.params?.reason ?? 'manual';
-  const headline = HEADLINES[reason] ?? HEADLINES.manual;
 
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const [alreadyPremium, setAlreadyPremium] = useState(false);
+  const [premiumChecked, setPremiumChecked] = useState(false);
   const dialog = useDialog();
+
+  // Different layout when the user is *already* premium and hit the
+  // monthly cap. There's no upgrade to sell — render an info-only view.
+  const isPremiumMonthlyCap = alreadyPremium && reason === 'monthly_cap';
+  const headline = isPremiumMonthlyCap ? PREMIUM_MONTHLY_CAP : (HEADLINES[reason] ?? HEADLINES.manual);
+
+  // Cheap entitlement check on mount. Resolves quickly because
+  // configureBilling() ran during App.tsx startup. If it's still in
+  // flight, awaitConfiguration inside billing.isPremium() handles it.
+  // premiumChecked guards the monthly_cap render so a paying user
+  // never flashes the sell-paywall before we re-render to info-only.
+  useEffect(() => {
+    let active = true;
+    isPremium()
+      .then((p) => { if (active) setAlreadyPremium(p); })
+      .catch(() => {})
+      .finally(() => { if (active) setPremiumChecked(true); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -137,6 +165,39 @@ export default function PaywallScreen({ navigation, route }: Props) {
     }
   };
 
+  // Info-only variant: premium user who hit the monthly cap. They
+  // already paid; there's nothing left to sell. Skip the bullets,
+  // packages, restore CTA, and fineprint — just inform and dismiss.
+  if (isPremiumMonthlyCap) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{headline.title}</Text>
+          <Text style={styles.subtitle}>{headline.subtitle}</Text>
+        </View>
+        <View style={styles.dismiss}>
+          <BubbleButton onPress={() => navigation.goBack()}>
+            Got it
+          </BubbleButton>
+        </View>
+      </ScrollView>
+    );
+  }
+
+  // Flash-of-wrong-content guard for the capped-premium user. If we
+  // landed here because of monthly_cap and haven't yet learned whether
+  // this user is premium, hold a spinner rather than flashing the
+  // sell-paywall to someone who's already subscribed. Other reasons
+  // (trial_used / manual) are unaffected since the sell view is the
+  // correct render for them regardless of premium state.
+  if (reason === 'monthly_cap' && !premiumChecked) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <ActivityIndicator color={COLORS.pink} style={{ marginTop: 64 }} />
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
@@ -146,7 +207,7 @@ export default function PaywallScreen({ navigation, route }: Props) {
 
       <View style={styles.benefits}>
         <Bullet text="Real-time AI stylist conversations" />
-        <Bullet text="Unlimited daily sessions (30/mo soft cap)" />
+        <Bullet text="Up to 30 sessions per month" />
         <Bullet text="Full image preview generation" />
         <Bullet text="Personal style memory across sessions" />
         <Bullet text="EU-resident data, no tracking" />
