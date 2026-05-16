@@ -40,7 +40,12 @@
       ]
     },
     "plugins": [
-      "react-native-vision-camera",
+      [
+        "react-native-vision-camera",
+        {
+          "enableLocation": false
+        }
+      ],
       "expo-splash-screen",
       "expo-notifications",
       "@sentry/react-native",

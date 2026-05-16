@@ -1,0 +1,211 @@
+diff --git a/node_modules/react-native-vision-camera/ios/Core/CameraSession+Location.swift b/node_modules/react-native-vision-camera/ios/Core/CameraSession+Location.swift
+index 2a600b6..b1e2e7b 100644
+--- a/node_modules/react-native-vision-camera/ios/Core/CameraSession+Location.swift
++++ b/node_modules/react-native-vision-camera/ios/Core/CameraSession+Location.swift
+@@ -5,7 +5,9 @@
+ //  Created by Marc Rousavy on 19.03.24.
+ //
+ 
++#if VISION_CAMERA_ENABLE_LOCATION
+ import CoreLocation
++#endif
+ import Foundation
+ 
+ extension CameraSession {
+diff --git a/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocation+iso6709String.swift b/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocation+iso6709String.swift
+index 7139fbd..5a91db6 100644
+--- a/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocation+iso6709String.swift
++++ b/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocation+iso6709String.swift
+@@ -5,8 +5,9 @@
+ //  Created by Marc Rousavy on 20.03.24.
+ //
+ 
+-import CoreLocation
+ import Foundation
++#if VISION_CAMERA_ENABLE_LOCATION
++import CoreLocation
+ 
+ extension CLLocation {
+   /**
+@@ -20,3 +21,4 @@ extension CLLocation {
+     return String(format: "%+07.4f%+08.4f/%.0f", latitude, longitude, altitude)
+   }
+ }
++#endif
+diff --git a/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocation+toEXIF.swift b/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocation+toEXIF.swift
+index 45a6456..36b971c 100644
+--- a/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocation+toEXIF.swift
++++ b/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocation+toEXIF.swift
+@@ -5,8 +5,9 @@
+ //  Created by Marc Rousavy on 20.03.24.
+ //
+ 
+-import CoreLocation
+ import Foundation
++#if VISION_CAMERA_ENABLE_LOCATION
++import CoreLocation
+ 
+ extension CLLocation {
+   /**
+@@ -57,3 +58,4 @@ extension CLLocation {
+     return gpsDictionary
+   }
+ }
++#endif
+diff --git a/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocationManager+requestAccess.swift b/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocationManager+requestAccess.swift
+index b678fe8..5c22f9a 100644
+--- a/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocationManager+requestAccess.swift
++++ b/node_modules/react-native-vision-camera/ios/Core/Extensions/CLLocationManager+requestAccess.swift
+@@ -5,8 +5,9 @@
+ //  Created by Marc Rousavy on 21.03.24.
+ //
+ 
+-import CoreLocation
+ import Foundation
++#if VISION_CAMERA_ENABLE_LOCATION
++import CoreLocation
+ 
+ extension CLLocationManager {
+   enum AccessType {
+@@ -56,3 +57,4 @@ extension CLLocationManager {
+     }
+   }
+ }
++#endif
+diff --git a/node_modules/react-native-vision-camera/ios/Core/LocationProvider.swift b/node_modules/react-native-vision-camera/ios/Core/LocationProvider.swift
+index e84fb9b..5a95844 100644
+--- a/node_modules/react-native-vision-camera/ios/Core/LocationProvider.swift
++++ b/node_modules/react-native-vision-camera/ios/Core/LocationProvider.swift
+@@ -5,8 +5,9 @@
+ //  Created by Marc Rousavy on 20.03.24.
+ //
+ 
+-import CoreLocation
+ import Foundation
++#if VISION_CAMERA_ENABLE_LOCATION
++import CoreLocation
+ 
+ class LocationProvider {
+   private let locationManager = CLLocationManager()
+@@ -51,3 +52,4 @@ class LocationProvider {
+     return locationManager.heading
+   }
+ }
++#endif
+diff --git a/node_modules/react-native-vision-camera/ios/Core/MetadataProvider.swift b/node_modules/react-native-vision-camera/ios/Core/MetadataProvider.swift
+index 4855d31..30f8fc3 100644
+--- a/node_modules/react-native-vision-camera/ios/Core/MetadataProvider.swift
++++ b/node_modules/react-native-vision-camera/ios/Core/MetadataProvider.swift
+@@ -6,17 +6,21 @@
+ //
+ 
+ import AVFoundation
++#if VISION_CAMERA_ENABLE_LOCATION
+ import CoreLocation
++#endif
+ import Foundation
+ 
+ /**
+  A Provider for Photo (AVCapturePhoto) EXIF metadata, and Video (AVAssetWriter) metadata.
+  */
+ class MetadataProvider: NSObject, AVCapturePhotoFileDataRepresentationCustomizer {
++  #if VISION_CAMERA_ENABLE_LOCATION
+   /**
+    Get or set the location provider to also set GPS tags for captured photos or videos.
+    */
+   var locationProvider: LocationProvider?
++  #endif
+ 
+   // MARK: - Photo Metadata
+ 
+@@ -32,12 +36,14 @@ class MetadataProvider: NSObject, AVCapturePhotoFileDataRepresentationCustomizer
+       properties[kCGImagePropertyExifDictionary as String] = exifDictionary
+     }
+ 
++    #if VISION_CAMERA_ENABLE_LOCATION
+     // Add GPS Location EXIF info
+     if let locationProvider,
+        let location = locationProvider.location {
+       let locationExif = location.toEXIF(heading: locationProvider.heading)
+       properties[kCGImagePropertyGPSDictionary as String] = locationExif
+     }
++    #endif
+ 
+     return properties
+   }
+@@ -51,11 +57,13 @@ class MetadataProvider: NSObject, AVCapturePhotoFileDataRepresentationCustomizer
+     let brandingMetadata = createBrandingMetadaItem()
+     metadata.append(brandingMetadata)
+ 
++    #if VISION_CAMERA_ENABLE_LOCATION
+     if let location = locationProvider?.location {
+       // Add GPS Location metadata
+       let locationMetadata = createLocationMetadataItem(location: location)
+       metadata.append(locationMetadata)
+     }
++    #endif
+ 
+     return metadata
+   }
+@@ -70,6 +78,7 @@ class MetadataProvider: NSObject, AVCapturePhotoFileDataRepresentationCustomizer
+     return metadataItem
+   }
+ 
++  #if VISION_CAMERA_ENABLE_LOCATION
+   private func createLocationMetadataItem(location: CLLocation) -> AVMetadataItem {
+     let metadataItem = AVMutableMetadataItem()
+     metadataItem.keySpace = .quickTimeMetadata
+@@ -79,4 +88,5 @@ class MetadataProvider: NSObject, AVCapturePhotoFileDataRepresentationCustomizer
+     metadataItem.dataType = kCMMetadataDataType_QuickTimeMetadataLocation_ISO6709 as String
+     return metadataItem
+   }
++  #endif
+ }
+diff --git a/node_modules/react-native-vision-camera/ios/Core/Parsers/CLAuthorizationStatus+descriptor.swift b/node_modules/react-native-vision-camera/ios/Core/Parsers/CLAuthorizationStatus+descriptor.swift
+index 441937e..8b8f4ad 100644
+--- a/node_modules/react-native-vision-camera/ios/Core/Parsers/CLAuthorizationStatus+descriptor.swift
++++ b/node_modules/react-native-vision-camera/ios/Core/Parsers/CLAuthorizationStatus+descriptor.swift
+@@ -5,8 +5,9 @@
+ //  Created by Marc Rousavy on 19.03.24.
+ //
+ 
+-import CoreLocation
+ import Foundation
++#if VISION_CAMERA_ENABLE_LOCATION
++import CoreLocation
+ 
+ extension CLAuthorizationStatus {
+   var descriptor: String {
+@@ -24,3 +25,4 @@ extension CLAuthorizationStatus {
+     }
+   }
+ }
++#endif
+diff --git a/node_modules/react-native-vision-camera/ios/Core/RecordingSession.swift b/node_modules/react-native-vision-camera/ios/Core/RecordingSession.swift
+index adee189..36e5ab6 100644
+--- a/node_modules/react-native-vision-camera/ios/Core/RecordingSession.swift
++++ b/node_modules/react-native-vision-camera/ios/Core/RecordingSession.swift
+@@ -7,7 +7,9 @@
+ //
+ 
+ import AVFoundation
++#if VISION_CAMERA_ENABLE_LOCATION
+ import CoreLocation
++#endif
+ import Foundation
+ 
+ // MARK: - RecordingSession
+diff --git a/node_modules/react-native-vision-camera/ios/React/CameraViewManager.swift b/node_modules/react-native-vision-camera/ios/React/CameraViewManager.swift
+index f7bd9e8..3fa886b 100644
+--- a/node_modules/react-native-vision-camera/ios/React/CameraViewManager.swift
++++ b/node_modules/react-native-vision-camera/ios/React/CameraViewManager.swift
+@@ -7,7 +7,9 @@
+ //
+ 
+ import AVFoundation
++#if VISION_CAMERA_ENABLE_LOCATION
+ import CoreLocation
++#endif
+ import Foundation
+ 
+ @objc(CameraViewManager)
