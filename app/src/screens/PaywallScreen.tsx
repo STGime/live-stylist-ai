@@ -58,6 +58,7 @@ export default function PaywallScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [alreadyPremium, setAlreadyPremium] = useState(false);
+  const [premiumChecked, setPremiumChecked] = useState(false);
   const dialog = useDialog();
 
   // Different layout when the user is *already* premium and hit the
@@ -68,9 +69,14 @@ export default function PaywallScreen({ navigation, route }: Props) {
   // Cheap entitlement check on mount. Resolves quickly because
   // configureBilling() ran during App.tsx startup. If it's still in
   // flight, awaitConfiguration inside billing.isPremium() handles it.
+  // premiumChecked guards the monthly_cap render so a paying user
+  // never flashes the sell-paywall before we re-render to info-only.
   useEffect(() => {
     let active = true;
-    isPremium().then((p) => { if (active) setAlreadyPremium(p); }).catch(() => {});
+    isPremium()
+      .then((p) => { if (active) setAlreadyPremium(p); })
+      .catch(() => {})
+      .finally(() => { if (active) setPremiumChecked(true); });
     return () => { active = false; };
   }, []);
 
@@ -174,6 +180,20 @@ export default function PaywallScreen({ navigation, route }: Props) {
             Got it
           </BubbleButton>
         </View>
+      </ScrollView>
+    );
+  }
+
+  // Flash-of-wrong-content guard for the capped-premium user. If we
+  // landed here because of monthly_cap and haven't yet learned whether
+  // this user is premium, hold a spinner rather than flashing the
+  // sell-paywall to someone who's already subscribed. Other reasons
+  // (trial_used / manual) are unaffected since the sell view is the
+  // correct render for them regardless of premium state.
+  if (reason === 'monthly_cap' && !premiumChecked) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <ActivityIndicator color={COLORS.pink} style={{ marginTop: 64 }} />
       </ScrollView>
     );
   }

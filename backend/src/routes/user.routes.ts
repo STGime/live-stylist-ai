@@ -97,28 +97,22 @@ router.get('/profile', async (req: Request, res: Response, next: NextFunction) =
       res.status(404).json({ error: 'not_found', message: 'User not registered' });
       return;
     }
-    // Resolve effective tier (tester check before RC entitlement, matching
-    // /start-session) so the app can render an accurate cap + remaining
-    // pill on Home without having to start a session to discover the cap.
+    // Resolve effective tier. Tester check is local (no RC round-trip).
+    // For non-testers we use tryCheckEntitlement (returns null on RC
+    // errors) rather than checkEntitlement (collapses errors to 'free').
+    // If RC is unreachable we OMIT the three tier fields — the app then
+    // falls back to its on-device RC SDK signal, which is more reliable
+    // than the server faking 'free' during an RC outage and downgrading
+    // a paying user's pill to "1 of 1, upgrade".
     const testerSecret = req.get('x-tester-secret') ?? undefined;
-    const tier: 'free' | 'premium' | 'tester' = dbService.isTesterDevice(req.deviceId!, testerSecret)
-      ? 'tester'
-      : await revenuecatService.checkEntitlement(req.deviceId!);
-    const env = getEnv();
-    const monthlySessionCap =
-      tier === 'tester'
-        ? env.TESTER_MONTHLY_SESSION_CAP
-        : tier === 'premium'
-          ? env.MONTHLY_PREMIUM_SESSION_CAP
-          : 1; // free = 1 lifetime trial; expose as a 1-cap for symmetry
-    // For free tier, the "month" concept doesn't apply — show 1/1 until
-    // trial_used flips, then 0/1. For premium/tester, count real
-    // sessions this calendar month.
-    const sessionsUsedThisMonth =
-      tier === 'free'
-        ? (user.trial_used ? 1 : 0)
-        : await dbService.getSessionsUsedThisMonth(req.deviceId!);
-    res.json({
+    let tier: 'free' | 'premium' | 'tester' | null;
+    if (dbService.isTesterDevice(req.deviceId!, testerSecret)) {
+      tier = 'tester';
+    } else {
+      tier = await revenuecatService.tryCheckEntitlement(req.deviceId!);
+    }
+
+    const baseResponse = {
       device_id: req.deviceId,
       name: user.name,
       favorite_color: user.favorite_color,
@@ -134,8 +128,32 @@ router.get('/profile', async (req: Request, res: Response, next: NextFunction) =
       // on this launch. Once true, the next reinstall recovers them via
       // POST /register; until then, a reinstall still mints a new user row.
       has_stable_device_id: !!user.stable_device_id,
-      // Tier-aware session accounting so HomeScreen's pill reflects
-      // reality instead of always saying "30 of 30" for premium users.
+    };
+
+    if (tier === null) {
+      // RC unreachable. Omit tier-aware fields so the client falls back
+      // to its legacy guess (which uses the on-device RC SDK truth).
+      res.json(baseResponse);
+      return;
+    }
+
+    const env = getEnv();
+    const monthlySessionCap =
+      tier === 'tester'
+        ? env.TESTER_MONTHLY_SESSION_CAP
+        : tier === 'premium'
+          ? env.MONTHLY_PREMIUM_SESSION_CAP
+          : 1; // free = 1 lifetime trial; expose as a 1-cap for symmetry
+    // For free tier, the "month" concept doesn't apply — show 1/1 until
+    // trial_used flips, then 0/1. For premium/tester, count real
+    // sessions this calendar month.
+    const sessionsUsedThisMonth =
+      tier === 'free'
+        ? (user.trial_used ? 1 : 0)
+        : await dbService.getSessionsUsedThisMonth(req.deviceId!);
+
+    res.json({
+      ...baseResponse,
       tier,
       monthly_session_cap: monthlySessionCap,
       sessions_used_this_month: sessionsUsedThisMonth,
