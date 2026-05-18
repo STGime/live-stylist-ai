@@ -71,3 +71,22 @@ export const blockRateLimiter = rateLimit({
     message: 'Too many block requests. Please try again later.',
   },
 });
+
+// Report rate limit: 20/hr/device. Reports are a defense-side mechanism
+// like blocks (a user being harassed must be able to report many things),
+// so the budget is intentionally generous. But createReport's idempotency
+// only dedupes the exact (reporter, target_kind, target_id) tuple, so
+// without a limiter a malicious user could bury the moderation queue
+// with unlimited reports against fabricated target_ids. Capping mitigates
+// that without throttling genuine defense.
+export const reportRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req) => req.deviceId || req.ip || 'unknown',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: 'rate_limit_exceeded',
+    message: 'Too many reports. Please try again later.',
+  },
+});

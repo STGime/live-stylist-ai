@@ -69,6 +69,39 @@ export interface BlockRow {
   created_at: string;
 }
 
+// --- Content reports (App Review §1.2 UGC compliance, see #14) ---
+
+export type ReportTargetKind = 'session' | 'follow_request' | 'user';
+export type ReportCategory = 'sexual' | 'violent' | 'harassing' | 'spam' | 'other';
+export type ReportStatus = 'open' | 'dismissed' | 'content_removed' | 'user_banned';
+export type ReportAction = Exclude<ReportStatus, 'open'>;
+
+export interface ReportRow {
+  id: string;
+  reporter_device_id: string;
+  target_kind: ReportTargetKind;
+  target_id: string;
+  category: ReportCategory;
+  free_text?: string | null;
+  status: ReportStatus;
+  created_at: string;
+  resolved_at?: string | null;
+  resolved_by_device_id?: string | null;
+}
+
+export const ReportBodySchema = z.object({
+  target_kind: z.enum(['session', 'follow_request', 'user']),
+  target_id: z.string().min(1).max(128),
+  category: z.enum(['sexual', 'violent', 'harassing', 'spam', 'other']),
+  free_text: z.string().max(280).optional(),
+});
+export type ReportBody = z.infer<typeof ReportBodySchema>;
+
+export const ResolveReportBodySchema = z.object({
+  action: z.enum(['dismissed', 'content_removed', 'user_banned']),
+});
+export type ResolveReportBody = z.infer<typeof ResolveReportBodySchema>;
+
 // --- Session Images ---
 
 export interface SessionImageRow {

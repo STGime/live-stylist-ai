@@ -14,6 +14,7 @@ import sessionRoutes from './routes/session.routes.js';
 import followRoutes from './routes/follow.routes.js';
 import blocksRoutes from './routes/blocks.routes.js';
 import feedRoutes from './routes/feed.routes.js';
+import reportsRoutes from './routes/reports.routes.js';
 import internalRoutes from './routes/internal.routes.js';
 import { setupWebSocket } from './ws/session-control.ws.js';
 import { setupAdkWebSocket, shutdownAdkSessions } from './ws/adk-session.ws.js';
@@ -85,6 +86,7 @@ app.use(sessionRoutes);
 app.use(followRoutes);
 app.use(blocksRoutes);
 app.use(feedRoutes);
+app.use(reportsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
