@@ -244,6 +244,11 @@ export default function FollowScreen({ navigation }: Props) {
     }
   };
 
+  // Single derived list — used by both the section gate and the map.
+  // Hoisted so the filter predicate runs once per render and the two
+  // call sites can't drift if the predicate ever grows.
+  const visiblePending = pending.filter((p) => !isFollowRequestReported(p.id));
+
   return (
     <LinearGradient
       colors={[COLORS.cream, COLORS.pinkPale, COLORS.offWhite]}
@@ -313,13 +318,14 @@ export default function FollowScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
 
-          {/* Incoming pending. Long-press a name to report — the
-              affordance is hidden (no ⋯ button) to keep the row
-              uncluttered, but matches Apple's §1.2 requirement. */}
-          {pending.filter((p) => !isFollowRequestReported(p.id)).length > 0 && (
+          {/* Incoming pending. A visible "Hold to report" caption
+              under the name makes the §1.2 report path discoverable
+              to an App Review reviewer (and any sighted user) without
+              crowding the Allow / Decline buttons. */}
+          {visiblePending.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Wants to follow you</Text>
-              {pending.filter((p) => !isFollowRequestReported(p.id)).map((p) => (
+              {visiblePending.map((p) => (
                 <View key={p.id} style={styles.row}>
                   <TouchableOpacity
                     style={{ flex: 1 }}
@@ -330,6 +336,7 @@ export default function FollowScreen({ navigation }: Props) {
                     {p.follower_magic_id && (
                       <Text style={styles.rowMeta}>{p.follower_magic_id}</Text>
                     )}
+                    <Text style={styles.rowHint}>Hold to report</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleRespond(p.id, 'accept')}
@@ -621,6 +628,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textMuted,
     letterSpacing: 1,
+  },
+  rowHint: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textMuted,
+    marginTop: 2,
+    fontStyle: 'italic',
   },
   smallButton: {
     paddingVertical: 8,
