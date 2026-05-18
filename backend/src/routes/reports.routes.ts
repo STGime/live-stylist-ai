@@ -4,6 +4,7 @@ import * as dbService from '../services/db.service.js';
 import { ConflictError, NotFoundError } from '../services/db.service.js';
 import { logger } from '../utils/logger.js';
 import { deviceIdMiddleware } from '../middleware/device-id.middleware.js';
+import { reportRateLimiter } from '../middleware/rate-limiter.middleware.js';
 
 const router = Router();
 
@@ -12,7 +13,12 @@ router.use(deviceIdMiddleware);
 // POST /reports — anyone with a registered device can submit. Idempotent on
 // (reporter, target_kind, target_id) tuple while a prior report on the same
 // target is still open. See #14a for the App Review §1.2 context.
-router.post('/reports', async (req: Request, res: Response, next: NextFunction) => {
+//
+// Rate-limited (20/hr/device) — idempotency only dedupes exact tuples, so
+// without a limiter a malicious user could flood the moderation queue with
+// reports against fabricated target_ids and degrade the very signal §1.2
+// compliance depends on.
+router.post('/reports', reportRateLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const body = ReportBodySchema.parse(req.body);
     await dbService.createReport(
