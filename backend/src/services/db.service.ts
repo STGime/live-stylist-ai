@@ -11,6 +11,10 @@ import type {
   FollowStatus,
   SessionImageRow,
   BlockRow,
+  ReportRow,
+  ReportTargetKind,
+  ReportCategory,
+  ReportAction,
 } from '../types/index.js';
 
 // 'users' is reserved by the Eurobase platform auth users table, so device-keyed
@@ -18,6 +22,7 @@ import type {
 const USERS_TABLE = 'app_users';
 const SESSIONS_TABLE = 'sessions';
 const MEMORIES_TABLE = 'session_memories';
+const REPORTS_TABLE = 'content_reports';
 const FOLLOWS_TABLE = 'follows';
 const SESSION_IMAGES_TABLE = 'session_images';
 const BLOCKS_TABLE = 'blocks';
@@ -41,6 +46,11 @@ interface SessionRow extends SessionRecord {
 interface MemoryRow extends SessionMemory {
   id: string;
   device_id: string;
+  // Set by admins via POST /reports/:id/resolve action=content_removed.
+  // When non-null, the memory is excluded from every feed and detail
+  // endpoint (filtered client-side since the Eurobase SDK doesn't
+  // expose an `IS NULL` operator).
+  hidden_at?: string | null;
 }
 
 function stripRow<T extends { id?: string; device_id?: string }>(row: T): Omit<T, 'id' | 'device_id'> {
@@ -384,7 +394,9 @@ async function queryMemories(deviceId: string, limit: number): Promise<SessionMe
   if (error) throw new Error(`queryMemories failed: ${error}`);
   if (!data) return [];
   const rows = Array.isArray(data) ? data : [data];
-  return rows.map(row => stripRow(row) as SessionMemory);
+  // Client-side filter for hidden_at — Eurobase SDK has no IS NULL op.
+  // Sessions taken down via #14 admin moderation never surface here.
+  return rows.filter((row) => row.hidden_at == null).map(row => stripRow(row) as SessionMemory);
 }
 
 export async function getSessionMemory(deviceId: string, sessionId: string): Promise<SessionMemory | null> {
@@ -400,7 +412,8 @@ export async function getSessionMemory(deviceId: string, sessionId: string): Pro
   }
   if (!data) return null;
   const row = Array.isArray(data) ? data[0] : data;
-  return row ? (stripRow(row) as SessionMemory) : null;
+  if (!row || row.hidden_at != null) return null;
+  return stripRow(row) as SessionMemory;
 }
 
 /**
@@ -422,7 +435,7 @@ export async function findSessionMemoryWithOwner(
   }
   if (!data) return null;
   const row = Array.isArray(data) ? data[0] : data;
-  if (!row) return null;
+  if (!row || row.hidden_at != null) return null;
   return { memory: stripRow(row) as SessionMemory, ownerDeviceId: row.device_id };
 }
 
@@ -1013,7 +1026,10 @@ export async function getFollowedSessionFeed(
         logger.warn({ followee: f.followee_device_id, error }, 'feed: memory fetch failed');
         return { follow: f, rows: [] as MemoryRow[] };
       }
-      const rows = Array.isArray(data) ? data : data ? [data] : [];
+      const allRows = Array.isArray(data) ? data : data ? [data] : [];
+      // Filter admin-hidden rows (#14 moderation). SDK has no IS NULL op
+      // so we filter client-side here too.
+      const rows = allRows.filter((r) => r.hidden_at == null);
       return { follow: f, rows };
     }),
   );
@@ -1056,6 +1072,160 @@ export async function getFollowedSessionFeed(
 
   results.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
   return results.slice(0, limit);
+}
+
+// --- Content reports (#14 UGC compliance) ---
+
+/** Admin gating for moderation endpoints. Matches isTesterDevice's
+ *  shape — comma-separated allowlist of device IDs in env. Operator
+ *  sets via gcloud; cloudbuild deploys preserve it (#28). */
+export function isAdminDevice(deviceId: string): boolean {
+  const env = getEnv();
+  if (!env.ADMIN_DEVICE_IDS) return false;
+  return env.ADMIN_DEVICE_IDS.split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .includes(deviceId);
+}
+
+/** Create a content report. Idempotent on the
+ *  (reporter, target_kind, target_id) tuple — a second submission
+ *  from the same reporter against the same target while the first
+ *  is still open is a no-op (returns the existing row). Avoids
+ *  spam-reporting the same item to inflate counts. */
+export async function createReport(
+  reporterDeviceId: string,
+  targetKind: ReportTargetKind,
+  targetId: string,
+  category: ReportCategory,
+  freeText?: string,
+): Promise<ReportRow> {
+  const eb = getEurobase();
+  // Idempotency check — only against open reports; resolved ones can be
+  // re-opened by a fresh report (e.g. user posted new harassing content
+  // after the first report was dismissed).
+  const existing = await eb.db
+    .from<ReportRow>(REPORTS_TABLE)
+    .eq('reporter_device_id', reporterDeviceId)
+    .eq('target_kind', targetKind)
+    .eq('target_id', targetId)
+    .eq('status', 'open');
+  if (!existing.error && existing.data) {
+    const rows = Array.isArray(existing.data) ? existing.data : [existing.data];
+    if (rows.length > 0) return rows[0] as ReportRow;
+  }
+
+  const { data, error } = await eb.db.from<ReportRow>(REPORTS_TABLE).insert({
+    reporter_device_id: reporterDeviceId,
+    target_kind: targetKind,
+    target_id: targetId,
+    category,
+    ...(freeText && { free_text: freeText }),
+    status: 'open',
+  });
+  if (error || !data) throw new Error(`createReport failed: ${error ?? 'no data'}`);
+  return Array.isArray(data) ? (data[0] as ReportRow) : (data as ReportRow);
+}
+
+/** Admin read of all open reports, newest first. */
+export async function listOpenReports(): Promise<ReportRow[]> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<ReportRow>(REPORTS_TABLE)
+    .eq('status', 'open')
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw new Error(`listOpenReports failed: ${error}`);
+  if (!data) return [];
+  return Array.isArray(data) ? data : [data];
+}
+
+/** Mark a memory hidden from feeds. Idempotent — re-hiding an already-
+ *  hidden row is a no-op. Used by resolveReport when admin picks
+ *  content_removed. */
+export async function setSessionMemoryHidden(sessionId: string): Promise<void> {
+  const eb = getEurobase();
+  const lookup = await eb.db
+    .from<MemoryRow>(MEMORIES_TABLE)
+    .select('id,hidden_at')
+    .eq('session_id', sessionId)
+    .single();
+  if (lookup.error || !lookup.data) {
+    throw new NotFoundError('Session memory not found');
+  }
+  const row = Array.isArray(lookup.data) ? lookup.data[0] : lookup.data;
+  if (!row) throw new NotFoundError('Session memory not found');
+  if (row.hidden_at) return;
+  const { error } = await eb.db
+    .from(MEMORIES_TABLE)
+    .update(row.id, { hidden_at: new Date().toISOString() });
+  if (error) throw new Error(`setSessionMemoryHidden failed: ${error}`);
+}
+
+/** Hide every session memory belonging to a device. Used for the
+ *  user_banned action — wipes a banned user's feed presence in one
+ *  pass. Returns the count of rows updated. */
+export async function hideAllSessionsForOwner(ownerDeviceId: string): Promise<number> {
+  const eb = getEurobase();
+  const { data, error } = await eb.db
+    .from<MemoryRow>(MEMORIES_TABLE)
+    .select('id,hidden_at')
+    .eq('device_id', ownerDeviceId);
+  if (error) throw new Error(`hideAllSessionsForOwner failed: ${error}`);
+  if (!data) return 0;
+  const rows = Array.isArray(data) ? data : [data];
+  const nowIso = new Date().toISOString();
+  let hidden = 0;
+  for (const row of rows) {
+    if (row.hidden_at || !row.id) continue;
+    const upd = await eb.db.from(MEMORIES_TABLE).update(row.id, { hidden_at: nowIso });
+    if (!upd.error) hidden += 1;
+  }
+  return hidden;
+}
+
+/** Admin resolves an open report. action determines side effects:
+ *    - dismissed: just marks the report resolved
+ *    - content_removed: hides the target session (target_kind must be 'session')
+ *    - user_banned: hides every session belonging to the target user
+ *      (target_kind must be 'user'). Does NOT also insert a block —
+ *      block table is user-initiated; admin ban is enforced via
+ *      hidden_at on existing content + future enforcement can layer on. */
+export async function resolveReport(
+  reportId: string,
+  action: ReportAction,
+  adminDeviceId: string,
+): Promise<ReportRow> {
+  const eb = getEurobase();
+  const lookup = await eb.db.from<ReportRow>(REPORTS_TABLE).eq('id', reportId).single();
+  if (lookup.error || !lookup.data) {
+    throw new NotFoundError('Report not found');
+  }
+  const report = Array.isArray(lookup.data) ? lookup.data[0] : lookup.data;
+  if (!report) throw new NotFoundError('Report not found');
+  if (report.status !== 'open') {
+    throw new ConflictError(`Report already resolved (${report.status})`);
+  }
+
+  if (action === 'content_removed') {
+    if (report.target_kind !== 'session') {
+      throw new ConflictError(`content_removed action requires target_kind=session (got ${report.target_kind})`);
+    }
+    await setSessionMemoryHidden(report.target_id);
+  } else if (action === 'user_banned') {
+    if (report.target_kind !== 'user') {
+      throw new ConflictError(`user_banned action requires target_kind=user (got ${report.target_kind})`);
+    }
+    await hideAllSessionsForOwner(report.target_id);
+  }
+
+  const { error } = await eb.db.from(REPORTS_TABLE).update(report.id, {
+    status: action,
+    resolved_at: new Date().toISOString(),
+    resolved_by_device_id: adminDeviceId,
+  });
+  if (error) throw new Error(`resolveReport failed: ${error}`);
+  return { ...report, status: action, resolved_at: new Date().toISOString(), resolved_by_device_id: adminDeviceId };
 }
 
 // --- Custom Errors ---

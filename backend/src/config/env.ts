@@ -28,6 +28,10 @@ const EnvSchema = z.object({
   TESTER_DEVICE_IDS: z.string().optional(),
   TESTER_SECRET: z.string().optional(),
   TESTER_MONTHLY_SESSION_CAP: z.coerce.number().default(100),
+  // Comma-separated list of device IDs allowed to call the admin-only
+  // reports endpoints (#14a). Operator-managed via gcloud — persists
+  // across cloudbuild deploys since #28.
+  ADMIN_DEVICE_IDS: z.string().optional(),
   SESSION_DURATION_SECONDS: z.coerce.number().default(300),
   SESSION_WARNING_SECONDS: z.coerce.number().default(270),
   AWIN_API_TOKEN: z.string().optional(),
