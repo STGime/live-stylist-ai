@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
 import FloatingBubbles from '../components/FloatingBubbles';
 import * as api from '../services/api';
+import { isSessionReported } from '../services/reported';
 import type { RootStackParamList, FeedItem } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Feed'>;
@@ -48,10 +49,12 @@ export default function FeedScreen({ navigation }: Props) {
       let active = true;
       setLoading(true);
       api.getFeed().then((data) => {
-        if (active) {
-          setItems(data);
-          setLoading(false);
-        }
+        if (!active) return;
+        // Optimistic hide: skip rows the user reported this launch.
+        // Server-side hidden_at filter handles the persistent case
+        // once an admin acts.
+        setItems(data.filter((item) => !isSessionReported(item.session_id)));
+        setLoading(false);
       }).catch(() => {
         if (active) setLoading(false);
       });

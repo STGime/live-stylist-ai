@@ -257,3 +257,21 @@ export function blockByFollowId(followId: string) {
 export function unblock(id: string) {
   return apiRequest<void>('DELETE', `/blocks/${id}`);
 }
+
+// Content reports (#14b)
+export type ReportTargetKind = 'session' | 'follow_request' | 'user';
+export type ReportCategory = 'sexual' | 'violent' | 'harassing' | 'spam' | 'other';
+
+export function submitReport(
+  targetKind: ReportTargetKind,
+  targetId: string,
+  category: ReportCategory,
+  freeText?: string,
+) {
+  return apiRequest<void>('POST', '/reports', {
+    target_kind: targetKind,
+    target_id: targetId,
+    category,
+    ...(freeText && { free_text: freeText }),
+  });
+}

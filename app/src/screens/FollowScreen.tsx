@@ -16,6 +16,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
 import FloatingBubbles from '../components/FloatingBubbles';
 import { useDialog } from '../components/AppDialog';
+import ReportSheet from '../components/ReportSheet';
+import { isFollowRequestReported, markFollowRequestReported } from '../services/reported';
 import * as api from '../services/api';
 import { registerForPushNotifications } from '../services/push';
 import type { RootStackParamList, FollowSummary, BlockSummary } from '../types';
@@ -35,6 +37,7 @@ export default function FollowScreen({ navigation }: Props) {
   const [blocked, setBlocked] = useState<BlockSummary[]>([]);
   const [editingAliasId, setEditingAliasId] = useState<string | null>(null);
   const [aliasDraft, setAliasDraft] = useState('');
+  const [reportTargetId, setReportTargetId] = useState<string | null>(null);
 
   const refresh = useCallback(async (opts: { silent?: boolean } = {}) => {
     if (!opts.silent) setLoading(true);
@@ -241,6 +244,11 @@ export default function FollowScreen({ navigation }: Props) {
     }
   };
 
+  // Single derived list — used by both the section gate and the map.
+  // Hoisted so the filter predicate runs once per render and the two
+  // call sites can't drift if the predicate ever grows.
+  const visiblePending = pending.filter((p) => !isFollowRequestReported(p.id));
+
   return (
     <LinearGradient
       colors={[COLORS.cream, COLORS.pinkPale, COLORS.offWhite]}
@@ -310,18 +318,26 @@ export default function FollowScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
 
-          {/* Incoming pending */}
-          {pending.length > 0 && (
+          {/* Incoming pending. A visible "Hold to report" caption
+              under the name makes the §1.2 report path discoverable
+              to an App Review reviewer (and any sighted user) without
+              crowding the Allow / Decline buttons. */}
+          {visiblePending.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Wants to follow you</Text>
-              {pending.map((p) => (
+              {visiblePending.map((p) => (
                 <View key={p.id} style={styles.row}>
-                  <View style={{ flex: 1 }}>
+                  <TouchableOpacity
+                    style={{ flex: 1 }}
+                    activeOpacity={0.7}
+                    onLongPress={() => setReportTargetId(p.id)}
+                    accessibilityLabel={`Long press to report ${p.follower_name ?? 'this user'}`}>
                     <Text style={styles.rowName}>{p.follower_name ?? 'Someone'}</Text>
                     {p.follower_magic_id && (
                       <Text style={styles.rowMeta}>{p.follower_magic_id}</Text>
                     )}
-                  </View>
+                    <Text style={styles.rowHint}>Hold to report</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleRespond(p.id, 'accept')}
                     style={[styles.smallButton, styles.acceptButton]}>
@@ -462,6 +478,25 @@ export default function FollowScreen({ navigation }: Props) {
           </View>
         </ScrollView>
       )}
+
+      <ReportSheet
+        visible={reportTargetId !== null}
+        target={reportTargetId ? { kind: 'follow_request', id: reportTargetId } : null}
+        onClose={() => setReportTargetId(null)}
+        onSubmitted={() => {
+          if (!reportTargetId) return;
+          const id = reportTargetId;
+          // Mark for the optimistic hide so the row disappears even
+          // before the next refresh, then auto-deny on the server so
+          // the requester also stops seeing it as pending.
+          markFollowRequestReported(id);
+          setPending((prev) => prev.filter((p) => p.id !== id));
+          api.respondToFollow(id, 'deny').catch(() => {
+            // Non-fatal — if the deny fails, the report is still
+            // logged server-side and the row is hidden locally.
+          });
+        }}
+      />
     </LinearGradient>
   );
 }
@@ -593,6 +628,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textMuted,
     letterSpacing: 1,
+  },
+  rowHint: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: COLORS.textMuted,
+    marginTop: 2,
+    fontStyle: 'italic',
   },
   smallButton: {
     paddingVertical: 8,
