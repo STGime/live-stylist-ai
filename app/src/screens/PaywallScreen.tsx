@@ -253,8 +253,9 @@ export default function PaywallScreen({ navigation, route }: Props) {
 
       <Text style={styles.fineprint}>
         Subscriptions auto-renew until cancelled. Manage in your device's
-        subscription settings. Terms: https://livestylist.app/terms — Privacy:
-        https://livestylist.app/privacy
+        subscription settings. Terms: https://livestylist.app/terms.html — Privacy:
+        https://livestylist.app/privacy.html — Community Guidelines:
+        https://livestylist.app/community-guidelines.html
       </Text>
     </ScrollView>
   );

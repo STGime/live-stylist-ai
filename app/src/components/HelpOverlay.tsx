@@ -15,10 +15,13 @@ import {
   ScrollView,
   Switch,
   Dimensions,
+  Linking,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
 import { COLORS } from '../theme/colors';
+
+const COMMUNITY_GUIDELINES_URL = 'https://livestylist.app/community-guidelines.html';
 
 interface Props {
   visible: boolean;
@@ -178,17 +181,24 @@ export default function HelpOverlay({ visible, onDismiss }: Props) {
                 standard mobile expectation that the label is part of the
                 hit target. */}
             {isLast ? (
-              <TouchableOpacity
-                style={styles.dontShowRow}
-                onPress={() => setDontShowAgain((v) => !v)}
-                activeOpacity={0.8}>
-                <Switch
-                  value={dontShowAgain}
-                  onValueChange={setDontShowAgain}
-                  trackColor={{ false: COLORS.pinkLight, true: COLORS.pink }}
-                />
-                <Text style={styles.dontShowLabel}>Don’t show this again</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  style={styles.dontShowRow}
+                  onPress={() => setDontShowAgain((v) => !v)}
+                  activeOpacity={0.8}>
+                  <Switch
+                    value={dontShowAgain}
+                    onValueChange={setDontShowAgain}
+                    trackColor={{ false: COLORS.pinkLight, true: COLORS.pink }}
+                  />
+                  <Text style={styles.dontShowLabel}>Don’t show this again</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(COMMUNITY_GUIDELINES_URL).catch(() => {})}
+                  accessibilityRole="link">
+                  <Text style={styles.guidelinesLink}>Community Guidelines</Text>
+                </TouchableOpacity>
+              </>
             ) : null}
 
             <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
@@ -291,6 +301,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.textMid,
+  },
+  guidelinesLink: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.pink,
+    textAlign: 'center',
+    marginBottom: 10,
+    textDecorationLine: 'underline',
   },
   nextButton: {
     alignSelf: 'center',
