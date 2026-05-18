@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Platform,
   ToastAndroid,
+  Linking,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { PurchasesPackage, PurchasesOffering } from 'react-native-purchases';
@@ -251,11 +252,30 @@ export default function PaywallScreen({ navigation, route }: Props) {
         </BubbleButton>
       </View>
 
+      {/* Tappable Terms + Privacy links are required by Apple Guideline
+          3.1.2 for auto-renewable subscriptions — plaintext URLs in a
+          <Text> have triggered rejections. Community Guidelines doesn't
+          strictly need to be tappable but matches the pattern. */}
       <Text style={styles.fineprint}>
         Subscriptions auto-renew until cancelled. Manage in your device's
-        subscription settings. Terms: https://livestylist.app/terms.html — Privacy:
-        https://livestylist.app/privacy.html — Community Guidelines:
-        https://livestylist.app/community-guidelines.html
+        subscription settings.{' '}
+        <Text
+          style={styles.fineprintLink}
+          onPress={() => Linking.openURL('https://livestylist.app/terms.html').catch(() => {})}>
+          Terms
+        </Text>
+        {' — '}
+        <Text
+          style={styles.fineprintLink}
+          onPress={() => Linking.openURL('https://livestylist.app/privacy.html').catch(() => {})}>
+          Privacy
+        </Text>
+        {' — '}
+        <Text
+          style={styles.fineprintLink}
+          onPress={() => Linking.openURL('https://livestylist.app/community-guidelines.html').catch(() => {})}>
+          Community Guidelines
+        </Text>
       </Text>
     </ScrollView>
   );
@@ -328,4 +348,5 @@ const styles = StyleSheet.create({
   restore: { color: COLORS.charcoal, opacity: 0.6, textAlign: 'center', marginBottom: 16, textDecorationLine: 'underline' },
   dismiss: { marginBottom: 24 },
   fineprint: { fontSize: 11, color: COLORS.charcoal, opacity: 0.5, textAlign: 'center', lineHeight: 16 },
+  fineprintLink: { color: COLORS.pink, textDecorationLine: 'underline', opacity: 1 },
 });
