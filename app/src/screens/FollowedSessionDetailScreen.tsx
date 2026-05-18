@@ -13,6 +13,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { COLORS } from '../theme/colors';
 import FloatingBubbles from '../components/FloatingBubbles';
+import ReportSheet from '../components/ReportSheet';
+import { markSessionReported } from '../services/reported';
 import * as api from '../services/api';
 import type { RootStackParamList, FollowedSessionDetail } from '../types';
 
@@ -34,6 +36,7 @@ export default function FollowedSessionDetailScreen({ route, navigation }: Props
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
   const [zoomIndex, setZoomIndex] = useState<number | null>(null);
+  const [reportVisible, setReportVisible] = useState(false);
 
   // Derived from the fetched detail, not the navigation params, so a
   // hand-crafted navigate({ isOwner: true }) on a session that isn't
@@ -83,7 +86,18 @@ export default function FollowedSessionDetailScreen({ route, navigation }: Props
             return name ? `${name}'s session` : 'Session';
           })()}
         </Text>
-        <View style={styles.backButton} />
+        {/* Report ⋯ only for other people's sessions — you can't
+            report your own past session from the history view. */}
+        {!isOwner && detail ? (
+          <TouchableOpacity
+            onPress={() => setReportVisible(true)}
+            style={styles.backButton}
+            accessibilityLabel="Report this session">
+            <Text style={styles.moreText}>⋯</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.backButton} />
+        )}
       </View>
 
       {loading ? (
@@ -152,6 +166,19 @@ export default function FollowedSessionDetailScreen({ route, navigation }: Props
         doubleTapToZoomEnabled
         backgroundColor="#000"
       />
+
+      <ReportSheet
+        visible={reportVisible}
+        target={detail ? { kind: 'session', id: sessionId } : null}
+        onClose={() => setReportVisible(false)}
+        onSubmitted={() => {
+          // Optimistic hide: FeedScreen reads this set on next focus
+          // and filters the row out. Persistent global hide kicks in
+          // when an admin sets hidden_at server-side.
+          markSessionReported(sessionId);
+          navigation.goBack();
+        }}
+      />
     </LinearGradient>
   );
 }
@@ -177,6 +204,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.pinkLight + '40',
   },
   backText: { fontSize: 20, fontWeight: '700', color: COLORS.textDark },
+  moreText: { fontSize: 22, fontWeight: '900', color: COLORS.textDark, lineHeight: 22 },
   title: { fontSize: 18, fontWeight: '800', color: COLORS.textDark, maxWidth: 220 },
   scroll: { padding: 18, paddingBottom: 60, gap: 14 },
   gallery: { gap: 12, paddingRight: 18 },
