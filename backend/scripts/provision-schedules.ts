@@ -4,15 +4,10 @@
 //
 //   npx tsx scripts/provision-schedules.ts
 //
-// Notes:
-//   - The target function (`purge-expired-images`) has to be deployed to
-//     Eurobase before any tick can do work. Source lives in
-//     `functions/purge-expired-images.ts` — paste it into the Eurobase
-//     dashboard once until `eb.functions.deploy(...)` lands in the SDK.
-//   - Once this script + the deployed function are both in place,
-//     /internal/purge-images, PURGE_SECRET, the Cloud Run env mount,
-//     and scripts/setup-purge-scheduler.sh are all redundant and can
-//     be retired.
+// The target function (`purge-expired-images`) has to be deployed to
+// Eurobase before any tick can do work. Source lives in
+// `functions/purge-expired-images.ts` — paste it into the Eurobase
+// dashboard once until `eb.functions.deploy(...)` lands in the SDK.
 
 import 'dotenv/config';
 import { createClient } from '@eurobase/sdk';

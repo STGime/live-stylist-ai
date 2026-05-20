@@ -15,7 +15,6 @@ import followRoutes from './routes/follow.routes.js';
 import blocksRoutes from './routes/blocks.routes.js';
 import feedRoutes from './routes/feed.routes.js';
 import reportsRoutes from './routes/reports.routes.js';
-import internalRoutes from './routes/internal.routes.js';
 import { setupWebSocket } from './ws/session-control.ws.js';
 import { setupAdkWebSocket, shutdownAdkSessions } from './ws/adk-session.ws.js';
 import { shutdownAllSessions } from './services/session-manager.service.js';
@@ -73,14 +72,10 @@ app.set('trust proxy', 1);
 app.set('etag', false);
 
 // Routes. Order matters: routers that don't use deviceIdMiddleware
-// (health, internal) must be mounted FIRST. The middleware is wired via
-// `router.use(...)` on each app-user-facing router, but because Express
-// runs every mounted router's middleware in order, that `router.use(...)`
-// applies to any subsequent router as well — so internalRoutes mounted
-// after userRoutes would 400 with "missing X-Device-ID" before its own
-// handler runs. Keeping internal first sidesteps that.
+// (health) must be mounted FIRST, because deviceIdMiddleware is wired
+// via `router.use(...)` on each app-user-facing router and Express
+// applies that middleware to any subsequent router too.
 app.use(healthRoutes);
-app.use(internalRoutes);
 app.use(userRoutes);
 app.use(sessionRoutes);
 app.use(followRoutes);
