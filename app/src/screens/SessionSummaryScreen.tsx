@@ -66,13 +66,16 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
     ]).start();
   }, [fadeAnim, slideAnim]);
 
-  // One-shot session counter increment. Each Summary screen mount == one
-  // completed session, regardless of whether the user actually sees the
-  // review modal (the counter still bumps so the every-2nd cadence keeps
-  // ticking).
+  // One-shot session counter increment. Each non-error Summary mount ==
+  // one completed session. We deliberately skip `reason === 'error'`
+  // sessions — asking for a review immediately after a failed session
+  // is the worst possible moment, and we'd rather miss a bump than nag
+  // a frustrated user. The every-2nd cadence still ticks on subsequent
+  // successful sessions.
   useEffect(() => {
+    if (reason === 'error') return;
     incrementSessionCount().then(setSessionCount).catch(() => {});
-  }, []);
+  }, [reason]);
 
   // Schedule the review prompt for a trigger-eligible session, after the
   // summary has settled (so the user actually gets to recap the result

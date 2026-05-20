@@ -33,9 +33,19 @@ export default function ReviewPromptSheet({ visible, onYes, onNo }: Props) {
       <TouchableOpacity
         style={styles.backdrop}
         activeOpacity={1}
-        onPress={onNo}>
-        {/* Inner swallow so taps on the card don't dismiss. */}
-        <TouchableOpacity activeOpacity={1} onPress={() => {}} style={styles.cardWrap}>
+        onPress={onNo}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss review prompt">
+        {/* Inner swallow so taps on the card don't dismiss. Made
+            non-accessible so VoiceOver / TalkBack pass focus straight
+            to the actual content (title, body, buttons) instead of
+            landing on an unlabeled wrapper button. */}
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => {}}
+          style={styles.cardWrap}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants">
           <View style={styles.card}>
             <Text style={styles.emoji}>💖</Text>
             <Text style={styles.title} accessibilityRole="header">
@@ -49,13 +59,17 @@ export default function ReviewPromptSheet({ visible, onYes, onNo }: Props) {
               <TouchableOpacity
                 onPress={onNo}
                 style={[styles.button, styles.secondary]}
-                activeOpacity={0.8}>
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Not now">
                 <Text style={styles.secondaryText}>Not now</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={onYes}
                 style={[styles.button, styles.primary]}
-                activeOpacity={0.85}>
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Sure, leave a review">
                 <Text style={styles.primaryText}>Sure!</Text>
               </TouchableOpacity>
             </View>
