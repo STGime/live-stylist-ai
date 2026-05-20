@@ -9,9 +9,6 @@
 //     Name:       purge-expired-images
 //     Runtime:    TypeScript (or whatever Eurobase calls its TS option)
 //     Body:       (paste the source below)
-//
-// Replaces the Cloud Run /internal/purge-images endpoint + PURGE_SECRET +
-// Cloud Scheduler chain — all of which can be retired once this is live.
 
 // @ts-expect-error — `eurobase:edge` is provided by the Eurobase runtime
 // at execution time. The SDK package on npm doesn't ship it.

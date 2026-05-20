@@ -981,24 +981,6 @@ export async function getSessionImages(sessionId: string): Promise<SessionImageR
   return rows;
 }
 
-export async function purgeExpiredSessionImages(): Promise<number> {
-  const eb = getEurobase();
-  const nowIso = new Date().toISOString();
-  const { data, error } = await eb.db
-    .from<SessionImageRow>(SESSION_IMAGES_TABLE)
-    .select('id')
-    .lte('expires_at', nowIso);
-  if (error) throw new Error(`purgeExpiredSessionImages select failed: ${error}`);
-  const rows = Array.isArray(data) ? data : data ? [data] : [];
-  let purged = 0;
-  for (const row of rows) {
-    if (!row?.id) continue;
-    const del = await eb.db.from(SESSION_IMAGES_TABLE).delete(row.id);
-    if (!del.error) purged++;
-  }
-  return purged;
-}
-
 export async function getFollowedSessionFeed(
   followerDeviceId: string,
   limit = 30,
