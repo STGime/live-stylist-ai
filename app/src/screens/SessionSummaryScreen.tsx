@@ -16,9 +16,22 @@ import { COLORS } from '../theme/colors';
 import BubbleButton from '../components/BubbleButton';
 import FloatingBubbles from '../components/FloatingBubbles';
 import Confetti from '../components/Confetti';
+import ReviewPromptSheet from '../components/ReviewPromptSheet';
 import { shareSummary } from '../utils/shareSummary';
 import * as api from '../services/api';
+import {
+  incrementSessionCount,
+  shouldShowReviewPrompt,
+  markReviewSatisfied,
+  requestStoreReview,
+} from '../services/review-prompt';
 import type { RootStackParamList, SessionHistoryItem } from '../types';
+
+// How long to wait after the summary finishes loading before showing the
+// review prompt. Long enough that the user has had a beat to skim the
+// summary + tips ("recap the results"), short enough that it doesn't feel
+// disconnected from the session that just ended.
+const REVIEW_PROMPT_DELAY_MS = 3000;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SessionSummary'>;
 
@@ -40,12 +53,68 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptsRef = useRef(0);
 
+  // Review prompt: counter bumped once on mount, modal shown after the
+  // summary settles + a short grace period so the user gets to recap
+  // before being interrupted.
+  const [sessionCount, setSessionCount] = useState<number | null>(null);
+  const [reviewVisible, setReviewVisible] = useState(false);
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 800, delay: 200, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 800, delay: 200, useNativeDriver: true }),
     ]).start();
   }, [fadeAnim, slideAnim]);
+
+  // One-shot session counter increment. Each non-error Summary mount ==
+  // one completed session. We deliberately skip `reason === 'error'`
+  // sessions — asking for a review immediately after a failed session
+  // is the worst possible moment, and we'd rather miss a bump than nag
+  // a frustrated user. The every-2nd cadence still ticks on subsequent
+  // successful sessions.
+  useEffect(() => {
+    if (reason === 'error') return;
+    incrementSessionCount().then(setSessionCount).catch(() => {});
+  }, [reason]);
+
+  // Schedule the review prompt for a trigger-eligible session, after the
+  // summary has settled (so the user actually gets to recap the result
+  // before being interrupted). For sessions with no `sessionId`, fall
+  // through after a fixed grace.
+  useEffect(() => {
+    if (sessionCount === null) return; // not yet counted
+    if (sessionId && summaryLoading) return; // wait for summary
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    (async () => {
+      const ok = await shouldShowReviewPrompt(sessionCount);
+      if (cancelled || !ok) return;
+      timer = setTimeout(() => {
+        if (!cancelled) setReviewVisible(true);
+      }, REVIEW_PROMPT_DELAY_MS);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [sessionCount, sessionId, summaryLoading]);
+
+  const handleReviewYes = () => {
+    setReviewVisible(false);
+    markReviewSatisfied().catch(() => {});
+    // Fire-and-forget — the OS-native prompt is itself silent past its
+    // rate limit, and we've already recorded the user's intent so we
+    // won't ask again on this device.
+    requestStoreReview().catch(() => {});
+  };
+
+  const handleReviewNo = () => {
+    setReviewVisible(false);
+    // Don't flip `satisfied` — the every-2nd-session cadence will retry.
+  };
 
   // Poll for session summary
   useEffect(() => {
@@ -200,6 +269,12 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
         </View>
       </Animated.View>
       </ScrollView>
+
+      <ReviewPromptSheet
+        visible={reviewVisible}
+        onYes={handleReviewYes}
+        onNo={handleReviewNo}
+      />
     </LinearGradient>
   );
 }
