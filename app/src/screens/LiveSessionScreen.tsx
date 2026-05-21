@@ -338,6 +338,13 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
         </View>
       )}
 
+      {/* AI disclaimer footer — required by Apple/Play for AI-mediated advice */}
+      {mounted && (
+        <Text style={styles.aiDisclaimer} pointerEvents="none">
+          Advice is AI-generated, not professional styling.
+        </Text>
+      )}
+
       {/* Product carousel */}
       {mounted && (
         <ProductCarousel products={products} onDismiss={dismissProducts} />
@@ -456,6 +463,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     zIndex: 5,
+  },
+  aiDisclaimer: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 10,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.45)',
+    letterSpacing: 0.3,
+    zIndex: 6,
   },
   avatarLabel: {
     backgroundColor: 'rgba(0,0,0,0.45)',

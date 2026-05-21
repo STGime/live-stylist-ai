@@ -36,7 +36,8 @@
       },
       "android": {
         "buildType": "app-bundle",
-        "credentialsSource": "remote"
+        "credentialsSource": "remote",
+        "distribution": "store"
       },
       "ios": {
         "credentialsSource": "remote"
