@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Animated,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   TouchableOpacity,
 } from 'react-native';
@@ -28,6 +29,7 @@ export default function OnboardingScreen({ navigation }: Props) {
   const [stylistName, setStylistName] = useState('');
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [language, setLanguage] = useState<'en' | 'de'>('en');
+  const [confirmAge, setConfirmAge] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -48,6 +50,10 @@ export default function OnboardingScreen({ navigation }: Props) {
     }
     if (!selectedColor) {
       setError('Pick a fave color!');
+      return;
+    }
+    if (!confirmAge) {
+      setError('Please confirm you are 13 years or older.');
       return;
     }
 
@@ -182,9 +188,40 @@ export default function OnboardingScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.buttonArea}>
+            <TouchableOpacity
+              style={styles.ageRow}
+              onPress={() => {
+                setConfirmAge((v) => !v);
+                setError('');
+              }}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: confirmAge }}
+              accessibilityLabel="I confirm I am 13 years or older">
+              <View style={[styles.checkbox, confirmAge && styles.checkboxChecked]}>
+                {confirmAge ? <Text style={styles.checkboxMark}>✓</Text> : null}
+              </View>
+              <Text style={styles.ageText}>I confirm I'm 13+</Text>
+            </TouchableOpacity>
+
             <BubbleButton onPress={handleSubmit} disabled={loading}>
               {loading ? 'Setting up...' : "Let's Go!"}
             </BubbleButton>
+
+            <Text style={styles.legalText}>
+              By continuing you agree to our{' '}
+              <Text
+                style={styles.legalLink}
+                onPress={() => Linking.openURL('https://livestylist.app/terms.html').catch(() => {})}>
+                Terms
+              </Text>
+              {' and '}
+              <Text
+                style={styles.legalLink}
+                onPress={() => Linking.openURL('https://livestylist.app/community-guidelines.html').catch(() => {})}>
+                Community Guidelines
+              </Text>
+              .
+            </Text>
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -262,6 +299,51 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   buttonArea: { marginTop: 32 },
+  ageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: COLORS.pinkLight,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  checkboxChecked: {
+    backgroundColor: COLORS.pink,
+    borderColor: COLORS.pink,
+  },
+  checkboxMark: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 16,
+  },
+  ageText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textMid,
+  },
+  legalText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginTop: 18,
+    lineHeight: 18,
+  },
+  legalLink: {
+    color: COLORS.pink,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
   languageRow: {
     flexDirection: 'row',
     gap: 10,
