@@ -340,7 +340,7 @@ export default function LiveSessionScreen({ route, navigation }: Props) {
 
       {/* AI disclaimer footer — required by Apple/Play for AI-mediated advice */}
       {mounted && (
-        <Text style={styles.aiDisclaimer} pointerEvents="none">
+        <Text style={styles.aiDisclaimer}>
           Advice is AI-generated, not professional styling.
         </Text>
       )}
@@ -475,6 +475,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.45)',
     letterSpacing: 0.3,
     zIndex: 6,
+    pointerEvents: 'none',
   },
   avatarLabel: {
     backgroundColor: 'rgba(0,0,0,0.45)',
