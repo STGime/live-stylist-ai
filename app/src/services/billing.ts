@@ -22,12 +22,8 @@ const ENTITLEMENT_ID = 'premium';
 // keys, intended to be embedded in client bundles — they're not secrets,
 // so committing them is fine. The matching server-side REST API key
 // lives on Cloud Run as the REVENUECAT_API_KEY env var (different key).
-//
-// Google key still empty until the Play Console product is live and
-// imported into the same RC project; configureBilling() guards against
-// it being absent on Android so the app degrades gracefully.
 const APPLE_KEY = 'appl_gAIokSuKhVsvHCvXtimKxBxLdcy';
-const GOOGLE_KEY = '';
+const GOOGLE_KEY = 'goog_MsmMVhcNUdRaihLmXFkwcJtGMUp';
 
 let configured = false;
 // Concurrent callers (e.g. App.tsx kicking configureBilling on startup
