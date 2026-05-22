@@ -592,6 +592,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tierBadgePremium: {
+    backgroundColor: COLORS.gold,
     borderColor: COLORS.gold,
   },
   tierText: {
@@ -599,7 +600,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.textMid,
   },
-  tierTextPremium: { color: COLORS.white },
+  tierTextPremium: { color: COLORS.charcoal },
   profileButton: {
     width: 42,
     height: 42,
