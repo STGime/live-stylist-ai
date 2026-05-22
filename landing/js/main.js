@@ -1,42 +1,66 @@
-// ===== STARS BACKGROUND =====
-function createStars() {
-  const container = document.querySelector('.bg-stars');
+/* LiveStylist landing — interactive bits.
+ * Floating bubbles ported from app/src/components/FloatingBubbles.tsx
+ * (light palette, 18 bubbles, 12-52px, 6-16s float, opacity 0.25-0.5).
+ */
+
+// ----- Floating bubbles background -----
+// Same palette + size + duration distribution as the app component so the
+// landing and the in-app onboarding feel like the same animation.
+const BUBBLE_COLORS = [
+  '#FF8FAB', '#FF6B8A', '#C5A3FF', '#A78BFA', '#FFB88C',
+  '#F9A8D4', '#A8E6CF', '#6EE7B7', '#FFF3A3', '#FDE68A',
+  '#93C5FD', '#7DD3FC', '#E879F9', '#C084FC',
+];
+
+function rand(min, max) { return min + Math.random() * (max - min); }
+
+function createBubbles() {
+  const container = document.querySelector('.bubbles');
   if (!container) return;
-  const count = Math.floor(window.innerWidth * window.innerHeight / 8000);
+  // Reset any prior children (handles hot-reload-ish edge cases).
+  container.innerHTML = '';
+  const count = window.innerWidth < 760 ? 12 : 18;
   for (let i = 0; i < count; i++) {
-    const star = document.createElement('div');
-    star.className = 'star';
-    star.style.left = Math.random() * 100 + '%';
-    star.style.top = Math.random() * 100 + '%';
-    star.style.animationDelay = Math.random() * 5 + 's';
-    star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px';
-    container.appendChild(star);
+    const el = document.createElement('div');
+    el.className = 'bubble';
+    const size = rand(12, 52);
+    const left = Math.random() * 100;
+    const duration = rand(6, 16); // seconds, matches RN 6000-16000ms
+    const delay = -rand(0, duration); // negative so bubbles appear mid-flight at load
+    const opacity = rand(0.25, 0.5);
+    const color = BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)];
+    el.style.cssText =
+      `left:${left}%;` +
+      `width:${size}px;height:${size}px;` +
+      `background:${color};` +
+      `animation-duration:${duration}s;` +
+      `animation-delay:${delay}s;` +
+      `--bubble-opacity:${opacity};`;
+    container.appendChild(el);
   }
 }
 
-// ===== NAVBAR SCROLL =====
+// ----- Navbar shadow on scroll -----
 function initNavbar() {
   const navbar = document.querySelector('.navbar');
   if (!navbar) return;
-  window.addEventListener('scroll', () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 50);
-  });
+  const update = () => navbar.classList.toggle('scrolled', window.scrollY > 24);
+  update();
+  window.addEventListener('scroll', update, { passive: true });
 }
 
-// ===== MOBILE MENU =====
+// ----- Mobile nav toggle -----
 function initMobileMenu() {
   const toggle = document.querySelector('.nav-toggle');
   const links = document.querySelector('.nav-links');
   if (!toggle || !links) return;
-
   toggle.addEventListener('click', () => {
-    const isOpen = toggle.classList.toggle('active');
-    links.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', isOpen);
+    const open = toggle.classList.toggle('active');
+    links.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
   });
-
-  links.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => {
+  links.querySelectorAll('a').forEach((a) => {
+    a.addEventListener('click', () => {
       toggle.classList.remove('active');
       links.classList.remove('open');
       toggle.setAttribute('aria-expanded', 'false');
@@ -44,56 +68,39 @@ function initMobileMenu() {
   });
 }
 
-// ===== SCROLL ANIMATIONS =====
+// ----- Scroll-in animations -----
 function initScrollAnimations() {
-  const elements = document.querySelectorAll('.fade-in');
-  if (!elements.length) return;
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
+  const els = document.querySelectorAll('.fade-in');
+  if (!els.length) return;
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
+        obs.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.1 });
-
-  elements.forEach(el => observer.observe(el));
+  }, { threshold: 0.12 });
+  els.forEach((el) => obs.observe(el));
 }
 
-// ===== SMOOTH SCROLL =====
+// ----- Smooth anchor scrolling -----
 function initSmoothScroll() {
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
+  document.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const href = a.getAttribute('href');
+      if (!href || href === '#') return;
+      const target = document.querySelector(href);
+      if (!target) return;
       e.preventDefault();
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 }
 
-// ===== PARALLAX (subtle) =====
-function initParallax() {
-  const clouds = document.querySelectorAll('.cloud');
-  if (!clouds.length) return;
-
-  window.addEventListener('scroll', () => {
-    const scrollY = window.scrollY;
-    clouds.forEach((cloud, i) => {
-      const speed = 0.02 + (i * 0.01);
-      cloud.style.transform = `translateX(${-200 + scrollY * speed}px)`;
-    });
-  });
-}
-
-// ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
-  createStars();
+  createBubbles();
   initNavbar();
   initMobileMenu();
   initScrollAnimations();
   initSmoothScroll();
-  initParallax();
 });

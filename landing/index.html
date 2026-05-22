@@ -6,7 +6,7 @@
   <title>LiveStylist — AI Personal Stylist App | Real-Time Beauty & Style Advice</title>
   <meta name="description" content="LiveStylist is your AI personal stylist app. Get real-time outfit recommendations, beauty advice, and style tips powered by AI vision and voice — like having a fashion advisor in your pocket.">
   <meta name="author" content="LiveStylist">
-  <meta name="theme-color" content="#0f0f23">
+  <meta name="theme-color" content="#FFFAFC">
   <link rel="canonical" href="https://livestylist.app/">
   <link rel="icon" type="image/png" href="assets/favicon.png">
 
@@ -127,266 +127,294 @@
   }
   </script>
 
-  <!-- Fonts (non-blocking) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap">
-
-  <!-- Preload LCP image -->
-  <link rel="preload" as="image" href="assets/hero-character.png">
-
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Skip Navigation -->
   <a href="#main" class="skip-link">Skip to content</a>
 
-  <!-- Background Effects -->
-  <div class="bg-stars"></div>
-  <div class="bubbles">
-    <div class="bubble"></div>
-    <div class="bubble"></div>
-    <div class="bubble"></div>
-    <div class="bubble"></div>
-    <div class="bubble"></div>
-    <div class="bubble"></div>
-    <div class="bubble"></div>
-    <div class="bubble"></div>
-  </div>
-  <div class="clouds">
-    <div class="cloud"></div>
-    <div class="cloud"></div>
-    <div class="cloud"></div>
-  </div>
+  <!-- Floating bubbles background, populated by main.js -->
+  <div class="bubbles" aria-hidden="true"></div>
 
-  <!-- Navigation -->
   <header>
     <nav class="navbar" aria-label="Main navigation">
       <div class="nav-container">
-        <a href="#" class="nav-logo">LiveStylist</a>
+        <a href="#" class="nav-logo">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white"/></svg>
+          </span>
+          LiveStylist
+        </a>
         <ul class="nav-links">
           <li><a href="#features">Features</a></li>
           <li><a href="#how-it-works">How It Works</a></li>
           <li><a href="#pricing">Pricing</a></li>
           <li><a href="#download">Download</a></li>
           <li class="nav-dropdown">
-            <span class="nav-dropdown-toggle">Legal</span>
+            <span class="nav-dropdown-toggle" tabindex="0">Legal</span>
             <div class="nav-dropdown-menu">
               <a href="privacy.html">Privacy Policy</a>
-              <a href="terms.html">Terms & Conditions</a>
+              <a href="terms.html">Terms &amp; Conditions</a>
               <a href="community-guidelines.html">Community Guidelines</a>
               <a href="imprint.html">Imprint</a>
             </div>
           </li>
         </ul>
         <div class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false" role="button" tabindex="0">
-          <span></span>
-          <span></span>
-          <span></span>
+          <span></span><span></span><span></span>
         </div>
       </div>
     </nav>
   </header>
 
-  <!-- Hero Section -->
   <main id="main">
-  <section class="hero" id="hero">
-    <div class="hero-content">
-      <span class="hero-badge">POWERED BY AI VISION</span>
-      <img src="assets/hero-character.png" alt="Pixel art AI stylist character — LiveStylist personal style assistant mascot" class="hero-mascot" width="180" height="180">
-      <h1>Your AI Style<br>Sidekick</h1>
-      <p>Your personal stylist app powered by AI vision — get real-time outfit recommendations, beauty advice, and style tips like chatting with a fashion advisor who always knows what looks good.</p>
-      <div class="store-badges">
-        <div class="store-badge">
-          <img src="assets/app-store-badge.svg" alt="Download LiveStylist AI stylist on the App Store" width="120" height="40" loading="lazy">
-          <span class="coming-soon">COMING SOON</span>
-        </div>
-        <div class="store-badge">
-          <img src="assets/play-store-badge.svg" alt="Get LiveStylist AI stylist on Google Play" width="135" height="40" loading="lazy">
-          <span class="coming-soon">COMING SOON</span>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- Features Section -->
-  <section class="features" id="features">
-    <div class="section-container">
-      <h2 class="section-title fade-in">FEATURES</h2>
-      <p class="section-subtitle fade-in">Everything you need for personalized style advice, right in your pocket.</p>
-      <div class="features-grid">
-        <div class="feature-card fade-in fade-in-delay-1">
-          <img src="assets/feature-icons/icon-vision.png" alt="AI vision icon — real-time camera analysis of your style and outfit" class="feature-icon" width="80" height="80" loading="lazy">
-          <h3>See You, Know You</h3>
-          <p>AI vision analyzes your hair, makeup, and clothing in real-time. It sees what you see in the mirror and gives instant outfit recommendations and beauty feedback.</p>
+    <!-- Hero -->
+    <section class="hero" id="hero">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="hero-logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white"/></svg>
+          </div>
+          <span class="hero-badge">Powered by AI vision</span>
+          <h1>LiveStylist<br><span class="accent">your AI style bestie</span></h1>
+          <p class="hero-tagline">Live styling sessions in your pocket</p>
+          <p class="hero-lede">
+            Real-time outfit and beauty advice powered by AI vision + voice.
+            Five-minute sessions, personalised to you, ready whenever you are.
+          </p>
+          <div class="store-badges" id="hero-cta">
+            <a class="store-badge" href="#download" aria-label="App Store coming soon">
+              <img src="assets/app-store-badge.svg" alt="Download LiveStylist on the App Store" width="120" height="46" loading="eager">
+              <span class="coming-soon">Coming soon</span>
+            </a>
+            <a class="store-badge" href="#download" aria-label="Google Play coming soon">
+              <img src="assets/play-store-badge.svg" alt="Get LiveStylist on Google Play" width="135" height="46" loading="eager">
+              <span class="coming-soon">Coming soon</span>
+            </a>
+          </div>
         </div>
-        <div class="feature-card fade-in fade-in-delay-2">
-          <img src="assets/feature-icons/icon-voice.png" alt="Voice chat icon — natural conversation with your AI style advisor" class="feature-icon" width="80" height="80" loading="lazy">
-          <h3>Talk Naturally</h3>
-          <p>Have a real voice conversation with your AI style advisor. Interrupt, ask follow-ups, get personalized style tips — just like chatting with a friend.</p>
-        </div>
-        <div class="feature-card fade-in fade-in-delay-3">
-          <img src="assets/feature-icons/icon-memory.png" alt="Memory icon — personalized style preferences saved across sessions" class="feature-icon" width="80" height="80" loading="lazy">
-          <h3>Personal Memory</h3>
-          <p>Remembers your preferences, favorite colors, past sessions, and style evolution. Every session builds on the last for better beauty advice.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- How It Works Section -->
-  <section class="how-it-works" id="how-it-works">
-    <div class="section-container">
-      <h2 class="section-title fade-in">HOW IT WORKS</h2>
-      <p class="section-subtitle fade-in">Three simple steps to level up your style game.</p>
-      <div class="steps">
-        <div class="step fade-in fade-in-delay-1">
-          <div class="step-number">1</div>
-          <span class="step-label">Stage 1</span>
-          <h3>Start a Session</h3>
-          <p>Open the app and tap start. Choose your occasion — date night, office, casual — and you're in.</p>
-        </div>
-        <div class="step fade-in fade-in-delay-2">
-          <div class="step-number">2</div>
-          <span class="step-label">Stage 2</span>
-          <h3>Show Your Look</h3>
-          <p>Point your selfie camera at yourself. The AI-powered styling engine sees your hair, makeup, and outfit in real-time.</p>
-        </div>
-        <div class="step fade-in fade-in-delay-3">
-          <div class="step-number">3</div>
-          <span class="step-label">Stage 3</span>
-          <h3>Get Advice</h3>
-          <p>Receive instant, personalized style tips and outfit recommendations via voice. Ask questions, get alternatives, build your perfect look.</p>
+        <!-- Phone mockup. Drop a real device screenshot into hero-screenshot.png
+             and replace the .phone-mock block with `<img src="assets/hero-screenshot.png" alt="...">`. -->
+        <div class="hero-phone-wrap" aria-hidden="true">
+          <div class="phone-frame">
+            <div class="phone-screen">
+              <div class="phone-mock">
+                <div class="mock-timer">4:32</div>
+                <div class="mock-end">End</div>
+                <div class="mock-bubble b1">"Try a pop of pink"</div>
+                <div class="mock-bubble b2">"Mid-rise jeans?"</div>
+                <div class="mock-bubble b3">"Soft glam ✨"</div>
+                <div class="mock-avatar"></div>
+                <div class="mock-label">Stylist AI</div>
+                <div class="mock-orb">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <div class="mock-mute"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Pricing Section -->
-  <section class="pricing" id="pricing">
-    <div class="section-container">
-      <h2 class="section-title fade-in">SELECT YOUR CHARACTER</h2>
-      <p class="section-subtitle fade-in">Choose the plan that fits your style journey.</p>
-      <div class="pricing-grid">
-        <div class="pricing-card free fade-in fade-in-delay-1">
-          <span class="pricing-tag">FREE TRIAL</span>
-          <h3>Starter</h3>
-          <div class="pricing-price">$0</div>
-          <p class="pricing-period">1 session at signup</p>
-          <ul class="pricing-features">
-            <li>1 lifetime trial session</li>
-            <li>5 minutes long</li>
-            <li>Real-time AI vision</li>
-            <li>Voice conversation</li>
-            <li>Style preview generation</li>
-          </ul>
-          <button class="pricing-btn">GET STARTED</button>
-        </div>
-        <div class="pricing-card premium fade-in fade-in-delay-2">
-          <span class="pricing-tag">PRO PLAYER</span>
-          <h3>Premium</h3>
-          <div class="pricing-price">$14.99</div>
-          <p class="pricing-period">per month — or $119.99/year</p>
-          <ul class="pricing-features">
-            <li>Daily styling sessions</li>
-            <li>5 minutes per session</li>
-            <li>Real-time AI vision</li>
-            <li>Voice conversation</li>
-            <li>Style preview generation</li>
-            <li>Personal style memory</li>
-            <li>Session history</li>
-          </ul>
-          <button class="pricing-btn">LEVEL UP</button>
+    <!-- Features -->
+    <section class="features" id="features">
+      <div class="section-container">
+        <h2 class="section-title fade-in">What you get</h2>
+        <p class="section-subtitle fade-in">Everything you need for real-time, personalised style advice.</p>
+        <div class="features-grid">
+          <article class="feature-card fade-in fade-in-delay-1">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
+            <h3>See you, know you</h3>
+            <p>AI vision analyses your hair, makeup and outfit in real time. It sees what you see in the mirror — and offers advice in the moment.</p>
+          </article>
+          <article class="feature-card fade-in fade-in-delay-2">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="2" width="6" height="12" rx="3"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+              </svg>
+            </div>
+            <h3>Talk naturally</h3>
+            <p>Have a real voice chat with your AI stylist. Interrupt, ask follow-ups, get fresh ideas — just like texting a friend who actually knows fashion.</p>
+          </article>
+          <article class="feature-card fade-in fade-in-delay-3">
+            <div class="feature-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L13.5 7.5 19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5L12 2z"/>
+                <path d="M5 19l1 3M19 19l-1 3"/>
+              </svg>
+            </div>
+            <h3>Style memory</h3>
+            <p>Remembers your favourite colours, occasions and past sessions. Every chat builds on the last so the advice gets sharper over time.</p>
+          </article>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- FAQ Section -->
-  <section class="faq" id="faq">
-    <div class="section-container">
-      <h2 class="section-title fade-in">FAQ</h2>
-      <p class="section-subtitle fade-in">Got questions? We've got answers.</p>
-      <div class="faq-list">
-        <details class="faq-item fade-in fade-in-delay-1">
-          <summary>What is LiveStylist?</summary>
-          <div class="faq-answer">
-            <p>LiveStylist is an AI personal stylist app that gives you real-time beauty and fashion advice. Using your phone's camera and voice conversation, it analyzes your hair, makeup, and outfit, then provides personalized style tips — like having a knowledgeable friend who always knows what looks good.</p>
-          </div>
-        </details>
-        <details class="faq-item fade-in fade-in-delay-1">
-          <summary>How does the AI vision work?</summary>
-          <div class="faq-answer">
-            <p>LiveStylist uses advanced AI computer vision to analyze your look in real-time through your selfie camera. It detects your hair style, makeup, clothing, and accessories, then provides instant, context-aware fashion analysis and outfit recommendations.</p>
-          </div>
-        </details>
-        <details class="faq-item fade-in fade-in-delay-2">
-          <summary>Is LiveStylist free to use?</summary>
-          <div class="faq-answer">
-            <p>You get 1 free trial session at signup — a full 5-minute conversation with the AI stylist, no credit card required. After that, Premium is $14.99/month or $119.99/year (≈33% off) and gives you daily styling sessions, real-time style preview images, and persistent style memory.</p>
-          </div>
-        </details>
-        <details class="faq-item fade-in fade-in-delay-2">
-          <summary>What can LiveStylist help me with?</summary>
-          <div class="faq-answer">
-            <p>LiveStylist can help with outfit recommendations, makeup tips, hair styling advice, color coordination, occasion-specific dressing (date night, office, casual), and building a cohesive personal style. It remembers your preferences and evolves with you.</p>
-          </div>
-        </details>
-        <details class="faq-item fade-in fade-in-delay-3">
-          <summary>Is my camera data private and secure?</summary>
-          <div class="faq-answer">
-            <p>Your privacy is our priority. Camera frames are processed in real-time for AI analysis and are not permanently stored. All data is encrypted in transit using TLS. See our <a href="privacy.html">Privacy Policy</a> for full details.</p>
-          </div>
-        </details>
-        <details class="faq-item fade-in fade-in-delay-3">
-          <summary>What devices is LiveStylist available on?</summary>
-          <div class="faq-answer">
-            <p>LiveStylist is coming soon to both iPhone (iOS) and Android devices. It will be available for download on the Apple App Store and Google Play Store.</p>
-          </div>
-        </details>
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="section-container">
+        <h2 class="section-title fade-in">How it works</h2>
+        <p class="section-subtitle fade-in">Three steps. Five minutes. Real advice.</p>
+        <div class="steps">
+          <article class="step fade-in fade-in-delay-1">
+            <div class="step-number">1</div>
+            <h3>Start a session</h3>
+            <p>Open the app, pick the vibe — date night, work, casual — and you're in.</p>
+          </article>
+          <article class="step fade-in fade-in-delay-2">
+            <div class="step-number">2</div>
+            <h3>Show your look</h3>
+            <p>Point the selfie camera at yourself. The AI sees your hair, makeup and outfit in real time.</p>
+          </article>
+          <article class="step fade-in fade-in-delay-3">
+            <div class="step-number">3</div>
+            <h3>Get advice</h3>
+            <p>Hear personalised tips, ask follow-ups, see preview images — all in one conversation.</p>
+          </article>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- CTA Section -->
-  <section class="cta" id="download">
-    <div class="section-container">
-      <h2 class="fade-in">Ready to Level Up<br>Your Style?</h2>
-      <p class="fade-in">Your personal AI stylist is waiting. Download the app and start your first session today.</p>
-      <div class="store-badges fade-in">
-        <div class="store-badge">
-          <img src="assets/app-store-badge.svg" alt="Download LiveStylist AI stylist on the App Store" width="120" height="40" loading="lazy">
-          <span class="coming-soon">COMING SOON</span>
-        </div>
-        <div class="store-badge">
-          <img src="assets/play-store-badge.svg" alt="Get LiveStylist AI stylist on Google Play" width="135" height="40" loading="lazy">
-          <span class="coming-soon">COMING SOON</span>
+    <!-- Pricing -->
+    <section class="pricing" id="pricing">
+      <div class="section-container">
+        <h2 class="section-title fade-in">Pick your plan</h2>
+        <p class="section-subtitle fade-in">Start free. Upgrade when you're ready.</p>
+        <div class="pricing-grid">
+          <article class="pricing-card free fade-in fade-in-delay-1">
+            <span class="pricing-tag">Free trial</span>
+            <h3>Free</h3>
+            <div class="pricing-price">$0<span class="per"></span></div>
+            <p class="pricing-period">1 session at signup, 5 minutes</p>
+            <ul class="pricing-features">
+              <li>1 lifetime trial session</li>
+              <li>Real-time AI vision</li>
+              <li>Voice conversation</li>
+              <li>Style preview generation</li>
+              <li>Save your favourite colours</li>
+            </ul>
+            <a href="#download" class="btn btn-ghost">Try it free</a>
+          </article>
+          <article class="pricing-card premium fade-in fade-in-delay-2">
+            <span class="pricing-tag">Most popular</span>
+            <h3>Premium</h3>
+            <div class="pricing-price">$14.99<span class="per">/mo</span></div>
+            <p class="pricing-period">or $119.99/year — save ~33%</p>
+            <ul class="pricing-features">
+              <li>30 sessions per month</li>
+              <li>Real-time AI vision + voice</li>
+              <li>Style preview generation</li>
+              <li>Personal style memory</li>
+              <li>Session history &amp; sharing</li>
+              <li>Follow other stylists</li>
+            </ul>
+            <a href="#download" class="btn">Go Premium</a>
+          </article>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+      <div class="section-container">
+        <h2 class="section-title fade-in">Questions?</h2>
+        <p class="section-subtitle fade-in">The short answers. Privacy Policy &amp; Terms have the full ones.</p>
+        <div class="faq-list">
+          <details class="faq-item fade-in fade-in-delay-1">
+            <summary>What is LiveStylist?</summary>
+            <div class="faq-answer">
+              <p>LiveStylist is your AI style bestie. Using your camera and voice, it analyses your look in real time and gives personalised tips — like having a knowledgeable friend who always knows what looks good.</p>
+            </div>
+          </details>
+          <details class="faq-item fade-in fade-in-delay-1">
+            <summary>How does the AI vision work?</summary>
+            <div class="faq-answer">
+              <p>The selfie camera streams frames to our backend, where multiple vision agents look at your eyes, mouth and outfit. The results are sent to a voice agent that talks you through advice in real time. Frames are processed and discarded — nothing is stored permanently.</p>
+            </div>
+          </details>
+          <details class="faq-item fade-in fade-in-delay-2">
+            <summary>Is LiveStylist free?</summary>
+            <div class="faq-answer">
+              <p>You get one free 5-minute session at signup, no card required. After that, Premium is $14.99/month or $119.99/year (~33% off) for 30 sessions a month, style memory and session history.</p>
+            </div>
+          </details>
+          <details class="faq-item fade-in fade-in-delay-2">
+            <summary>What can it help me with?</summary>
+            <div class="faq-answer">
+              <p>Outfit picks, makeup tips, hair ideas, colour coordination, occasion dressing (date, office, casual, weekend), and building a personal style that gets sharper the more you use it.</p>
+            </div>
+          </details>
+          <details class="faq-item fade-in fade-in-delay-3">
+            <summary>Is my camera data private?</summary>
+            <div class="faq-answer">
+              <p>Yes. Camera frames are processed in real time and not permanently stored. Everything in transit uses TLS. Generated preview images auto-delete after 24 hours. See our <a href="privacy.html">Privacy Policy</a> for the full story.</p>
+            </div>
+          </details>
+          <details class="faq-item fade-in fade-in-delay-3">
+            <summary>What devices is it available on?</summary>
+            <div class="faq-answer">
+              <p>iPhone and Android — coming soon to the App Store and Google Play.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta" id="download">
+      <div class="section-container">
+        <div class="cta-card">
+          <h2 class="fade-in">Ready for your style sesh?</h2>
+          <p class="fade-in">Your AI stylist is one tap away. Download the app and start your first session.</p>
+          <div class="store-badges fade-in">
+            <a class="store-badge" href="#" aria-label="App Store coming soon">
+              <img src="assets/app-store-badge.svg" alt="Download LiveStylist on the App Store" width="120" height="46" loading="lazy">
+              <span class="coming-soon">Coming soon</span>
+            </a>
+            <a class="store-badge" href="#" aria-label="Google Play coming soon">
+              <img src="assets/play-store-badge.svg" alt="Get LiveStylist on Google Play" width="135" height="46" loading="lazy">
+              <span class="coming-soon">Coming soon</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <!-- Footer -->
   <footer class="footer">
     <div class="footer-container">
       <div class="footer-brand">
-        <a href="#" class="nav-logo">LiveStylist</a>
-        <p>Your AI-powered personal style sidekick. Real-time beauty & fashion advice through the magic of computer vision.</p>
+        <a href="#" class="nav-logo">
+          <span class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white"/></svg>
+          </span>
+          LiveStylist
+        </a>
+        <p>Your AI style bestie. Real-time beauty &amp; fashion advice through computer vision and voice.</p>
       </div>
       <div class="footer-links">
         <div class="footer-links-group">
           <h4>Product</h4>
           <a href="#features">Features</a>
-          <a href="#how-it-works">How It Works</a>
+          <a href="#how-it-works">How it works</a>
           <a href="#pricing">Pricing</a>
           <a href="#download">Download</a>
         </div>
         <div class="footer-links-group">
           <h4>Legal</h4>
           <a href="privacy.html">Privacy Policy</a>
-          <a href="terms.html">Terms & Conditions</a>
+          <a href="terms.html">Terms &amp; Conditions</a>
           <a href="community-guidelines.html">Community Guidelines</a>
           <a href="imprint.html">Imprint</a>
         </div>
