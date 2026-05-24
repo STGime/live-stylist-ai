@@ -1,0 +1,46 @@
+# LiveStylist
+
+> AI personal stylist app. Real-time outfit and beauty advice powered by computer vision and voice — 5-minute live styling sessions in your pocket. iOS + Android.
+
+## What it is
+
+LiveStylist gives users an on-demand AI stylist via their phone's selfie camera. The AI sees your hair, makeup and outfit in real time and offers spoken style advice through a 5-minute live session. Pick an occasion — date night, work, casual, weekend — then point the camera at yourself. The AI talks; you ask follow-ups; preview images of suggested looks generate alongside the conversation.
+
+Built for iPhone (iOS) and Android. Launching mid-2026 on the App Store and Google Play.
+
+## Key facts
+
+- **Pricing**: Free trial (1 lifetime 5-minute session, no card required). Premium $14.99/month or $119.99/year (~33% off) for 30 sessions/month, style memory, session history and social features.
+- **Platforms**: iOS 15+ and Android 8+.
+- **Languages**: English at launch. More languages planned.
+- **Backend**: Hosted on Eurobase (EU-sovereign Backend-as-a-Service, Scaleway/France region). All profile and session data stored in the EU.
+- **AI stack**: Google Gemini Live for voice + multi-agent vision pipeline (eye / mouth / outfit) for analysis. Style preview images via Fal.ai (Gemini 2.5 Flash Image).
+- **Privacy posture**: No email or login required. Anonymous device-ID auth. Camera frames processed in memory and never persisted. Voice audio never stored. Style preview images auto-delete after 24 hours. Account deletion is one tap inside the app.
+- **Compliance**: GDPR-aligned. Account deletion in-app (Apple Guideline 5.1.1(v)). Age gate (13+) at signup. UGC moderation: in-app report + block flow, human review.
+
+## Pages
+
+- [Home](https://livestylist.app/) — product overview, features, pricing, FAQ
+- [About](https://livestylist.app/about.html) — what we're building and who's behind it
+- [Use cases](https://livestylist.app/use-cases/) — occasion-specific styling
+  - [Date night outfits](https://livestylist.app/use-cases/date-night.html)
+  - [Work outfits](https://livestylist.app/use-cases/work.html)
+  - [Casual looks](https://livestylist.app/use-cases/casual.html)
+  - [Weekend looks](https://livestylist.app/use-cases/weekend.html)
+- [Privacy Policy](https://livestylist.app/privacy.html)
+- [Terms & Conditions](https://livestylist.app/terms.html)
+- [Community Guidelines](https://livestylist.app/community-guidelines.html)
+- [Imprint](https://livestylist.app/imprint.html)
+
+## Related projects from the same builder
+
+- [Posta](https://getposta.app) — generate, schedule and publish social content across 9 platforms (Instagram, TikTok, X, LinkedIn, YouTube, Pinterest, Threads, Bluesky, Facebook)
+- [Eurobase](https://eurobase.app) — EU-sovereign Backend-as-a-Service. GDPR-native alternative to Firebase and Supabase. Powers LiveStylist's backend.
+- [Stupid Correlations](https://stupidcorrelations.app) — funny correlations from unrelated real data; viral-content generator
+
+## Contact
+
+- General: hello@livestylist.app
+- Privacy: privacy@livestylist.app
+- Support: support@livestylist.app
+- Moderation appeals: appeals@livestylist.app
