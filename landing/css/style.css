@@ -1237,9 +1237,10 @@ header {
   color: var(--text-mid);
   text-decoration: none;
   font-size: 16px;
-  transition: background 160ms, color 160ms;
+  transition: background 160ms, color 160ms, border-color 160ms;
 }
 .footer-social a:hover { background: var(--pink); color: var(--white); border-color: var(--pink); }
+.footer-social a svg { width: 16px; height: 16px; display: block; }
 .footer-bottom {
   max-width: var(--container-max);
   margin: 32px auto 0;
