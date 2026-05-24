@@ -17,12 +17,29 @@
   <meta property="og:description" content="Get real-time outfit recommendations, beauty advice, and style tips powered by AI vision and voice. Your personal AI fashion advisor.">
   <meta property="og:image" content="https://livestylist.app/assets/og-image.png">
   <meta property="og:url" content="https://livestylist.app/">
+  <meta property="og:locale" content="en_GB">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="LiveStylist — AI Personal Stylist App">
   <meta name="twitter:description" content="Real-time beauty & style advice powered by AI vision and voice. Your personal AI fashion advisor.">
   <meta name="twitter:image" content="https://livestylist.app/assets/og-image.png">
+  <meta name="twitter:site" content="@livestylist">
+  <meta name="twitter:creator" content="@stgime">
+
+  <!-- Structured Data: WebSite (enables SERP search box, identifies the site to crawlers) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "LiveStylist",
+    "alternateName": "LiveStylist — AI Style Bestie",
+    "url": "https://livestylist.app/",
+    "description": "AI personal stylist app with real-time vision + voice styling sessions.",
+    "inLanguage": "en",
+    "publisher": { "@type": "Organization", "name": "LiveStylist Ltd." }
+  }
+  </script>
 
   <!-- Structured Data: SoftwareApplication -->
   <script type="application/ld+json">
@@ -30,9 +47,11 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "LiveStylist",
+    "url": "https://livestylist.app/",
     "description": "AI personal stylist app providing real-time beauty and fashion advice through computer vision and voice conversation.",
     "applicationCategory": "LifestyleApplication",
     "operatingSystem": "iOS, Android",
+    "image": "https://livestylist.app/assets/og-image.png",
     "offers": [
       {
         "@type": "Offer",
@@ -58,14 +77,77 @@
   }
   </script>
 
+  <!-- Structured Data: MobileApplication (more specific than SoftwareApplication for App Store / Play Store) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "MobileApplication",
+    "name": "LiveStylist",
+    "url": "https://livestylist.app/",
+    "applicationCategory": "LifestyleApplication",
+    "applicationSubCategory": "Fashion & Beauty",
+    "operatingSystem": "iOS 15+, Android 8+",
+    "downloadUrl": "https://livestylist.app/#download",
+    "image": "https://livestylist.app/assets/og-image.png",
+    "offers": [
+      { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free Trial" },
+      { "@type": "Offer", "price": "14.99", "priceCurrency": "USD", "name": "Premium Monthly" },
+      { "@type": "Offer", "price": "119.99", "priceCurrency": "USD", "name": "Premium Annual" }
+    ]
+  }
+  </script>
+
+  <!-- Structured Data: HowTo (enables HowTo rich result on the 3-step session flow) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to get an AI styling session with LiveStylist",
+    "description": "Three steps. Five minutes. Real personalised style advice from the LiveStylist AI.",
+    "totalTime": "PT5M",
+    "step": [
+      {
+        "@type": "HowToStep",
+        "position": 1,
+        "name": "Start a session",
+        "text": "Open the LiveStylist app, pick the occasion — date night, work, casual, weekend — and tap Start."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 2,
+        "name": "Show your look",
+        "text": "Point your selfie camera at yourself. The AI sees your hair, makeup and outfit in real time."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 3,
+        "name": "Get advice",
+        "text": "Hear personalised tips, ask follow-ups, see preview images — all in one conversation."
+      }
+    ]
+  }
+  </script>
+
   <!-- Structured Data: Organization -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "LiveStylist",
+    "name": "LiveStylist Ltd.",
     "url": "https://livestylist.app",
-    "logo": "https://livestylist.app/assets/favicon.png"
+    "logo": "https://livestylist.app/assets/favicon.png",
+    "image": "https://livestylist.app/assets/og-image.png",
+    "description": "Indie maker of LiveStylist — an AI personal stylist app delivering real-time fashion and beauty advice via on-device camera + voice.",
+    "contactPoint": [
+      { "@type": "ContactPoint", "email": "hello@livestylist.app", "contactType": "customer support" },
+      { "@type": "ContactPoint", "email": "privacy@livestylist.app", "contactType": "privacy" },
+      { "@type": "ContactPoint", "email": "support@livestylist.app", "contactType": "technical support" }
+    ],
+    "sameAs": [
+      "https://twitter.com/livestylist",
+      "https://instagram.com/livestylist",
+      "https://tiktok.com/@livestylist"
+    ]
   }
   </script>
 
@@ -370,6 +452,34 @@
       </div>
     </section>
 
+    <!-- More from this builder — sister projects -->
+    <section class="builder-section" id="more">
+      <div class="section-container">
+        <h2 class="section-title fade-in">More from this builder</h2>
+        <p class="section-subtitle fade-in">Indie tools by the same team. Same focus on speed, privacy and EU sovereignty.</p>
+        <div class="builder-grid">
+          <a class="builder-card fade-in fade-in-delay-1" href="https://getposta.app" target="_blank" rel="noopener noreferrer">
+            <img class="builder-mark" src="assets/posta-mark.svg" width="48" height="48" alt="Posta">
+            <h3>Posta</h3>
+            <p>Generate, schedule and publish social content across 9 platforms — Instagram, TikTok, X, LinkedIn and more.</p>
+            <span class="builder-visit">Visit getposta.app <span aria-hidden="true">→</span></span>
+          </a>
+          <a class="builder-card fade-in fade-in-delay-2" href="https://eurobase.app" target="_blank" rel="noopener noreferrer">
+            <img class="builder-mark" src="assets/eurobase-mark.svg" width="48" height="48" alt="Eurobase">
+            <h3>Eurobase</h3>
+            <p>EU-sovereign Backend-as-a-Service. GDPR-native alternative to Firebase and Supabase. Powers LiveStylist's backend.</p>
+            <span class="builder-visit">Visit eurobase.app <span aria-hidden="true">→</span></span>
+          </a>
+          <a class="builder-card fade-in fade-in-delay-3" href="https://stupidcorrelations.app" target="_blank" rel="noopener noreferrer">
+            <img class="builder-mark" src="assets/stupidcorrelations-mark.png" width="48" height="48" alt="Stupid Correlations">
+            <h3>Stupid Correlations</h3>
+            <p>Funny correlations from completely unrelated real data — a viral-content generator for the curious and the chaotic.</p>
+            <span class="builder-visit">Visit stupidcorrelations.app <span aria-hidden="true">→</span></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
     <!-- CTA -->
     <section class="cta" id="download">
       <div class="section-container">
@@ -409,6 +519,8 @@
           <a href="#features">Features</a>
           <a href="#how-it-works">How it works</a>
           <a href="#pricing">Pricing</a>
+          <a href="use-cases/">Use cases</a>
+          <a href="about.html">About</a>
           <a href="#download">Download</a>
         </div>
         <div class="footer-links-group">
@@ -417,6 +529,12 @@
           <a href="terms.html">Terms &amp; Conditions</a>
           <a href="community-guidelines.html">Community Guidelines</a>
           <a href="imprint.html">Imprint</a>
+        </div>
+        <div class="footer-links-group">
+          <h4>More from us</h4>
+          <a href="https://getposta.app" target="_blank" rel="noopener noreferrer">Posta</a>
+          <a href="https://eurobase.app" target="_blank" rel="noopener noreferrer">Eurobase</a>
+          <a href="https://stupidcorrelations.app" target="_blank" rel="noopener noreferrer">Stupid Correlations</a>
         </div>
       </div>
       <div class="footer-social">
