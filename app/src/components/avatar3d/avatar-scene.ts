@@ -199,10 +199,14 @@ export function getAvatarHtml(glbBase64: string, threeJsSrc: string, gltfLoaderS
       model.traverse(function(child) {
         if (child.isMesh && FACE_MESH_NAMES.indexOf(child.name) >= 0) {
           var dict = child.morphTargetDictionary || {};
+          var keys = Object.keys(dict);
+          // Skip meshes that don't actually expose any blendshapes (e.g.
+          // beard/outfit on most RPM exports) — otherwise every setMorph
+          // call pays for empty-dict lookups across them every frame.
+          if (keys.length === 0) return;
           morphMeshes.push({ mesh: child, dict: dict, name: child.name });
           // One-time log so a real device run tells us exactly what
           // blendshapes the bundled GLB exposes per mesh.
-          var keys = Object.keys(dict);
           log('mesh ' + child.name + ' blendshapes(' + keys.length + '): '
               + keys.slice(0, 20).join(',') + (keys.length > 20 ? ',...' : ''));
         }
@@ -268,21 +272,28 @@ export function getAvatarHtml(glbBase64: string, threeJsSrc: string, gltfLoaderS
     var now = Date.now();
 
     // Smooth amplitude — drives viseme intensity, brow flicks, and mouth
-    // fallback when the GLB doesn't expose viseme blendshapes.
+    // fallback when the GLB doesn't expose viseme blendshapes. The
+    // incoming amplitude is RMS-ish in roughly [0, 0.3] during normal
+    // speech, so a x2 multiplier keeps amp from saturating at 1.0 the
+    // moment she opens her mouth — we want it to actually modulate.
     smoothAmp = lerp(smoothAmp, amplitude, 0.35);
-    var amp = clamp(smoothAmp * 3.0, 0, 1);
+    var amp = clamp(smoothAmp * 2.0, 0, 1);
 
     // ------------ Mouth: visemes during speaking ------------
     if (aiState === 'speaking') {
       if (now >= nextVisemeAt) {
         currentViseme = pickViseme();
-        nextVisemeAt = now + 90 + Math.random() * 90; // ~100-180ms swap
+        // Conversational English syllables are ~200-300ms; faster swaps
+        // start to look like a chittering mouth on sustained speech.
+        // Loud → faster swaps, quiet → slower.
+        var ampScale = 1 - amp * 0.4;
+        nextVisemeAt = now + (140 + Math.random() * 100) * ampScale;
       }
     } else {
       currentViseme = ''; // no target — all visemes fade to 0
     }
 
-    var targetIntensity = aiState === 'speaking' ? (0.55 + amp * 0.5) : 0;
+    var targetIntensity = aiState === 'speaking' ? (0.40 + amp * 0.55) : 0;
     for (var v = 0; v < VISEMES.length; v++) {
       var name = VISEMES[v];
       var target = (name === currentViseme) ? targetIntensity : 0;
@@ -310,9 +321,15 @@ export function getAvatarHtml(glbBase64: string, threeJsSrc: string, gltfLoaderS
       case 'listening': smileBase = 0.50; break;
       case 'thinking': smileBase = 0.15; break;
       case 'analyzing': smileBase = 0.15; break;
-      case 'speaking': smileBase = 0.30 + amp * 0.25; break;
+      case 'speaking': smileBase = 0.30 + amp * 0.20; break;
       default: smileBase = 0.30;
     }
+    // Attenuate smile while a viseme is actively driving the mouth open —
+    // a wide smile + an "aa"/"O" viseme stacks into a stretched/distorted
+    // shape. The active viseme weight smoothly fades, so the smile rides
+    // back up naturally between viseme swaps.
+    var activeVisemeWeight = currentViseme ? (visemeWeights[currentViseme] || 0) : 0;
+    smileBase *= (1 - activeVisemeWeight * 0.5);
     smoothSmile = lerp(smoothSmile, smileBase, 0.08);
     setMorph('mouthSmile', smoothSmile);
     // Split-smile blendshapes are common on RPM exports — drive them too
