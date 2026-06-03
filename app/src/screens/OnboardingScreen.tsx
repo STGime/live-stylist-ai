@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Animated,
   KeyboardAvoidingView,
+  Keyboard,
+  ScrollView,
   Linking,
   Platform,
   TouchableOpacity,
@@ -34,6 +36,7 @@ export default function OnboardingScreen({ navigation }: Props) {
   const [error, setError] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+  const stylistInputRef = useRef<TextInput>(null);
   const dialog = useDialog();
 
   useEffect(() => {
@@ -108,6 +111,12 @@ export default function OnboardingScreen({ navigation }: Props) {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+          bounces={false}>
         <Animated.View
           style={[
             styles.content,
@@ -138,6 +147,9 @@ export default function OnboardingScreen({ navigation }: Props) {
               placeholder="e.g. Sophia"
               placeholderTextColor={COLORS.textMuted}
               maxLength={50}
+              returnKeyType="next"
+              onSubmitEditing={() => stylistInputRef.current?.focus()}
+              blurOnSubmit={false}
               style={[
                 styles.input,
                 error && !name ? styles.inputError : null,
@@ -146,11 +158,14 @@ export default function OnboardingScreen({ navigation }: Props) {
 
             <Text style={[styles.label, { marginTop: 22 }]}>Name your stylist</Text>
             <TextInput
+              ref={stylistInputRef}
               value={stylistName}
               onChangeText={handleStylistNameChange}
               placeholder="e.g. Luna, Aria, Chloe"
               placeholderTextColor={COLORS.textMuted}
               maxLength={50}
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
               style={styles.input}
             />
 
@@ -224,6 +239,7 @@ export default function OnboardingScreen({ navigation }: Props) {
             </Text>
           </View>
         </Animated.View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
   );
@@ -232,9 +248,11 @@ export default function OnboardingScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+  },
+  content: {
     paddingHorizontal: 28,
     paddingTop: 40,
     paddingBottom: 32,
