@@ -278,13 +278,16 @@
         </div>
 
         <!-- Phone mockup with autoplaying demo video. Starts muted (required
-             for autoplay) and loops; the sound toggle unmutes on tap. -->
+             for autoplay) and plays once; the sound toggle unmutes on tap.
+             poster shows immediately and persists if the video 404s, since
+             the binary is hosted out of band (see .gitignore). -->
         <div class="hero-phone-wrap">
           <div class="phone-frame">
             <div class="phone-screen">
               <video
                 class="phone-video"
                 src="assets/videos/demo.mp4"
+                poster="assets/hero-poster.jpg"
                 autoplay
                 muted
                 playsinline
