@@ -97,10 +97,29 @@ function initSmoothScroll() {
   });
 }
 
+// ----- Demo video sound toggle -----
+// Video autoplays muted (browsers block autoplay with sound). The toggle
+// flips muted and reflects state via aria-pressed, which drives the icon
+// swap in CSS.
+function initSoundToggle() {
+  const btn = document.getElementById('phone-sound-toggle');
+  const video = document.querySelector('.phone-video');
+  if (!btn || !video) return;
+  btn.addEventListener('click', () => {
+    video.muted = !video.muted;
+    const on = !video.muted;
+    btn.setAttribute('aria-pressed', String(on));
+    btn.setAttribute('aria-label', on ? 'Mute demo video' : 'Unmute demo video');
+    // Unmuting after autoplay sometimes needs an explicit play() nudge.
+    if (on) video.play().catch(() => {});
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   createBubbles();
   initNavbar();
   initMobileMenu();
   initScrollAnimations();
   initSmoothScroll();
+  initSoundToggle();
 });
