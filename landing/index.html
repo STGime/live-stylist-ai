@@ -277,24 +277,38 @@
           </div>
         </div>
 
-        <!-- Phone mockup. Drop a real device screenshot into hero-screenshot.png
-             and replace the .phone-mock block with `<img src="assets/hero-screenshot.png" alt="...">`. -->
-        <div class="hero-phone-wrap" aria-hidden="true">
+        <!-- Phone mockup with autoplaying demo video. Starts muted (required
+             for autoplay) and plays once; the sound toggle unmutes on tap.
+             poster shows immediately and persists if the video 404s, since
+             the binary is hosted out of band (see .gitignore). -->
+        <div class="hero-phone-wrap">
           <div class="phone-frame">
             <div class="phone-screen">
-              <div class="phone-mock">
-                <div class="mock-timer">4:32</div>
-                <div class="mock-end">End</div>
-                <div class="mock-bubble b1">"Try a pop of pink"</div>
-                <div class="mock-bubble b2">"Bold lip works?"</div>
-                <div class="mock-bubble b3">"Soft glam ✨"</div>
-                <div class="mock-avatar"></div>
-                <div class="mock-label">Stylist AI</div>
-                <div class="mock-orb">
-                  <span></span><span></span><span></span><span></span><span></span>
-                </div>
-                <div class="mock-mute"></div>
-              </div>
+              <video
+                class="phone-video"
+                src="assets/videos/demo.mp4"
+                poster="assets/hero-poster.jpg"
+                autoplay
+                muted
+                playsinline
+                preload="metadata"
+                aria-label="LiveStylist live styling session demo"></video>
+              <button
+                type="button"
+                class="phone-sound-toggle"
+                id="phone-sound-toggle"
+                aria-pressed="false"
+                aria-label="Unmute demo video">
+                <svg class="icon-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <line x1="23" y1="9" x2="17" y2="15"/>
+                  <line x1="17" y1="9" x2="23" y2="15"/>
+                </svg>
+                <svg class="icon-unmuted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>

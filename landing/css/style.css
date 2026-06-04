@@ -605,11 +605,54 @@ header {
   display: block;
 }
 .phone-screen img,
-.phone-screen .phone-mock {
+.phone-screen .phone-mock,
+.phone-screen .phone-video {
   width: 100%;
   height: 100%;
   display: block;
 }
+.phone-screen .phone-video {
+  object-fit: cover;
+}
+
+/* Sound toggle overlaid on the demo video. */
+.phone-sound-toggle {
+  position: absolute;
+  bottom: clamp(12px, 4%, 24px);
+  right: clamp(12px, 4%, 24px);
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--white);
+  background: rgba(10, 7, 16, 0.55);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+.phone-sound-toggle:hover {
+  background: rgba(199, 38, 106, 0.7);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: scale(1.06);
+}
+.phone-sound-toggle:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+.phone-sound-toggle svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+/* Default = muted: show the muted icon, hide the unmuted one. */
+.phone-sound-toggle .icon-unmuted { display: none; }
+.phone-sound-toggle[aria-pressed="true"] .icon-muted { display: none; }
+.phone-sound-toggle[aria-pressed="true"] .icon-unmuted { display: block; }
 
 /* Embedded SVG "screenshot" — represents a LiveSession in progress so the
    landing has a hero image even before a real device capture lands. */

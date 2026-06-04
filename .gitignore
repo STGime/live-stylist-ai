@@ -68,3 +68,6 @@ app/ios/GoogleService-Info.plist
 
 # Claude
 .claude/
+
+# Landing demo videos — large binaries, hosted/uploaded out of band
+landing/assets/videos/
