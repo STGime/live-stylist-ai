@@ -13,6 +13,7 @@ import type { GenerationRequest } from '../services/image-generation.service.js'
 import { searchProducts, type ProductResult } from '../services/awin-product-search.js';
 import { ProductTriggerCooldown } from '../services/product-trigger.js';
 import * as push from '../services/push.service.js';
+import { SessionCostTracker } from '../services/cost-tracker.js';
 
 // Track active sessions for cleanup
 const activeSessions = new Map<string, {
@@ -98,6 +99,9 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
     // Build system instruction for this user
     const systemInstruction = buildCoordinatorInstruction(userProfile, memories, session.occasion);
 
+    // Per-session token + cost accounting (logged once at session end).
+    const cost = new SessionCostTracker(sessionId, deviceId);
+
     // Connect to Gemini Live API
     const env = getEnv();
     const genai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
@@ -111,7 +115,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
             logger.info({ sessionId }, 'Gemini Live session opened');
           },
           onmessage: (msg: LiveServerMessage) => {
-            processGeminiMessage(msg, ws, sessionId, sessionLog, checkForPreviewTrigger, checkBufferOnTurnComplete, checkForProductTrigger, (speaking) => { agentSpeaking = speaking; });
+            processGeminiMessage(msg, ws, sessionId, sessionLog, checkForPreviewTrigger, checkBufferOnTurnComplete, checkForProductTrigger, (speaking) => { agentSpeaking = speaking; }, (usage) => cost.recordLiveUsage(usage));
           },
           onerror: (e: any) => {
             logger.error({ sessionId, error: e?.message || e }, 'Gemini Live error');
@@ -260,7 +264,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
 
       try {
         // Call 3 vision agents in parallel via direct Gemini API
-        const results = await runVisionPipeline(eyeCrop, mouthCrop, bodyCrop);
+        const results = await runVisionPipeline(eyeCrop, mouthCrop, bodyCrop, (usage) => cost.recordVisionUsage(usage));
 
         // Inject vision results into conversation context.
         // First update: use turnComplete: true so the model sees initial appearance.
@@ -361,6 +365,7 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
         });
 
         sessionLog.push(`[Preview generated]: ${prompt}`);
+        cost.recordPreview();
 
         // Persist a row so followers (and the owner's history) can see the
         // image until expires_at (now + 24h). Fire-and-forget — don't block
@@ -570,18 +575,31 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
       cleanup();
     });
 
+    let cleanedUp = false;
     function cleanup() {
+      // ws 'close' and 'error' can both fire — only clean up (and cost-log) once.
+      if (cleanedUp) return;
+      cleanedUp = true;
+
       try {
         geminiSession.close();
       } catch (_) { /* ignore close errors */ }
       activeSessions.delete(sessionId);
 
+      const durationSeconds = Math.round((Date.now() - sessionStartedAt) / 1000);
+      // Log the per-session cost once, after the summary call (it adds its own
+      // tokens to the tracker). Runs whether or not the summary succeeds.
+      const logCost = () => cost.logTotals(durationSeconds);
+
       // Generate and save session summary (fire-and-forget)
       if (sessionLog.length > 0) {
-        const durationSeconds = Math.round((Date.now() - sessionStartedAt) / 1000);
-        generateSessionSummary(sessionLog, sessionId, deviceId, genai, durationSeconds, sessionOccasion, userLanguage, shownProducts).catch(err => {
-          logger.warn({ sessionId, error: err }, 'Failed to generate session summary');
-        });
+        generateSessionSummary(sessionLog, sessionId, deviceId, genai, durationSeconds, sessionOccasion, userLanguage, shownProducts, cost)
+          .catch(err => {
+            logger.warn({ sessionId, error: err }, 'Failed to generate session summary');
+          })
+          .finally(logCost);
+      } else {
+        logCost();
       }
     }
   });
@@ -590,7 +608,12 @@ export function setupAdkWebSocket(wss: WebSocketServer): void {
 /**
  * Process a Gemini Live server message and forward relevant data to the client.
  */
-function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: string, sessionLog: string[], onOutputText?: (text: string) => void, onTurnComplete?: () => void, onProductCheck?: (text: string) => void, onSpeakingChange?: (speaking: boolean) => void): void {
+function processGeminiMessage(msg: LiveServerMessage, ws: WebSocket, sessionId: string, sessionLog: string[], onOutputText?: (text: string) => void, onTurnComplete?: () => void, onProductCheck?: (text: string) => void, onSpeakingChange?: (speaking: boolean) => void, onUsage?: (usage: import('../services/cost-tracker.js').UsageLike | undefined) => void): void {
+  // Token usage for cost tracking — Live reports usageMetadata cumulatively.
+  if (msg.usageMetadata) {
+    onUsage?.(msg.usageMetadata);
+  }
+
   // Handle server content (audio, text, transcriptions)
   if (msg.serverContent) {
     const content = msg.serverContent;
@@ -680,6 +703,7 @@ async function generateSessionSummary(
   occasion?: import('../types/index.js').Occasion,
   language?: string,
   shownProducts?: ProductResult[],
+  cost?: SessionCostTracker,
 ): Promise<void> {
   try {
     const transcript = sessionLog.join('\n');
@@ -708,6 +732,8 @@ ${transcript}`,
         }],
       }],
     });
+
+    cost?.recordSummaryUsage(response.usageMetadata);
 
     const rawText = response.text?.trim();
     if (!rawText) {
