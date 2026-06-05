@@ -4,6 +4,7 @@ import { mouthAgent } from './mouthAgent.js';
 import { bodyAgent } from './bodyAgent.js';
 import { getEnv } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import type { UsageLike } from '../services/cost-tracker.js';
 
 export interface VisionResults {
   eye_analysis: Record<string, unknown>;
@@ -18,11 +19,15 @@ export interface VisionResults {
  *
  * Called directly from the WebSocket handler — NOT through ADK tool calling.
  * Results are injected as text into the coordinator's live request queue.
+ *
+ * @param recordUsage Optional callback invoked once per agent call with that
+ *   call's usageMetadata, for per-session cost tracking.
  */
 export async function runVisionPipeline(
   eyeCrop: string,
   mouthCrop: string,
   bodyCrop: string,
+  recordUsage?: (usage: UsageLike | undefined) => void,
 ): Promise<VisionResults> {
   const env = getEnv();
   const genai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
@@ -62,6 +67,12 @@ export async function runVisionPipeline(
       config: { responseMimeType: 'application/json' },
     }),
   ]);
+
+  if (recordUsage) {
+    recordUsage(eyeResult.usageMetadata);
+    recordUsage(mouthResult.usageMetadata);
+    recordUsage(bodyResult.usageMetadata);
+  }
 
   const eye_analysis = JSON.parse(eyeResult.text ?? '{}');
   const mouth_analysis = JSON.parse(mouthResult.text ?? '{}');
