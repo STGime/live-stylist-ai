@@ -280,7 +280,13 @@
         <!-- Phone mockup with autoplaying demo video. Starts muted (required
              for autoplay) and plays once; the sound toggle unmutes on tap.
              poster shows immediately and persists if the video 404s, since
-             the binary is hosted out of band (see .gitignore). -->
+             the binary is hosted out of band (see .gitignore).
+             Encoding constraints (see fix in PR #50):
+               - H.264 *Main* profile, no B-frames — High + B-frames produced
+                 flashing/garbled playback on Android hardware decoders.
+               - Keep demo.mp4 UNDER 32 MiB. Cloud Run caps non-streamed
+                 response bodies at 32 MiB; a larger file 500s on full / open-
+                 ended-range GETs (which is exactly what <video> requests). -->
         <div class="hero-phone-wrap">
           <div class="phone-frame">
             <div class="phone-screen">
