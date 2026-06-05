@@ -375,10 +375,18 @@ header {
     box-shadow: none;
     border: none;
     padding-left: 16px;
-    opacity: 1;
-    visibility: visible;
     transform: none;
     background: transparent;
+    /* Stay hidden until the mobile menu is opened. Previously this rule set
+       opacity:1/visibility:visible unconditionally — but `visibility: visible`
+       overrides the closed parent's `visibility: hidden`, and opacity:0 hides
+       it visually WITHOUT disabling taps. The result was an invisible "Legal"
+       submenu sitting over the hero that swallowed taps and sent them to the
+       legal links (e.g. imprint). Reveal it only when the menu is open. */
+  }
+  .nav-links.open .nav-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
   }
 }
 
@@ -613,6 +621,17 @@ header {
 }
 .phone-screen .phone-video {
   object-fit: cover;
+  /* Firefox (esp. Android) flickers/flashes a <video> when it's clipped by a
+     rounded, overflow:hidden ancestor that's also rotated — Mozilla bugs
+     971720 + 1449904. Audio is unaffected, which is why this looked like a
+     codec issue but no re-encode fixed it. Fix: round the video on ITSELF and
+     promote it to its own GPU layer so Firefox isn't clipping a composited
+     video layer through the rotated/overflow-hidden ancestor. */
+  border-radius: 36px;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* Sound toggle overlaid on the demo video. */
@@ -653,6 +672,37 @@ header {
 .phone-sound-toggle .icon-unmuted { display: none; }
 .phone-sound-toggle[aria-pressed="true"] .icon-muted { display: none; }
 .phone-sound-toggle[aria-pressed="true"] .icon-unmuted { display: block; }
+
+/* Tap-to-play overlay — revealed by JS only when autoplay is blocked
+   (e.g. mobile Firefox). Centered play button over the poster frame. */
+.phone-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  color: var(--white);
+  background: rgba(199, 38, 106, 0.82);
+  box-shadow: 0 8px 24px rgba(58, 31, 51, 0.35);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.phone-play-overlay[hidden] { display: none; }
+.phone-play-overlay:hover { transform: translate(-50%, -50%) scale(1.06); }
+.phone-play-overlay:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+.phone-play-overlay svg {
+  width: 26px;
+  height: 26px;
+  margin-left: 3px; /* optical centering of the triangle */
+  pointer-events: none;
+}
 
 /* Embedded SVG "screenshot" — represents a LiveSession in progress so the
    landing has a hero image even before a real device capture lands. */
