@@ -621,6 +621,17 @@ header {
 }
 .phone-screen .phone-video {
   object-fit: cover;
+  /* Firefox (esp. Android) flickers/flashes a <video> when it's clipped by a
+     rounded, overflow:hidden ancestor that's also rotated — Mozilla bugs
+     971720 + 1449904. Audio is unaffected, which is why this looked like a
+     codec issue but no re-encode fixed it. Fix: round the video on ITSELF and
+     promote it to its own GPU layer so Firefox isn't clipping a composited
+     video layer through the rotated/overflow-hidden ancestor. */
+  border-radius: 36px;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* Sound toggle overlaid on the demo video. */

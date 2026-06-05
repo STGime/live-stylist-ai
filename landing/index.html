@@ -282,11 +282,12 @@
              poster shows immediately and persists if the video 404s, since
              the binary is hosted out of band (see .gitignore).
              Encoding constraints (see fix in PR #50):
-               - H.264 *Constrained Baseline*, 540x960, no B-frames, frequent
-                 keyframes (-g 48) — High/Main + B-frames produced flashing /
-                 garbled playback on Android Firefox's hardware decoder.
-                 Baseline + smaller frames + frequent IDRs maximises HW-decode
-                 compatibility and lets the decoder recover quickly.
+               - The Android Firefox "flashing" was NOT the codec — it's a
+                 Firefox compositing bug (Mozilla 971720 + 1449904): a <video>
+                 clipped by a rounded, overflow:hidden, rotated ancestor
+                 flickers. Real fix is in CSS (.phone-video gets its own
+                 border-radius + translateZ(0) layer). Encode is plain H.264
+                 Main, no B-frames, 720x1280.
                - Keep demo.mp4 UNDER 32 MiB. Cloud Run caps non-streamed
                  response bodies at 32 MiB; a larger file 500s on full / open-
                  ended-range GETs (which is exactly what <video> requests). -->
