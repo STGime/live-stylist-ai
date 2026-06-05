@@ -97,22 +97,61 @@ function initSmoothScroll() {
   });
 }
 
-// ----- Demo video sound toggle -----
-// Video autoplays muted (browsers block autoplay with sound). The toggle
-// flips muted and reflects state via aria-pressed, which drives the icon
-// swap in CSS.
-function initSoundToggle() {
-  const btn = document.getElementById('phone-sound-toggle');
+// ----- Demo video: robust autoplay + sound toggle -----
+// The video autoplays muted (browsers block autoplay with sound). Mobile
+// browsers — notably Firefox on Android — are inconsistent about honouring the
+// `autoplay`/`muted` attributes, which can leave the hero showing broken /
+// flashing frames. So we drive playback from JS too: force the muted *property*
+// (more reliable than the attribute), kick off play(), retry when the hero
+// scrolls into view, and if it's still blocked reveal a tap-to-play button.
+function initHeroVideo() {
   const video = document.querySelector('.phone-video');
-  if (!btn || !video) return;
-  btn.addEventListener('click', () => {
-    video.muted = !video.muted;
-    const on = !video.muted;
-    btn.setAttribute('aria-pressed', String(on));
-    btn.setAttribute('aria-label', on ? 'Mute demo video' : 'Unmute demo video');
-    // Unmuting after autoplay sometimes needs an explicit play() nudge.
-    if (on) video.play().catch(() => {});
-  });
+  if (!video) return;
+  const soundBtn = document.getElementById('phone-sound-toggle');
+  const playOverlay = document.getElementById('phone-play-overlay');
+
+  // Property is more reliable than the attribute for muted autoplay on mobile.
+  video.muted = true;
+
+  const showPlayButton = () => { if (playOverlay) playOverlay.hidden = false; };
+  const hidePlayButton = () => { if (playOverlay) playOverlay.hidden = true; };
+
+  const attemptPlay = () => {
+    const p = video.play();
+    if (p && typeof p.then === 'function') {
+      p.then(hidePlayButton).catch(showPlayButton);
+    }
+  };
+
+  // Initial autoplay attempt.
+  attemptPlay();
+
+  // Some mobile browsers only allow playback once the element is on screen.
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && video.paused) attemptPlay();
+      });
+    }, { threshold: 0.25 });
+    io.observe(video);
+  }
+
+  // Tap-to-play fallbacks (the overlay button and the video itself).
+  if (playOverlay) playOverlay.addEventListener('click', attemptPlay);
+  video.addEventListener('click', () => { if (video.paused) attemptPlay(); });
+  video.addEventListener('playing', hidePlayButton);
+
+  // Sound toggle — flip muted, reflect via aria-pressed (drives the CSS icon
+  // swap), and nudge play() on unmute.
+  if (soundBtn) {
+    soundBtn.addEventListener('click', () => {
+      video.muted = !video.muted;
+      const on = !video.muted;
+      soundBtn.setAttribute('aria-pressed', String(on));
+      soundBtn.setAttribute('aria-label', on ? 'Mute demo video' : 'Unmute demo video');
+      if (on) video.play().catch(() => {});
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -121,5 +160,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   initScrollAnimations();
   initSmoothScroll();
-  initSoundToggle();
+  initHeroVideo();
 });

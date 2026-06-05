@@ -654,6 +654,37 @@ header {
 .phone-sound-toggle[aria-pressed="true"] .icon-muted { display: none; }
 .phone-sound-toggle[aria-pressed="true"] .icon-unmuted { display: block; }
 
+/* Tap-to-play overlay — revealed by JS only when autoplay is blocked
+   (e.g. mobile Firefox). Centered play button over the poster frame. */
+.phone-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  color: var(--white);
+  background: rgba(199, 38, 106, 0.82);
+  box-shadow: 0 8px 24px rgba(58, 31, 51, 0.35);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.phone-play-overlay[hidden] { display: none; }
+.phone-play-overlay:hover { transform: translate(-50%, -50%) scale(1.06); }
+.phone-play-overlay:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+.phone-play-overlay svg {
+  width: 26px;
+  height: 26px;
+  margin-left: 3px; /* optical centering of the triangle */
+  pointer-events: none;
+}
+
 /* Embedded SVG "screenshot" — represents a LiveSession in progress so the
    landing has a hero image even before a real device capture lands. */
 .phone-mock {

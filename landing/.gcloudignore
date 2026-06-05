@@ -1,0 +1,14 @@
+# Controls what gets uploaded to Cloud Build for `gcloud run deploy --source`.
+# Defined explicitly so gcloud does NOT fall back to the repo .gitignore —
+# the demo video (landing/assets/videos/demo.mp4) is gitignored but MUST ship
+# in the Cloud Run image.
+#
+# Ship only the web-encoded demo.mp4 from the videos dir; exclude the large
+# HEVC source master (and any other raw clips) so they don't bloat the image.
+#
+# Note: Dockerfile and .dockerignore are intentionally NOT excluded — Cloud
+# Build needs the Dockerfile, and .dockerignore keeps it out of the served
+# HTML at image-build time.
+.DS_Store
+assets/videos/*
+!assets/videos/demo.mp4
