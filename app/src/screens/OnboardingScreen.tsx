@@ -30,7 +30,6 @@ export default function OnboardingScreen({ navigation }: Props) {
   const [name, setName] = useState('');
   const [stylistName, setStylistName] = useState('');
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [language, setLanguage] = useState<'en' | 'de'>('en');
   const [confirmAge, setConfirmAge] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -68,7 +67,8 @@ export default function OnboardingScreen({ navigation }: Props) {
       await Camera.requestCameraPermission();
       await Camera.requestMicrophonePermission();
 
-      const result = await api.register(name.trim(), selectedColor, stylistName.trim() || undefined, language);
+      // New users default to English; language can be changed later in Settings (profile).
+      const result = await api.register(name.trim(), selectedColor, stylistName.trim() || undefined, 'en');
       // Recovery: the backend recognised our stable_device_id from a
       // prior install on this device and returned the original profile.
       // The name/color the user just typed are *not* persisted — the
@@ -168,27 +168,6 @@ export default function OnboardingScreen({ navigation }: Props) {
               onSubmitEditing={() => Keyboard.dismiss()}
               style={styles.input}
             />
-
-            <Text style={[styles.label, { marginTop: 22 }]}>Agent Language</Text>
-            <View style={styles.languageRow}>
-              {(['en', 'de'] as const).map((code) => (
-                <TouchableOpacity
-                  key={code}
-                  onPress={() => setLanguage(code)}
-                  style={[
-                    styles.languageButton,
-                    language === code && styles.languageButtonActive,
-                  ]}>
-                  <Text
-                    style={[
-                      styles.languageText,
-                      language === code && styles.languageTextActive,
-                    ]}>
-                    {code === 'en' ? 'English' : 'Deutsch'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
 
             <Text style={[styles.label, { marginTop: 22 }]}>Fave color?</Text>
             <ColorSwatchPicker
@@ -361,35 +340,5 @@ const styles = StyleSheet.create({
     color: COLORS.pink,
     fontWeight: '700',
     textDecorationLine: 'underline',
-  },
-  languageRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  languageButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: COLORS.pinkLight,
-    backgroundColor: COLORS.white,
-    alignItems: 'center',
-    shadowColor: COLORS.grayLight,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 2,
-  },
-  languageButtonActive: {
-    borderColor: COLORS.pink,
-    backgroundColor: COLORS.pinkPale,
-  },
-  languageText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.textMid,
-  },
-  languageTextActive: {
-    color: COLORS.pink,
   },
 });
