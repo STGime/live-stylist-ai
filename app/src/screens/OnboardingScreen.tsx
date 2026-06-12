@@ -10,6 +10,7 @@ import {
   ScrollView,
   Linking,
   Platform,
+  NativeModules,
   TouchableOpacity,
 } from 'react-native';
 import { Camera } from 'react-native-vision-camera';
@@ -25,6 +26,19 @@ import type { RootStackParamList } from '../types';
 import { useDialog } from '../components/AppDialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
+
+/**
+ * Pick the default agent language from the device locale: German devices start
+ * in Deutsch, everyone else in English. This is only a starting point — users
+ * can change it any time in Settings (profile). Mirrors the region-detection
+ * read in HomeScreen.
+ */
+function detectDefaultLanguage(): 'en' | 'de' {
+  const locale = Platform.OS === 'ios'
+    ? (NativeModules.SettingsManager?.settings?.AppleLocale || NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] || 'en_US')
+    : (NativeModules.I18nManager?.localeIdentifier || 'en_US');
+  return /^de\b|[-_]DE\b/i.test(locale) ? 'de' : 'en';
+}
 
 export default function OnboardingScreen({ navigation }: Props) {
   const [name, setName] = useState('');
@@ -67,8 +81,9 @@ export default function OnboardingScreen({ navigation }: Props) {
       await Camera.requestCameraPermission();
       await Camera.requestMicrophonePermission();
 
-      // New users default to English; language can be changed later in Settings (profile).
-      const result = await api.register(name.trim(), selectedColor, stylistName.trim() || undefined, 'en');
+      // Default the agent language from the device locale (German → Deutsch,
+      // otherwise English); can be changed later in Settings (profile).
+      const result = await api.register(name.trim(), selectedColor, stylistName.trim() || undefined, detectDefaultLanguage());
       // Recovery: the backend recognised our stable_device_id from a
       // prior install on this device and returned the original profile.
       // The name/color the user just typed are *not* persisted — the
