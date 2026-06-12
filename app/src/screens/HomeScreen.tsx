@@ -9,8 +9,6 @@ import {
   ScrollView,
   Linking,
   Switch,
-  NativeModules,
-  Platform,
   AppState,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +26,7 @@ import HelpOverlay from '../components/HelpOverlay';
 import OccasionPicker from '../components/OccasionPicker';
 import * as api from '../services/api';
 import { HELP_SEEN_KEY } from '../services/api';
+import { getDeviceLocale } from '../utils/locale';
 import * as billing from '../services/billing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { RootStackParamList, UserProfile, Occasion, ProductRegion } from '../types';
@@ -78,9 +77,7 @@ export default function HomeScreen({ navigation }: Props) {
         setProductRegion(savedRegion);
       } else {
         // Auto-detect region from device locale
-        const locale = Platform.OS === 'ios'
-          ? (NativeModules.SettingsManager?.settings?.AppleLocale || NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] || 'en_US')
-          : (NativeModules.I18nManager?.localeIdentifier || 'en_US');
+        const locale = getDeviceLocale();
         const isEU = /^(de|fr|it|es|nl|pt|pl|sv|da|fi|no|cs|hu|ro|bg|hr|sk|sl|et|lv|lt|el|ga)/.test(locale) || /_?(AT|BE|BG|HR|CY|CZ|DK|EE|FI|FR|DE|GR|HU|IE|IT|LV|LT|LU|MT|NL|PL|PT|RO|SK|SI|ES|SE|GB|UK)$/i.test(locale);
         const detected: ProductRegion = isEU ? 'eu' : 'us';
         setProductRegion(detected);
