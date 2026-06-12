@@ -10,7 +10,6 @@ import {
   ScrollView,
   Linking,
   Platform,
-  NativeModules,
   TouchableOpacity,
 } from 'react-native';
 import { Camera } from 'react-native-vision-camera';
@@ -24,21 +23,9 @@ import ColorSwatchPicker from '../components/ColorSwatchPicker';
 import * as api from '../services/api';
 import type { RootStackParamList } from '../types';
 import { useDialog } from '../components/AppDialog';
+import { detectDefaultLanguage } from '../utils/locale';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
-
-/**
- * Pick the default agent language from the device locale: German devices start
- * in Deutsch, everyone else in English. This is only a starting point — users
- * can change it any time in Settings (profile). Mirrors the region-detection
- * read in HomeScreen.
- */
-function detectDefaultLanguage(): 'en' | 'de' {
-  const locale = Platform.OS === 'ios'
-    ? (NativeModules.SettingsManager?.settings?.AppleLocale || NativeModules.SettingsManager?.settings?.AppleLanguages?.[0] || 'en_US')
-    : (NativeModules.I18nManager?.localeIdentifier || 'en_US');
-  return /^de\b|[-_]DE\b/i.test(locale) ? 'de' : 'en';
-}
 
 export default function OnboardingScreen({ navigation }: Props) {
   const [name, setName] = useState('');
