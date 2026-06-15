@@ -19,6 +19,7 @@ import {
   Platform,
 } from 'react-native';
 import { COLORS } from '../theme/colors';
+import { useDialog } from './AppDialog';
 import { submitReport, type ReportCategory, type ReportTargetKind } from '../services/api';
 
 interface Props {
@@ -41,6 +42,7 @@ const CATEGORIES: Array<{ key: ReportCategory; label: string }> = [
 const MAX_FREE_TEXT = 280;
 
 export default function ReportSheet({ visible, target, onClose, onSubmitted }: Props) {
+  const dialog = useDialog();
   const [selected, setSelected] = useState<ReportCategory | null>(null);
   const [freeText, setFreeText] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -65,6 +67,18 @@ export default function ReportSheet({ visible, target, onClose, onSubmitted }: P
       await submitReport(target.kind, target.id, selected, freeText.trim() || undefined);
       onSubmitted();
       onClose();
+      // Acknowledge the report so the user (and an App Review reviewer)
+      // gets explicit confirmation rather than the content silently
+      // vanishing. Deferred so this dialog doesn't fight the sheet's
+      // slide-out on iOS; driven by the root DialogProvider so it still
+      // shows when the parent navigates away (session detail does
+      // goBack() in onSubmitted).
+      setTimeout(() => {
+        dialog.alert({
+          title: 'Thanks for reporting',
+          message: "Our team reviews every report. We've hidden this content for you.",
+        });
+      }, 400);
     } catch (e: any) {
       const isRateLimit = e?.status === 429;
       setError(
