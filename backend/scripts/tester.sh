@@ -47,10 +47,14 @@ set_value() {
       --update-env-vars="${ENV_NAME}=" \
       --quiet
   else
+    # The value is a comma-separated list, but gcloud treats commas as the
+    # delimiter *between* env vars. Use the alternate-delimiter syntax
+    # (^@^) so commas inside the value are preserved and only this one var
+    # is touched.
     gcloud run services update "$SERVICE" \
       --project "$PROJECT_ID" \
       --region "$REGION" \
-      --update-env-vars="${ENV_NAME}=${new}" \
+      --update-env-vars="^@^${ENV_NAME}=${new}" \
       --quiet
   fi
 }
