@@ -318,26 +318,33 @@ export default function FollowScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
 
-          {/* Incoming pending. A visible "Hold to report" caption
-              under the name makes the §1.2 report path discoverable
-              to an App Review reviewer (and any sighted user) without
-              crowding the Allow / Decline buttons. */}
+          {/* Incoming pending. A visible "Report" button under the name
+              makes the §1.2 report path obvious to an App Review reviewer
+              (and any sighted user); long-press on the name still works
+              as a redundant affordance. */}
           {visiblePending.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Wants to follow you</Text>
               {visiblePending.map((p) => (
                 <View key={p.id} style={styles.row}>
-                  <TouchableOpacity
-                    style={{ flex: 1 }}
-                    activeOpacity={0.7}
-                    onLongPress={() => setReportTargetId(p.id)}
-                    accessibilityLabel={`Long press to report ${p.follower_name ?? 'this user'}`}>
-                    <Text style={styles.rowName}>{p.follower_name ?? 'Someone'}</Text>
-                    {p.follower_magic_id && (
-                      <Text style={styles.rowMeta}>{p.follower_magic_id}</Text>
-                    )}
-                    <Text style={styles.rowHint}>Hold to report</Text>
-                  </TouchableOpacity>
+                  <View style={{ flex: 1 }}>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onLongPress={() => setReportTargetId(p.id)}
+                      accessibilityLabel={`${p.follower_name ?? 'Someone'} wants to follow you`}>
+                      <Text style={styles.rowName}>{p.follower_name ?? 'Someone'}</Text>
+                      {p.follower_magic_id && (
+                        <Text style={styles.rowMeta}>{p.follower_magic_id}</Text>
+                      )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setReportTargetId(p.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Report ${p.follower_name ?? 'this user'}`}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+                      <Text style={styles.reportLink}>⚐ Report</Text>
+                    </TouchableOpacity>
+                  </View>
                   <TouchableOpacity
                     onPress={() => handleRespond(p.id, 'accept')}
                     style={[styles.smallButton, styles.acceptButton]}>
@@ -629,12 +636,12 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     letterSpacing: 1,
   },
-  rowHint: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: COLORS.textMuted,
-    marginTop: 2,
-    fontStyle: 'italic',
+  reportLink: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.red,
+    marginTop: 4,
+    textDecorationLine: 'underline',
   },
   smallButton: {
     paddingVertical: 8,
