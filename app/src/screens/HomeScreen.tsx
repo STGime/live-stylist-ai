@@ -288,6 +288,7 @@ export default function HomeScreen({ navigation }: Props) {
     // Affirmative consent gate for third-party AI data sharing
     // (Gemini + Fal.ai). One-time per install; the key suffix bumps
     // if the disclosure materially changes.
+    if (starting || consentVisible) return;
     let consented = false;
     try {
       consented = (await AsyncStorage.getItem(AI_CONSENT_KEY)) === '1';

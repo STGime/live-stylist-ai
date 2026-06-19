@@ -16,7 +16,7 @@ Hold up your phone. Talk. LiveStylist sees what you're wearing and gives you rea
 
 Pick an occasion (work, casual, date night, event…), tap **Start Session**, point your camera at yourself, and have a conversation. Five minutes per session. No rambling — just focused style advice when you need it.
 
-Your first session is free. After that, ongoing daily sessions, image-preview generation, and persistent style memory across sessions require a Premium subscription.
+Your first session is free. After that, ongoing styling sessions (up to 30 per calendar month), image-preview generation, and persistent style memory across sessions require a Premium subscription.
 
 ## Privacy first
 
