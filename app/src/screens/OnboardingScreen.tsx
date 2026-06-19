@@ -210,7 +210,13 @@ export default function OnboardingScreen({ navigation }: Props) {
                 onPress={() => Linking.openURL('https://livestylist.app/terms.html').catch(() => {})}>
                 Terms
               </Text>
-              {' and '}
+              {', '}
+              <Text
+                style={styles.legalLink}
+                onPress={() => Linking.openURL('https://livestylist.app/privacy.html').catch(() => {})}>
+                Privacy Policy
+              </Text>
+              {', and '}
               <Text
                 style={styles.legalLink}
                 onPress={() => Linking.openURL('https://livestylist.app/community-guidelines.html').catch(() => {})}>

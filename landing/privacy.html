@@ -37,7 +37,7 @@
     "name": "Privacy Policy",
     "url": "https://livestylist.app/privacy.html",
     "inLanguage": "en",
-    "dateModified": "2026-05-11",
+    "dateModified": "2026-06-19",
     "isPartOf": { "@type": "WebSite", "name": "LiveStylist", "url": "https://livestylist.app/" },
     "breadcrumb": {
       "@type": "BreadcrumbList",
@@ -92,7 +92,7 @@
   <main class="legal-page" id="main">
     <div class="legal-content">
       <h1>Privacy Policy</h1>
-      <p class="last-updated">Last updated: May 11, 2026</p>
+      <p class="last-updated">Last updated: June 19, 2026</p>
 
       <h2>1. Information We Collect</h2>
       <p>LiveStylist is built around a minimal data model. We do not require an email address or login. Your account is identified only by an anonymous device identifier (a randomly-generated UUID stored on your device).</p>
@@ -106,7 +106,18 @@
       </ul>
       <p>We do <strong>not</strong> collect email addresses, real names, contacts, location, or device contact lists. We do not use third-party analytics or advertising trackers.</p>
 
-      <h2>2. How We Use Your Information</h2>
+      <h2>2. Face Data</h2>
+      <p>Because LiveStylist's camera frames include the user's face, we treat face imagery as a distinct, sensitive category and disclose it explicitly here.</p>
+      <ul>
+        <li><strong>What face data is collected:</strong> During an active styling session, the app captures short-lived cropped frames from your front-facing camera covering your face — specifically the eye region, the mouth region, and the upper-body / outfit region around a face-guide oval shown on screen. No raw full-frame photos or videos are saved.</li>
+        <li><strong>All planned uses of face data:</strong> real-time style and beauty analysis only — i.e. commentary on hair, makeup, eye/lip color choices, accessories, and upper-body outfit. Face data is <strong>not</strong> used for identification, biometric matching, attractiveness scoring, advertising, profile building, or training any AI model.</li>
+        <li><strong>Who face data is shared with, and where it is stored:</strong> the cropped frames are sent over a TLS-encrypted connection to our backend, which forwards them to <strong>Google (Gemini API)</strong> for in-memory computer-vision inference. Google processes them under its Enterprise Privacy Commitment. Face frames are <strong>not</strong> persisted to our database, are <strong>not</strong> sold, and are <strong>not</strong> shared with advertisers. Generated style-preview images (which may include your likeness) are returned via Fal.ai's CDN and served for a short window only.</li>
+        <li><strong>Retention of face data:</strong> camera frames containing your face are processed in memory and are <strong>never written to disk</strong> on our servers. Nothing facial is retained after the session ends. The only post-session artifact is a short text summary of the styling advice ("session memory"), which does not contain face data.</li>
+        <li><strong>No biometric identifier:</strong> LiveStylist does <strong>not</strong> create, derive, or store a biometric template, face embedding, or any identifier that could be used to recognise you across sessions or apps. Apple's on-device Face ID is not used by LiveStylist.</li>
+      </ul>
+      <p>If you want this data removed, simply end the session — face frames disappear from memory immediately. Deleting your account (Profile → Delete Account) additionally removes all stored profile data and session summaries.</p>
+
+      <h2>3. How We Use Your Information</h2>
       <ul>
         <li>To provide real-time AI-powered style and beauty advice during a session.</li>
         <li>To remember your preferences and recent sessions so the stylist can be personal across visits.</li>
@@ -114,7 +125,7 @@
         <li>To diagnose and fix bugs.</li>
       </ul>
 
-      <h2>3. Data Sharing &amp; Sub-processors</h2>
+      <h2>4. Data Sharing &amp; Sub-processors</h2>
       <p>We do not sell your personal data. To run the service, the following sub-processors handle data on our behalf:</p>
       <ul>
         <li><strong>Google (Gemini API):</strong> Real-time voice conversation and computer-vision analysis of camera frames. Data is processed under Google's Enterprise Privacy Commitment.</li>
@@ -125,7 +136,7 @@
         <li><strong>Apple App Store / Google Play Store:</strong> Payment processing for subscriptions. We never see your payment details.</li>
       </ul>
 
-      <h2>4. Data Retention</h2>
+      <h2>5. Data Retention</h2>
       <ul>
         <li><strong>Camera frames:</strong> processed in memory only; not stored.</li>
         <li><strong>Audio:</strong> processed in real time by Google Gemini Live; not stored by us.</li>
@@ -134,7 +145,7 @@
       </ul>
       <p>You can delete your entire account from inside the app (Profile → Delete Account). This permanently removes your profile, all session records, and all session memories from our servers.</p>
 
-      <h2>5. Your Rights (GDPR &amp; similar)</h2>
+      <h2>6. Your Rights (GDPR &amp; similar)</h2>
       <p>Because we collect almost no personal data, most rights are fulfilled automatically: there is no email or real name to access, correct, or export. You always have the right to:</p>
       <ul>
         <li>Delete your account and all associated data (Profile → Delete Account).</li>
@@ -142,16 +153,16 @@
         <li>Cancel your subscription at any time via your device's subscription settings.</li>
       </ul>
 
-      <h2>6. Data Security</h2>
+      <h2>7. Data Security</h2>
       <p>All network traffic is encrypted in transit using TLS. Data at rest in Eurobase is encrypted by the underlying database. API keys for sub-processors are stored in Google Secret Manager and are never embedded in the app.</p>
 
-      <h2>7. Children's Privacy</h2>
+      <h2>8. Children's Privacy</h2>
       <p>LiveStylist is not intended for users under the age of 13. We do not knowingly collect data from children under this age.</p>
 
-      <h2>8. Changes to This Policy</h2>
+      <h2>9. Changes to This Policy</h2>
       <p>We may update this Privacy Policy from time to time. We will notify you of significant changes via the app or by updating the "Last updated" date above.</p>
 
-      <h2>9. Contact Us</h2>
+      <h2>10. Contact Us</h2>
       <p>If you have questions about this Privacy Policy, contact us at:</p>
       <p>privacy@livestylist.app</p>
     </div>

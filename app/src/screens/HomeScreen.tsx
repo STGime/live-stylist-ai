@@ -24,6 +24,7 @@ import FloatingBubbles from '../components/FloatingBubbles';
 import ProfileModal from '../components/ProfileModal';
 import HelpOverlay from '../components/HelpOverlay';
 import OccasionPicker from '../components/OccasionPicker';
+import AiConsentSheet, { AI_CONSENT_KEY } from '../components/AiConsentSheet';
 import * as api from '../services/api';
 import { HELP_SEEN_KEY } from '../services/api';
 import { getDeviceLocale } from '../utils/locale';
@@ -55,6 +56,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [productRegion, setProductRegion] = useState<ProductRegion>('us');
   const [showProducts, setShowProducts] = useState(true);
   const [pendingFollowCount, setPendingFollowCount] = useState(0);
+  const [consentVisible, setConsentVisible] = useState(false);
   const dialog = useDialog();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(16)).current;
@@ -237,10 +239,14 @@ export default function HomeScreen({ navigation }: Props) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Hey there' : 'Good evening';
 
-  const handleStartSession = async () => {
+  // Actual session-start path. Called either directly (consent already
+  // granted) or after the user taps "I agree & continue" in the consent
+  // sheet. Apple §5.1.1(i)/§5.1.2(i) requires the affirmative consent
+  // gate ahead of any data being sent to Gemini / Fal.ai, so this
+  // function must never be reached without the consent flag being set.
+  const startSessionInternal = async () => {
     setStarting(true);
     try {
-      // Ensure camera + mic permissions before launching
       const camStatus = await Camera.requestCameraPermission();
       const micStatus = await Camera.requestMicrophonePermission();
 
@@ -276,6 +282,36 @@ export default function HomeScreen({ navigation }: Props) {
     } finally {
       setStarting(false);
     }
+  };
+
+  const handleStartSession = async () => {
+    // Affirmative consent gate for third-party AI data sharing
+    // (Gemini + Fal.ai). One-time per install; the key suffix bumps
+    // if the disclosure materially changes.
+    if (starting || consentVisible) return;
+    let consented = false;
+    try {
+      consented = (await AsyncStorage.getItem(AI_CONSENT_KEY)) === '1';
+    } catch {
+      // Storage unreachable — fail safe by re-prompting. Slightly more
+      // annoying than swallowing, but Apple wants the affirmative gate.
+      consented = false;
+    }
+    if (!consented) {
+      setConsentVisible(true);
+      return;
+    }
+    await startSessionInternal();
+  };
+
+  const handleConsentAgree = async () => {
+    try {
+      await AsyncStorage.setItem(AI_CONSENT_KEY, '1');
+    } catch {
+      // Non-fatal — they'll just see the sheet again next time.
+    }
+    setConsentVisible(false);
+    await startSessionInternal();
   };
 
   return (
@@ -562,6 +598,12 @@ export default function HomeScreen({ navigation }: Props) {
       )}
 
       <HelpOverlay visible={helpVisible} onDismiss={handleHelpDismiss} />
+
+      <AiConsentSheet
+        visible={consentVisible}
+        onCancel={() => setConsentVisible(false)}
+        onAgree={handleConsentAgree}
+      />
     </LinearGradient>
   );
 }

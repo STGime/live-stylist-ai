@@ -299,10 +299,15 @@ function PackageRow({
 }) {
   const product = pkg.product;
   const isAnnual = pkg.packageType === 'ANNUAL';
+  // Apple 3.1.2(c): the in-app subscription row must show title, length,
+  // and price. Length was implied by Monthly/Annual; spell it out so a
+  // reviewer can tick the box without inference.
+  const lengthLabel = isAnnual ? '12 months' : '1 month';
   return (
     <TouchableOpacity style={styles.pkg} onPress={() => onPress(pkg)}>
       <View style={{ flex: 1 }}>
         <Text style={styles.pkgTitle}>{isAnnual ? 'Annual' : 'Monthly'}</Text>
+        <Text style={styles.pkgLength}>{lengthLabel} • auto-renews</Text>
         <Text style={styles.pkgDesc}>{product.description}</Text>
       </View>
       <View>
@@ -340,6 +345,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.pink + '30',
   },
   pkgTitle: { fontSize: 18, fontWeight: '700', color: COLORS.charcoal },
+  pkgLength: { fontSize: 12, color: COLORS.charcoal, opacity: 0.7, marginTop: 2, fontWeight: '600' },
   pkgDesc: { fontSize: 13, color: COLORS.charcoal, opacity: 0.6, marginTop: 2 },
   pkgPrice: { fontSize: 18, fontWeight: '800', color: COLORS.pink, textAlign: 'right' },
   pkgSavings: { fontSize: 11, color: COLORS.charcoal, opacity: 0.6, textAlign: 'right' },
