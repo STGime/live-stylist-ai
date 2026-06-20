@@ -12,3 +12,7 @@
 .DS_Store
 assets/videos/*
 !assets/videos/demo.mp4
+
+# scripts/ holds dev tooling (e.g. build-llms-full.py) — the generated
+# llms-full.txt ships, the script itself doesn't need to.
+scripts/

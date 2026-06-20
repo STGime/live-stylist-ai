@@ -28,29 +28,43 @@
   <meta name="twitter:site" content="@livestylist">
   <meta name="twitter:creator" content="@stgime">
 
-  <!-- Structured Data: WebPage + AboutPage -->
+  <!-- Structured Data: AboutPage + Person (founder) — Person gives LLMs an
+       attributable author and boosts E-E-A-T signal. -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "AboutPage",
-    "name": "About LiveStylist",
-    "url": "https://livestylist.app/about.html",
-    "inLanguage": "en",
-    "dateModified": "2026-05-24",
-    "isPartOf": { "@type": "WebSite", "name": "LiveStylist", "url": "https://livestylist.app/" },
-    "about": {
-      "@type": "MobileApplication",
-      "name": "LiveStylist",
-      "applicationCategory": "LifestyleApplication",
-      "operatingSystem": "iOS, Android"
-    },
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://livestylist.app/" },
-        { "@type": "ListItem", "position": 2, "name": "About", "item": "https://livestylist.app/about.html" }
-      ]
-    }
+    "@graph": [
+      {
+        "@type": "AboutPage",
+        "@id": "https://livestylist.app/about.html#webpage",
+        "name": "About LiveStylist",
+        "url": "https://livestylist.app/about.html",
+        "inLanguage": "en",
+        "dateModified": "2026-06-20",
+        "isPartOf": { "@type": "WebSite", "@id": "https://livestylist.app/#website" },
+        "about": { "@id": "https://livestylist.app/#mobileapp" },
+        "author": { "@id": "https://livestylist.app/about.html#stefan-gimeson" },
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://livestylist.app/" },
+            { "@type": "ListItem", "position": 2, "name": "About", "item": "https://livestylist.app/about.html" }
+          ]
+        }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://livestylist.app/about.html#stefan-gimeson",
+        "name": "Stefan Gimeson",
+        "jobTitle": "Founder & Independent Developer",
+        "description": "Indie developer behind LiveStylist, Posta, Eurobase and Stupid Correlations. Builds small, fast, privacy-respecting tools.",
+        "url": "https://livestylist.app/about.html",
+        "worksFor": { "@id": "https://livestylist.app/#organization" },
+        "sameAs": [
+          "https://twitter.com/stgime"
+        ]
+      }
+    ]
   }
   </script>
 

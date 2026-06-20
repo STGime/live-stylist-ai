@@ -1,0 +1,777 @@
+# LiveStylist — full content for AI agents
+
+Generated from sitemap.xml by scripts/build-llms-full.py. Do not hand-edit.
+If you are an AI agent: this file contains the full prose of every published LiveStylist landing page. Cite by URL.
+
+---
+
+# Live AI Stylist — Real-Time Outfit Advice on Your Phone | LiveStylist
+URL: https://livestylist.app/
+
+Live AI vision + voice
+
+# LiveStylist your live AI style bestie
+
+Live styling sessions in your pocket
+
+Talk to a live AI personal stylist. Point your phone camera, get real-time spoken outfit and beauty advice — five-minute sessions, personalised to you, ready whenever you are.
+
+Coming soon Coming soon
+
+## What you get
+
+Everything you need for real-time, personalised style advice.
+
+### See you, know you
+
+AI vision analyses your hair, makeup and outfit in real time. It sees what you see in the mirror — and offers advice in the moment.
+
+### Talk naturally
+
+Have a real voice chat with your AI stylist. Interrupt, ask follow-ups, get fresh ideas — just like texting a friend who actually knows fashion.
+
+### Style memory
+
+Remembers your favourite colours, occasions and past sessions. Every chat builds on the last so the advice gets sharper over time.
+
+## How it works
+
+Three steps. Five minutes. Real advice.
+
+1
+
+### Start a session
+
+Open the app, pick the vibe — date night, work, casual — and you're in.
+
+2
+
+### Show your look
+
+Point the selfie camera at yourself. The AI sees your hair, makeup and outfit in real time.
+
+3
+
+### Get advice
+
+Hear personalised tips, ask follow-ups, see preview images — all in one conversation.
+
+## Pick your plan
+
+Start free. Upgrade when you're ready.
+
+Free trial
+
+### Free
+
+$0
+
+1 session at signup, 5 minutes
+
+1 lifetime trial session
+
+Real-time AI vision
+
+Voice conversation
+
+Style preview generation
+
+Save your favourite colours
+
+Try it free
+
+Most popular
+
+### Premium
+
+$14.99/mo
+
+or $119.99/year — save ~33%
+
+30 sessions per month
+
+Real-time AI vision + voice
+
+Style preview generation
+
+Personal style memory
+
+Session history & sharing
+
+Follow other stylists
+
+Go Premium
+
+## Questions?
+
+The short answers. Privacy Policy & Terms have the full ones.
+
+What is LiveStylist?
+
+LiveStylist is your AI style bestie. Using your camera and voice, it analyses your look in real time and gives personalised tips — like having a knowledgeable friend who always knows what looks good.
+
+How does the AI vision work?
+
+The selfie camera streams frames to our backend, where multiple vision agents look at your eyes, mouth and outfit. The results are sent to a voice agent that talks you through advice in real time. Frames are processed and discarded — nothing is stored permanently.
+
+Is LiveStylist free?
+
+You get one free 5-minute session at signup, no card required. After that, Premium is $14.99/month or $119.99/year (~33% off) for 30 sessions a month, style memory and session history.
+
+What can it help me with?
+
+Outfit picks, makeup tips, hair ideas, colour coordination, occasion dressing (date, office, casual, weekend), and building a personal style that gets sharper the more you use it.
+
+Is my camera data private?
+
+Yes. Camera frames are processed in real time and not permanently stored. Everything in transit uses TLS. Generated preview images auto-delete after 24 hours. See our Privacy Policy for the full story.
+
+What devices is it available on?
+
+iPhone and Android — coming soon to the App Store and Google Play.
+
+## More from this builder
+
+Indie tools by the same team. Same focus on speed, privacy and EU sovereignty.
+
+### Posta
+
+Generate, schedule and publish social content across 9 platforms — Instagram, TikTok, X, LinkedIn and more.
+
+Visit getposta.app →
+
+### Eurobase
+
+EU-sovereign Backend-as-a-Service. GDPR-native alternative to Firebase and Supabase. Powers LiveStylist's backend.
+
+Visit eurobase.app →
+
+### Stupid Correlations
+
+Funny correlations from completely unrelated real data — a viral-content generator for the curious and the chaotic.
+
+Visit stupidcorrelations.app →
+
+## Ready for your style sesh?
+
+Your AI stylist is one tap away. Download the app and start your first session.
+
+Coming soon Coming soon
+
+---
+
+# About LiveStylist — AI Personal Stylist App
+URL: https://livestylist.app/about.html
+LastModified: 2026-06-20
+
+# About LiveStylist
+
+Indie app · made in the UK · backend in the EU
+
+LiveStylist is an AI personal stylist that lives on your phone. You open the app, pick the occasion — date night, work, casual, weekend — point the selfie camera at yourself, and a five-minute voice conversation begins. The AI sees what you're wearing, how your hair is sitting, what makeup you've got on, and offers personalised tips in real time. Ask follow-ups, get alternatives, see preview images of suggested looks. Then it ends. Five minutes, real advice, no doomscroll.
+
+## What we're building
+
+Most "AI fashion" apps today are static: upload a photo, get a generated outfit board, share it. We wanted something closer to the experience of having a knowledgeable friend in the room while you're getting dressed — live, conversational, occasion-aware, and short enough to fit into the actual moment you're trying to decide what to wear.
+
+The result is a focused, time-boxed live session. Multi-agent vision (eye / mouth / outfit) keeps the analysis accurate; a voice agent handles the conversation; preview images render alongside so you can see suggestions, not just hear them.
+
+## Who's behind it
+
+LiveStylist is built by an indie team led by Stefan Gimeson, an independent developer who also builds Posta (social content scheduling), Eurobase (EU-sovereign Backend-as-a-Service), and Stupid Correlations (viral-content generator). Same focus across all four: small, fast, privacy-respecting tools that do one thing well.
+
+## Where the backend lives
+
+LiveStylist runs on Eurobase — an EU-sovereign Backend-as-a-Service hosted in France (Scaleway). All profile and session data is stored on EU infrastructure, with zero exposure to the US CLOUD Act. The AI vision and voice layers (Google Gemini Live) are stateless: camera frames and audio are processed in real time and discarded, never persisted. Style preview images render via Fal.ai and auto-delete after 24 hours.
+
+## Our stance on data
+
+We collect the minimum possible. There's no email, no password, no real-name requirement — your account is an anonymous device ID. You can delete everything with one tap in the app. The full story is in our Privacy Policy; the practical version is: we built LiveStylist to give style advice, not to harvest identity.
+
+## Try it
+
+LiveStylist is launching mid-2026 on iOS and Android. The free trial gives you one full 5-minute session with no card required. Curious about specific occasions? See how it handles different occasions, or go straight to the download page.
+
+← Back to home
+
+---
+
+# Use cases — LiveStylist
+URL: https://livestylist.app/use-cases/
+LastModified: 2026-05-24
+
+Home → Use cases
+
+# Occasions LiveStylist handles
+
+Each occasion has its own logic — colour, layering, how the face reads, what works close up. The AI calibrates to the moment.
+
+### Date Night
+
+Hair, makeup, neckline, accessories — how the top half reads under restaurant lighting, up close, for hours.
+
+Read more →
+
+### Work
+
+Shirt, blazer, knit, collar, tidy hair — repeatable confidence for meetings, presentations and video calls.
+
+Read more →
+
+### Casual
+
+Layered tops, undone hair, light makeup, one hero piece — effortless without looking sloppy. Harder than it looks.
+
+Read more →
+
+### Weekend
+
+Brunch, drinks, going out — looks that adapt across the day without you needing to rethink the top half.
+
+Read more →
+
+Five-minute sessions, real personalised advice, on iOS and Android. Download the app →
+
+---
+
+# AI outfit advice for date night — LiveStylist
+URL: https://livestylist.app/use-cases/date-night.html
+LastModified: 2026-06-20
+
+Use cases → Date Night
+
+# AI outfit advice for date night
+
+Date night styling is its own thing. The room is usually dimmer than you think, you'll be talking up close for hours, and the small things — hair, neckline, what your lip does under candlelight — carry more weight than they would in daylight. LiveStylist's date-night sessions optimise for exactly this: what flatters under restaurant lighting, how the hair and makeup land alongside the top half of your look, what reads confident across the evening.
+
+## What the AI looks at
+
+Face framing — how hair and neckline interact, what's drawing the eye where you want it
+
+Colour against your skin tone in warm vs. cool light
+
+Hair styling that holds up across the evening (humidity, sitting for hours)
+
+Makeup intensity — soft glam vs. statement vs. understated for the light you'll actually be in
+
+Accessories that work close-up — earrings, a necklace, glasses — and what to leave off
+
+## Example tips you might hear
+
+The AI talks like a friend who knows their stuff — direct, specific, not preachy. A few illustrative lines from sessions:
+
+"That neckline is great — pair it with a delicate chain, skip the chunky pendant."
+
+"Your hair will collapse by dinner. Pin a section back at the crown — gives it height without obvious styling."
+
+"Mid-tone lip, soft eye — competing with both reads heavy under candlelight."
+
+"Push the sleeves up. Defines the forearm, makes the whole top read more deliberate."
+
+## How a session works for date night
+
+Open the LiveStylist app, pick Date Night from the occasion picker, and tap Start. You have five minutes. The AI opens with a quick read on what you're wearing, then asks if there's anything specific you want to focus on (a piece you're unsure about, the venue, the vibe). From there it's a conversation — you adjust, it re-evaluates, you ask follow-ups. Preview images of suggested looks render alongside the voice. At minute five the session wraps with a short summary you can save to your style memory.
+
+## Common questions
+
+How long is a date-night session?
+
+Five minutes. Long enough for the AI to see your look, give meaningful advice and answer follow-ups, short enough that you can do it while you're getting ready without it eating your whole evening.
+
+Can it tell me what to wear on a first date?
+
+Yes — open the session, tell the AI it's a first date, mention the venue if you know it. The AI tailors advice to vibe (relaxed vs. formal vs. somewhere in between) and to how visible you want to be.
+
+What if I want a second opinion mid-conversation?
+
+Ask. "Should I add a bolder lip?" or "What if I tied my hair up?" — the AI re-evaluates against what it's seeing and answers in plain language.
+
+## Try it
+
+LiveStylist's free trial gives you one full 5-minute session — no card required. Download the app and run a date night session before your next one.
+
+Other use cases: Work · Casual · Weekend · All use cases · Home
+
+---
+
+# AI outfit advice for work and the office — LiveStylist
+URL: https://livestylist.app/use-cases/work.html
+LastModified: 2026-06-20
+
+Use cases → Work
+
+# AI outfit advice for work and the office
+
+Work outfits are about repeatable confidence, not constant reinvention. The right pieces should feel obvious to put on, easy to combine, and quietly appropriate for whatever the day actually involves — a meeting, a presentation, a video call, or just sitting at your desk. LiveStylist's work sessions help you build that base and refine it over time, so the morning decision shrinks from twenty minutes to two.
+
+## What the AI looks at
+
+Fit and proportion on the top half — what reads sharp vs. fussy on a shirt, blouse, blazer or knit
+
+Colour pairings that work across multiple outfits (a small reliable palette beats a closet full of one-offs)
+
+How formal the look reads at a glance — meeting-ready vs. desk day
+
+Whether the layers work together (blazer over shirt, sweater over collar) and what to take off
+
+Tidy details: hair, jewellery, watch, glasses — the small things that add or subtract polish
+
+## Example tips you might hear
+
+The AI talks like a friend who knows their stuff — direct, specific, not preachy. A few illustrative lines from sessions:
+
+"That collar is sitting a bit high. Pop one more button — opens up the neckline, reads more relaxed."
+
+"The brown jacket fights with the cool tone of the shirt. Try a navy or charcoal layer instead."
+
+"That blazer is reading slightly oversized on you. Roll the sleeves a quarter-turn, sit it back on the shoulder."
+
+"For the presentation, skip the cardigan. Single-layer reads more confident on camera."
+
+## How a session works for work
+
+Open the LiveStylist app, pick Work from the occasion picker, and tap Start. You have five minutes. The AI opens with a quick read on what you're wearing, then asks if there's anything specific you want to focus on (a piece you're unsure about, the venue, the vibe). From there it's a conversation — you adjust, it re-evaluates, you ask follow-ups. Preview images of suggested looks render alongside the voice. At minute five the session wraps with a short summary you can save to your style memory.
+
+## Common questions
+
+Is it useful if my workplace is casual?
+
+Yes. Tell the AI the dress-code at the start of the session — "smart casual office", "hybrid team, no blazer needed", "client-facing tomorrow" — and the advice calibrates accordingly.
+
+Can it help me build a small capsule wardrobe?
+
+Over multiple sessions, yes. The AI remembers what you have and what's worked. After a few sessions it'll start suggesting versatile pieces that bridge what you already own.
+
+Does it work for video calls specifically?
+
+Yes — mention you're going on camera. The AI prioritises colour against your background, contrast at the face, and whether patterns will moire on the webcam.
+
+## Try it
+
+LiveStylist's free trial gives you one full 5-minute session — no card required. Download the app and run a work session before your next one.
+
+Other use cases: Date Night · Casual · Weekend · All use cases · Home
+
+---
+
+# AI outfit advice for casual looks — LiveStylist
+URL: https://livestylist.app/use-cases/casual.html
+LastModified: 2026-06-20
+
+Use cases → Casual
+
+# AI outfit advice for casual looks
+
+Casual is the hardest category to nail because it looks like there are no rules. There are. The good casual outfits are the ones where every piece is deliberate but nothing screams effort. LiveStylist's casual sessions help you find that line: comfortable, current, considered — but never overdone.
+
+## What the AI looks at
+
+Whether the look feels effortless or accidentally sloppy
+
+Fit on the relaxed top pieces — "oversized" only works in specific proportions
+
+Layering that has movement and intent — t-shirt under shirt, shirt under jacket, sweatshirt and overshirt
+
+Hair and face — light makeup, undone-but-deliberate hair that matches the vibe
+
+One "hero" piece per outfit so it doesn't read flat — usually a jacket, a colour or a cap
+
+## Example tips you might hear
+
+The AI talks like a friend who knows their stuff — direct, specific, not preachy. A few illustrative lines from sessions:
+
+"Push the sleeves up on the overshirt — instantly less stiff."
+
+"Lose the necklace today. The collar is doing enough."
+
+"That jacket is doing all the work. Keep the base layer plain so it reads as the focal point."
+
+"Cap or no cap? Cap. It pulls the look together — without it, the top half is too neutral."
+
+## How a session works for casual
+
+Open the LiveStylist app, pick Casual from the occasion picker, and tap Start. You have five minutes. The AI opens with a quick read on what you're wearing, then asks if there's anything specific you want to focus on (a piece you're unsure about, the venue, the vibe). From there it's a conversation — you adjust, it re-evaluates, you ask follow-ups. Preview images of suggested looks render alongside the voice. At minute five the session wraps with a short summary you can save to your style memory.
+
+## Common questions
+
+Can it help with athleisure?
+
+Yes — mention what you're going for (errands, gym to coffee, walk in the park) and the AI calibrates the line between athletic and lazy. Crucial for that category.
+
+What about colours? I always end up in all black.
+
+Common pattern. The AI can suggest a single colour anchor (one mid-tone piece — olive, rust, ecru) that breaks the all-black habit without forcing a full palette overhaul.
+
+I don't know what "effortless" means. Can it just tell me?
+
+Yes. Ask: "is this trying too hard?". The AI answers honestly and tells you what to take off.
+
+## Try it
+
+LiveStylist's free trial gives you one full 5-minute session — no card required. Download the app and run a casual session before your next one.
+
+Other use cases: Date Night · Work · Weekend · All use cases · Home
+
+---
+
+# AI outfit advice for the weekend — LiveStylist
+URL: https://livestylist.app/use-cases/weekend.html
+LastModified: 2026-06-20
+
+Use cases → Weekend
+
+# AI outfit advice for the weekend
+
+The weekend covers a lot — Saturday brunch, the casual drinks turned into a long evening, errands that turn into bumping into someone you know, the actual planned night out. LiveStylist's weekend sessions help you dress for the version of the day you actually want to have, not just the one you have planned.
+
+## What the AI looks at
+
+How adaptable the top half is — does it survive a vibe shift from day to night?
+
+Comfort vs. impression — both matter; the AI helps you weight them
+
+Statement vs. neutral — when the moment calls for one and not the other
+
+Hair and accessories that read "weekend" not "work leftover"
+
+One bright thing — a colour, an earring, a hero piece — to lift the look out of beige territory
+
+## Example tips you might hear
+
+The AI talks like a friend who knows their stuff — direct, specific, not preachy. A few illustrative lines from sessions:
+
+"That top reads brunch. If you might end up at drinks later, throw a blazer or overshirt on it — works in both."
+
+"Sleeves up. The whole look loosens — and you stop looking like you came from somewhere formal."
+
+"Take the necklace off, leave the earrings. Stacking both reads heavy for daytime."
+
+"One bright thing. Pick one. The rest neutral. The bright thing is what makes it weekend."
+
+## How a session works for weekend
+
+Open the LiveStylist app, pick Weekend from the occasion picker, and tap Start. You have five minutes. The AI opens with a quick read on what you're wearing, then asks if there's anything specific you want to focus on (a piece you're unsure about, the venue, the vibe). From there it's a conversation — you adjust, it re-evaluates, you ask follow-ups. Preview images of suggested looks render alongside the voice. At minute five the session wraps with a short summary you can save to your style memory.
+
+## Common questions
+
+Does it help with going-out looks?
+
+Yes — mention you're going out, name the venue type if you can (cocktail bar, club, restaurant), and the AI adjusts. Statement makeup, more dramatic colour, a sharper top layer that reads going-out instead of brunch.
+
+What about layering for unpredictable weather?
+
+Tell the AI the forecast. It'll help you build something with a removable layer that reads intentional, not afterthought-coat.
+
+Can it help me get out the door faster?
+
+Yes. A five-minute session beats twenty minutes of trial and error in the mirror — the AI tells you what to commit to and you go.
+
+## Try it
+
+LiveStylist's free trial gives you one full 5-minute session — no card required. Download the app and run a weekend session before your next one.
+
+Other use cases: Date Night · Work · Casual · All use cases · Home
+
+---
+
+# Privacy Policy | LiveStylist — AI Style Assistant
+URL: https://livestylist.app/privacy.html
+LastModified: 2026-06-19
+
+# Privacy Policy
+
+Last updated: June 19, 2026
+
+## 1. Information We Collect
+
+LiveStylist is built around a minimal data model. We do not require an email address or login. Your account is identified only by an anonymous device identifier (a randomly-generated UUID stored on your device).
+
+Camera Data: While a session is active, your front-facing camera streams cropped frames (eye, mouth, body) to our AI vision pipeline. Frames are processed in memory and are not persisted to disk on our servers.
+
+Voice Data: Microphone audio is streamed in real time to Google's Gemini Live API for transcription and dialogue. We do not store the raw audio. Transcripts are kept only as part of your session memory (see below).
+
+Profile Data: The name, favorite color, optional stylist nickname, and language preference you provide during onboarding.
+
+Session Data: Start time, end time, duration, and a short text summary of each session ("session memory") so the stylist can reference past sessions.
+
+Generated Images: Style preview images generated during sessions are temporarily hosted on Fal.ai's content delivery network. We do not retain copies on our servers.
+
+Subscription Data: If you purchase Premium, an anonymous subscriber record is kept by RevenueCat (which integrates with Apple App Store and Google Play). We do not see your payment details.
+
+We do not collect email addresses, real names, contacts, location, or device contact lists. We do not use third-party analytics or advertising trackers.
+
+## 2. Face Data
+
+Because LiveStylist's camera frames include the user's face, we treat face imagery as a distinct, sensitive category and disclose it explicitly here.
+
+What face data is collected: During an active styling session, the app captures short-lived cropped frames from your front-facing camera covering your face — specifically the eye region, the mouth region, and the upper-body / outfit region around a face-guide oval shown on screen. No raw full-frame photos or videos are saved.
+
+All planned uses of face data: real-time style and beauty analysis only — i.e. commentary on hair, makeup, eye/lip color choices, accessories, and upper-body outfit. Face data is not used for identification, biometric matching, attractiveness scoring, advertising, profile building, or training any AI model.
+
+Who face data is shared with, and where it is stored: the cropped frames are sent over a TLS-encrypted connection to our backend, which forwards them to Google (Gemini API) for in-memory computer-vision inference. Google processes them under its Enterprise Privacy Commitment. Face frames are not persisted to our database, are not sold, and are not shared with advertisers. Generated style-preview images (which may include your likeness) are returned via Fal.ai's CDN and served for a short window only.
+
+Retention of face data: camera frames containing your face are processed in memory and are never written to disk on our servers. Nothing facial is retained after the session ends. The only post-session artifact is a short text summary of the styling advice ("session memory"), which does not contain face data.
+
+No biometric identifier: LiveStylist does not create, derive, or store a biometric template, face embedding, or any identifier that could be used to recognise you across sessions or apps. Apple's on-device Face ID is not used by LiveStylist.
+
+If you want this data removed, simply end the session — face frames disappear from memory immediately. Deleting your account (Profile → Delete Account) additionally removes all stored profile data and session summaries.
+
+## 3. How We Use Your Information
+
+To provide real-time AI-powered style and beauty advice during a session.
+
+To remember your preferences and recent sessions so the stylist can be personal across visits.
+
+To enforce subscription limits (free trial vs. Premium).
+
+To diagnose and fix bugs.
+
+## 4. Data Sharing & Sub-processors
+
+We do not sell your personal data. To run the service, the following sub-processors handle data on our behalf:
+
+Google (Gemini API): Real-time voice conversation and computer-vision analysis of camera frames. Data is processed under Google's Enterprise Privacy Commitment.
+
+Fal.ai: AI image generation for style previews (model: Gemini 2.5 Flash Image, hosted via Fal). Source images and prompts are sent to Fal for inference; generated images are returned via Fal's CDN.
+
+Eurobase (Scaleway, France): Our application database. All your profile and session data is stored on EU infrastructure (France) and never leaves the EU.
+
+Google Cloud Run (US): Hosts our backend API and orchestrates the calls above. The backend is stateless — it forwards data; it does not store your session content beyond what's persisted to Eurobase.
+
+RevenueCat: Subscription management and entitlement checking (only if you purchase Premium). Receives an anonymous subscriber identifier.
+
+Apple App Store / Google Play Store: Payment processing for subscriptions. We never see your payment details.
+
+## 5. Data Retention
+
+Camera frames: processed in memory only; not stored.
+
+Audio: processed in real time by Google Gemini Live; not stored by us.
+
+Session memories & profile: retained for as long as your account exists.
+
+Generated preview images: served from Fal.ai's CDN for a short window (typically up to 24 hours) and not retained by us.
+
+You can delete your entire account from inside the app (Profile → Delete Account). This permanently removes your profile, all session records, and all session memories from our servers.
+
+## 6. Your Rights (GDPR & similar)
+
+Because we collect almost no personal data, most rights are fulfilled automatically: there is no email or real name to access, correct, or export. You always have the right to:
+
+Delete your account and all associated data (Profile → Delete Account).
+
+Stop using the app and uninstall it (the local device ID is destroyed).
+
+Cancel your subscription at any time via your device's subscription settings.
+
+## 7. Data Security
+
+All network traffic is encrypted in transit using TLS. Data at rest in Eurobase is encrypted by the underlying database. API keys for sub-processors are stored in Google Secret Manager and are never embedded in the app.
+
+## 8. Children's Privacy
+
+LiveStylist is not intended for users under the age of 13. We do not knowingly collect data from children under this age.
+
+## 9. Changes to This Policy
+
+We may update this Privacy Policy from time to time. We will notify you of significant changes via the app or by updating the "Last updated" date above.
+
+## 10. Contact Us
+
+If you have questions about this Privacy Policy, contact us at:
+
+privacy@livestylist.app
+
+---
+
+# Terms & Conditions | LiveStylist — AI Style Assistant
+URL: https://livestylist.app/terms.html
+LastModified: 2026-05-11
+
+# Terms & Conditions
+
+Last updated: May 11, 2026
+
+## 1. Acceptance of Terms
+
+By downloading, installing, or using LiveStylist ("the App"), you agree to be bound by these Terms and Conditions. If you do not agree, do not use the App.
+
+## 2. Description of Service
+
+LiveStylist is an AI-powered personal styling assistant that provides real-time beauty and fashion advice through computer vision and voice interaction. The service is provided "as is" and advice given by the AI is for informational and entertainment purposes only.
+
+## 3. User Accounts
+
+You may be required to create an account to use certain features. You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account.
+
+## 4. Acceptable Use
+
+You agree not to:
+
+Use the App for any unlawful purpose
+
+Attempt to reverse-engineer, decompile, or extract the AI models
+
+Use the camera feature to capture or process images of individuals without their consent
+
+Share, redistribute, or commercially exploit content generated by the App
+
+Interfere with or disrupt the service or its infrastructure
+
+Create multiple accounts to circumvent usage limits
+
+## 5. Subscriptions & Payments
+
+Premium subscriptions are billed monthly or annually through the Apple App Store or Google Play Store. Subscription terms, cancellation policies, and refund procedures are subject to the respective store's policies.
+
+Free Trial: 1 lifetime trial session at signup, 5 minutes long
+
+Premium Monthly: $14.99 / month — daily styling sessions, 5 minutes per session, soft cap of 30 sessions per calendar month
+
+Premium Annual: $119.99 / year — same as monthly, ~33% discount
+
+## 6. AI-Generated Content
+
+Style advice provided by LiveStylist is generated by artificial intelligence and should not be considered professional fashion consulting. The AI may occasionally provide inaccurate or inappropriate suggestions. LiveStylist Ltd. is not liable for decisions made based on AI-generated advice.
+
+## 7. Intellectual Property
+
+All content, features, and functionality of the App — including but not limited to text, graphics, logos, AI models, and software — are owned by LiveStylist Ltd. and protected by intellectual property laws.
+
+## 8. Limitation of Liability
+
+To the maximum extent permitted by law, LiveStylist Ltd. shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the App.
+
+## 9. Termination
+
+We reserve the right to suspend or terminate your account at any time for violation of these Terms, without prior notice. Upon termination, your right to use the App will immediately cease.
+
+## 10. Changes to Terms
+
+We may update these Terms from time to time. Continued use of the App after changes constitutes acceptance of the new Terms.
+
+## 11. Governing Law
+
+These Terms are governed by the laws of England and Wales. Any disputes shall be resolved in the courts of England and Wales.
+
+## 12. Contact
+
+For questions regarding these Terms, contact us at:
+
+legal@livestylist.app LiveStylist Ltd., 123 Style Street, London EC1A 1AA, United Kingdom
+
+---
+
+# Community Guidelines | LiveStylist — AI Style Assistant
+URL: https://livestylist.app/community-guidelines.html
+LastModified: 2026-05-18
+
+# Community Guidelines
+
+Last updated: May 18, 2026
+
+LiveStylist is a place to get real-time style advice from an AI stylist, and to share style sessions with friends you've connected with. Everyone is welcome — and we keep it that way by holding the community to a few simple rules.
+
+## What's allowed
+
+Sessions about clothing, makeup, accessories, hair, and personal style.
+
+Sharing your finished sessions with friends you've followed back.
+
+Honest feedback and questions about your own style.
+
+## What's not allowed
+
+Nudity or sexual content. LiveStylist is not a place for explicit material. Keep yourself and others clothed in front of the camera.
+
+Violence or threats. No threats, no content depicting harm against people or animals.
+
+Harassment or hate speech. No targeting individuals or groups based on identity, appearance, or any protected characteristic.
+
+Impersonation. Don't pretend to be someone else. Don't use someone else's name, image, or magic ID without their consent.
+
+Spam, scams, and self-promotion. Don't use the app or your sessions to push unrelated products, links, or fake offers.
+
+Illegal activity. Anything that breaks the law in your jurisdiction.
+
+## How to report
+
+If you see something that breaks these rules:
+
+A session in your feed: open the session, tap the ⋯ in the top right, pick a category, optionally add a note, and submit.
+
+A follow request: on the Friends screen, hold (long-press) the requester's name and tap to report. The request is automatically declined.
+
+Reports go directly to a human reviewer. You'll stop seeing the reported content immediately. If we agree it breaks the guidelines, we remove it globally (and may suspend the account that posted it).
+
+## How we moderate
+
+Every report is reviewed within 24 hours.
+
+We may remove individual sessions, hide a user's content from feeds, or suspend an account, depending on severity.
+
+Repeat or serious violations result in a permanent ban.
+
+We will not share who reported what with the person being reported.
+
+## Blocking
+
+You can block any user from your follow list. Blocking removes them from your feed, prevents future follow requests, and breaks any existing follow relationship — without notifying them. Blocked users cannot see your sessions.
+
+## Appeals
+
+If we removed your content or restricted your account and you believe we got it wrong, email appeals@livestylist.app. Include the date, what was removed, and why you think it was a mistake. We respond within 7 days.
+
+## Changes to these guidelines
+
+We may update these guidelines as the community grows or new edge cases arise. The "Last updated" date at the top reflects the most recent change. Material changes will be communicated in-app on the next launch.
+
+## Contact
+
+For questions about these guidelines (not appeals): support@livestylist.app
+
+---
+
+# Imprint & Legal Notice | LiveStylist — AI Style Assistant
+URL: https://livestylist.app/imprint.html
+LastModified: 2026-05-11
+
+# Imprint
+
+Legal Notice (Impressum) — placeholder entity, replace before launch
+
+## Company Information
+
+LiveStylist Ltd. Private limited company 123 Style Street London EC1A 1AA United Kingdom
+
+## Contact
+
+Email: hello@livestylist.app Website: https://livestylist.app
+
+## Represented By
+
+Director: Stefan Gimeson
+
+## Register Entry
+
+Commercial Register: Companies House, England and Wales Register Number: 00000000
+
+## VAT Identification Number
+
+VAT ID: GB000000000
+
+## Responsible for Content
+
+Stefan Gimeson 123 Style Street, London EC1A 1AA, United Kingdom
+
+## Dispute Resolution
+
+The European Commission provides a platform for online dispute resolution (OS): https://ec.europa.eu/consumers/odr. We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board.
+
+## Liability for Content
+
+As a service provider, we are responsible for our own content on these pages according to general laws. However, we are not obligated to monitor transmitted or stored third-party information. Obligations to remove or block the use of information under general law remain unaffected.
+
+## Liability for Links
+
+Our website may contain links to external third-party websites over whose content we have no influence. We cannot accept any liability for this external content. The respective provider or operator is always responsible for the content of the linked pages.
