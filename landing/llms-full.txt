@@ -198,7 +198,7 @@ LiveStylist is launching mid-2026 on iOS and Android. The free trial gives you o
 
 # Use cases — LiveStylist
 URL: https://livestylist.app/use-cases/
-LastModified: 2026-05-24
+LastModified: 2026-06-20
 
 Home → Use cases
 
@@ -227,6 +227,12 @@ Read more →
 ### Weekend
 
 Brunch, drinks, going out — looks that adapt across the day without you needing to rethink the top half.
+
+Read more →
+
+### First date
+
+Honest, not safe. One statement, rest quiet. The five minutes before you walk out the door.
 
 Read more →
 
@@ -471,6 +477,274 @@ Yes. A five-minute session beats twenty minutes of trial and error in the mirror
 LiveStylist's free trial gives you one full 5-minute session — no card required. Download the app and run a weekend session before your next one.
 
 Other use cases: Date Night · Work · Casual · All use cases · Home
+
+---
+
+# First date outfit advice from a live AI stylist — LiveStylist
+URL: https://livestylist.app/use-cases/first-date.html
+LastModified: 2026-06-20
+
+Use cases → First date
+
+# First date outfit advice from a live AI stylist
+
+First dates are a styling problem because they're an information problem. You don't know the venue's vibe, you don't know what the other person is going to wear, you don't know whether the place is candlelit or under fluorescent strip lights. The instinct is to overthink and either over-dress (looks performative) or under-dress (reads underwhelmed). A five-minute live AI styling session with LiveStylist solves the version of the problem you can actually solve: it sees what you're wearing, hears the context, and tells you whether the look is landing where you want it to.
+
+## What the AI looks at on a first-date session
+
+How polished the look reads at a glance — first-date confidence vs. trying-too-hard is mostly a question of where the line falls between "considered" and "fussy"
+
+Fit on the top half — what the other person will see across a table for the first ninety minutes
+
+Colour against your skin tone — what brings the face forward vs. what washes it out under whatever lighting
+
+One statement, rest quiet — a single confident choice (bold lip, structured jacket, statement earrings, slick low pony) with the rest of the look turned down
+
+Shoes and the venue — what's walkable, what's weather-survivable, what reads with the rest of the outfit
+
+The small de-formal things — sleeves rolled or not, top button open or not, hair up or down
+
+## Example tips you might hear
+
+Concrete and friendly, not preachy. A few illustrative lines from real sessions:
+
+"That jacket is doing a lot of the work already. Drop the necklace — you don't need it competing."
+
+"The lip colour is sharp against the sweater. Bring the eye up to match it or take the lip down a notch."
+
+"Half-tuck the front of the shirt. It softens the silhouette without losing the line."
+
+"This reads slightly business. If you're going to a wine bar, swap the loafers for something with a little more attitude."
+
+"You're going for 'effortless'. Take off the second ring. Effortless usually means one less of something."
+
+## How a session works for a first date
+
+Open the LiveStylist app, tap Date Night, and start. You have five minutes — the box is intentional. The first thirty seconds, the AI reads what you're wearing and asks two things: where are you going, and how visible do you want to be? Both inputs matter. "Coffee at 4pm" and "cocktails at 9pm" call for genuinely different outfits, and "I want them to remember me" and "I don't want to overdo it" are both honest answers that change the advice.
+
+The middle three minutes are the real session — back-and-forth. You make adjustments, the AI re-evaluates. Preview images render alongside the conversation, so when the AI says "lose the cardigan, swap to the leather jacket", you see the difference rather than imagining it. If you push back ("the leather jacket feels too much"), the AI adapts and tries again. It's a conversation, not a verdict.
+
+The final thirty seconds, the AI summarises the look you've landed on and saves it to style memory. Next first-date session, it remembers what worked.
+
+## What it doesn't do
+
+Pretend to know things it can't. It can't tell you what the other person will be wearing, it can't predict the venue's lighting, and it doesn't read your mood any better than you do. What it can do is tell you, plainly, whether the outfit on you right now reads the way you want it to — which is the version of the problem you can actually fix in fifteen minutes before you leave.
+
+## What changes between sessions
+
+Style memory is the quiet feature that makes repeat first-date sessions sharper. The AI remembers what you wore last time, what you said worked, what you ended up taking off at the door, and what colours or silhouettes you keep returning to. By the third or fourth first-date session, the AI is no longer starting from scratch — it knows your version of "polished but easy" and can build on it instead of re-deriving it. That accumulation is the closest the app gets to having a stylist who actually knows you.
+
+## Common questions
+
+What should I wear on a first date?
+
+Something you'd feel comfortable being photographed in. One statement piece, everything else quiet. Fit beats trend.
+
+Should a first-date outfit be sexy or safe?
+
+Aim for honest. Wear a version of yourself — your better, slightly polished version, not a costume. The AI flags when something is reading try-hard.
+
+What if I don't know the venue?
+
+Tell the AI. It'll suggest something deliberately middle-of-the-road — readable as either casual or dressed-up depending on what shows up.
+
+How long before the date should I do the session?
+
+Twenty minutes. Long enough to change something if needed, short enough you don't second-guess yourself into a worse outfit.
+
+## Try it
+
+LiveStylist's free trial gives you one full 5-minute session — no card required. Download the app and run a first-date session before your next one. Or see what a live session actually looks like first.
+
+Other use cases: Date night · Work · Casual · Weekend · All use cases · AI stylist vs human stylist · Home
+
+---
+
+# What a live AI styling session actually looks like | LiveStylist
+URL: https://livestylist.app/live-session-walkthrough.html
+LastModified: 2026-06-20
+
+Home → Live session walkthrough
+
+# What a live AI styling session actually looks like
+
+The shortest way to explain LiveStylist is to show one. Below is a real five-minute live session, screen by screen — the moment the app opens, the first time the AI sees the user's look, the suggestions, the preview images, and the final outfit it lands on. If you've ever wondered what "live AI stylist" means concretely instead of as marketing copy, this is it.
+
+## Watch the 60-second demo
+
+The live video below is the same product, condensed. Sound is muted by default for autoplay — tap the speaker icon to hear the AI talk.
+
+Your browser doesn't support embedded video. Download the demo. A live AI styling session, condensed.
+
+## The session, screen by screen
+
+Same flow as the video, walked through carefully. Read it like a transcript.
+
+0:00 — The app opens. The AI greets you by name. Because LiveStylist uses an anonymous device ID instead of a login, there's no sign-in screen between you and a session.
+
+0:08 — Hey Nicole. A familiar, casual opener. The AI takes the time to acknowledge you before getting to the work — this is a conversation, not a form to fill.
+
+0:15 — Pick the vibe. Tell the AI what you're aiming for. Date night? Office? Weekend? The session is calibrated to the occasion from the first second.
+
+0:25 — Start. Tap once. The live vision pipeline spins up. Three vision agents (eye / mouth / outfit) start analysing your front-facing camera simultaneously, and the voice agent takes over the conversation.
+
+1:20 — Let me show you a preview. When the AI suggests a change, it doesn't just describe it — it generates a preview image alongside the voice. You see what it means.
+
+1:55 — Soft brown liner. The advice is concrete: not "maybe try makeup", but "soft brown liner across the lash line". Specific enough to act on, gentle enough not to feel prescribed.
+
+2:20 — Enhance the eyes. A new suggestion, framed as a reason rather than a rule: the AI explains why — because the warmth of your top picks up the colour of your iris.
+
+2:45 — Result preview. Side-by-side: before and after the suggested change, rendered as a preview image. You make the call.
+
+3:10 — A little sparkle. Small finishing detail: an earring suggestion to balance the upper half of the outfit. The AI is calibrating the noise level, not just the volume.
+
+3:35 — I love the suggestion. You can agree with the AI or push back. Both are normal. The session is a conversation, and the AI revises in real time when you disagree.
+
+4:00 — Fresh look. Halfway through, a stocktake: the AI restates where you've landed so far, makes sure you still agree, and asks what else to refine.
+
+4:45 — Compliments and advice. The closing minute is direct, warm, and substantive. Not gushing — useful. Whatever genuinely works gets named; whatever doesn't is noted with a reason.
+
+5:00 — The final look. Session ends. You get a one-screen summary you can save to style memory. Next session picks up here — the AI remembers what worked and refines its advice across sessions.
+
+## What was happening under the hood
+
+While the conversation felt like one continuous voice, the system was running three things at once. A live vision pipeline (multi-agent: eye, mouth, outfit) analysed the camera frames every few seconds, processed in memory and discarded — nothing was written to disk. A live voice agent (Google Gemini Live) handled the dialogue with roughly 300ms response latency, so it felt like a person you could interrupt. And a preview-image generator (Fal.ai, Gemini 2.5 Flash Image) rendered the suggested looks alongside the conversation so suggestions were visual, not just verbal.
+
+That triple-track is what makes LiveStylist's sessions feel like a video call with a stylist rather than a chat with a bot. It's also what no other AI stylist app in 2026 is doing.
+
+## How long it actually takes
+
+Five minutes, every time, by design. We tried longer sessions in early builds — they were worse. The five-minute box forces the AI to be useful immediately and forces you to take the advice instead of debating it forever. The pricing reflects this: Premium gives you thirty 5-minute sessions a month, which is roughly one a day. Most people use far fewer.
+
+## What it costs
+
+One free 5-minute session at signup, no card. After that, Premium is €14.99/month or €119.99/year. The annual saves you roughly 33% and is paid as one App Store / Google Play transaction. Full pricing.
+
+## Common questions
+
+How long is a live styling session?
+
+Five minutes. Time-boxed deliberately — long enough for real advice, short enough to fit into the moment you're actually getting ready.
+
+Can I interrupt the AI mid-sentence?
+
+Yes. The voice agent supports natural turn-taking. Cut it off, change direction, ask a follow-up — it adapts.
+
+Do I have to look perfect to start?
+
+No. The whole point is to start from wherever you are. Pyjamas, bedhead, mid-getting-ready — the AI doesn't judge and nothing is stored.
+
+## Try it
+
+The free trial gives you one full 5-minute live session — no card required. Make your own mind up. Download the app, or read how it handles specific occasions: Date night, Work, Casual, Weekend, First date.
+
+Related: AI stylist vs human stylist · Privacy Policy · How it works
+
+---
+
+# Compare AI stylist apps — LiveStylist vs alternatives
+URL: https://livestylist.app/comparison/
+LastModified: 2026-06-20
+
+Home → Compare
+
+# Compare AI stylist apps
+
+Most "AI stylist" apps look the same in a screenshot — different brand, similar promise. Under the hood, they differ on the things that actually matter: do they see you in real time, do they talk back, how long does a session take, what do they cost, where does your data go. These comparison pages take the differences seriously and answer them honestly, naming names instead of dancing around them.
+
+LiveStylist's wedge is simple to describe and hard to copy: live spoken voice + live camera analysis, in one five-minute conversation. Most competitors are photo-upload or closet-import — you give them a picture, they give you a board. That's a different product. The comparisons below explain when LiveStylist is the better fit and when it isn't.
+
+## Comparisons
+
+AI stylist vs human stylist — cost, speed, honesty, when to use which. The most common question we get.
+
+More side-by-sides arriving alongside the launch. If there's an app you want compared, email hello@livestylist.app and we'll add it.
+
+← Back to home
+
+---
+
+# AI stylist vs human stylist — honest comparison | LiveStylist
+URL: https://livestylist.app/comparison/ai-stylist-vs-human.html
+LastModified: 2026-06-20
+
+Compare → AI stylist vs human stylist
+
+# AI stylist vs human stylist: an honest comparison
+
+The question shows up every time someone tries an AI stylist app for the first time: is this actually as good as a real human stylist? The honest answer is that the two solve overlapping but different problems, and the right one depends on what you're trying to fix. Here's the side-by-side, with the trade-offs spelt out plainly — written by the team building LiveStylist, a live AI stylist app, so there's a side, but we'd rather you understand the trade-offs than guess wrong.
+
+## The five-second version
+
+A live AI stylist is the right choice when you need fast, frequent, low-stakes advice (what to wear to dinner, the office, a Tuesday). A human stylist is the right choice when you need a full wardrobe overhaul, an in-person fitting, or someone to walk a department store with you. Most people need the first kind weekly and the second kind once a year, if ever.
+
+## Cost
+
+A live AI stylist subscription runs around €15/month — LiveStylist Premium is €14.99/month or €119.99/year. That gives you up to thirty live styling sessions a calendar month, each one five minutes of focused real-time advice. A one-off session with a human personal shopper at a department store typically costs nothing to €100, but only if you spend on clothes during the appointment. An independent fashion stylist for an hour of pure consulting starts around €100–€200 and can easily climb to €400+ for a full wardrobe edit. For ongoing styling — what to wear to the gala, the wedding, the new role — the human relationship can run into thousands a year.
+
+If you want frequent, casual advice without the per-session anxiety, the maths overwhelmingly favours AI. If you want one big intervention every few years, a human is still affordable.
+
+A live session in progress — the AI stylist speaking outfit advice in real time.
+
+## Speed
+
+A LiveStylist session is five minutes from "open app" to "advice in your head". A human stylist is a calendar invitation, a travel plan, a fitting room, a polite negotiation. There's a real reason to want the second one — touching the fabric, walking the floor, talking through your life — but when the question is "do these earrings work with this neckline before I leave the house in fifteen minutes", the AI's latency is a feature, not a workaround.
+
+## Honesty
+
+This one cuts both ways. A human stylist with a few sessions of trust will tell you the unkind truth — that the jacket reads cheap, that the colour washes you out. They have skin in the game. An AI will say the unkind truth too, faster, with no concern for offending you, because it doesn't remember tomorrow whether you took the note well. The downside is that an AI can't read your face when you flinch, and won't soften the next line because you're clearly having a hard week. Humans are better at calibrating delivery; AI is better at being unflinching when you specifically asked for that.
+
+LiveStylist's voice agent is tuned to be direct and friendly — no scores, no ratings, no leaderboard. Ask it what doesn't work and it tells you what to take off.
+
+## Availability and privacy
+
+An AI stylist is available at 11pm on a Sunday in your pyjamas with bedhead. A human stylist is not. That sounds flippant but it's actually the main reason people use AI styling at all — the moments you need style advice are usually the moments you can't book a calendar invitation for.
+
+Privacy-wise, LiveStylist's posture is unusually strict: no email or login required, camera frames processed in memory and never written to disk, voice audio not stored, no biometric template created, profile and session data hosted on EU-sovereign infrastructure (Scaleway, France). Human stylists are subject to no such guarantee — your fitting-room conversation is whatever your stylist remembers and tells whoever they tell.
+
+## The honest side-by-side
+
+Live AI stylist (LiveStylist) Human stylist Cost€14.99/mo or €119.99/yr€100–€400 per session Speed5 minutes, on demandDays to weeks of scheduling Availability24/7, your phoneOffice hours, in person Sees you in real timeYes (live camera + voice)Yes (in person) Touches the fabricNoYes Reads body languageLimited (visual cues only)Yes Remembers youYes (style memory across sessions)Yes (if you stick with one) Embarrassment-freeYes (no human, no fitting room)No, especially first session Best forDaily decisions, frequent adviceWardrobe overhaul, big events PrivacyFrames in memory only, EU-sovereign storage, no biometric templateWhatever the human remembers
+
+## Where AI stylists actually differ from each other
+
+"AI stylist" is a marketing label hiding several distinct products. Whering and Acloset are virtual closets — you import or photograph what you own, and they suggest outfits from your existing wardrobe. Indyx is a closet-digitisation app with optional human stylist support. Style DNA does selfie-based colour-season analysis. Beauty AI, Aiuta, TryDrobe and FashionAdvice.ai are photo-upload tools — you give them a picture, they give you feedback. Lookastic is a look library you browse manually.
+
+None of them speak to you. None of them watch you live. LiveStylist is the only AI styling app with live spoken voice + live camera analysis in one conversation — which is the closest you can get to a stylist who is physically next to you without there being a person physically next to you.
+
+Mid-session: the user agrees with a suggested look and a preview image renders alongside the conversation.
+
+## When to use which
+
+Use a live AI stylist when the question is small, the timeline is short, and the answer needs to be honest right now. "Does this read smart-casual?" "Will this colour wash me out on camera?" "Am I trying too hard?" The whole point of a live AI stylist is that the cost of asking is near zero, so you ask more.
+
+Use a human stylist when the question is structural — you want a new wardrobe, a different personal aesthetic, advice that draws on touching the fabric and walking the store. Use them when the stakes are emotional in a way an AI can't hold (wedding dress, career-defining first day). Use them when you specifically want a human to disagree with you across a coffee.
+
+Most people benefit from both, in the same way most people benefit from both a GP and a specialist. The AI is the GP — fast, available, good for the 90% of questions that don't need a specialist. The human is the specialist — expensive, scheduled, deeply useful for the cases that warrant them.
+
+## Common questions
+
+Is an AI stylist actually as good as a human stylist?
+
+For day-to-day outfit decisions, yes — and faster, cheaper, more available. For a full wardrobe overhaul, a special occasion or an in-person fitting, a human still wins. Most people need the first kind much more often than the second.
+
+How much does an AI stylist cost compared to a human?
+
+Roughly €15/month for LiveStylist Premium (€14.99/mo or €119.99/yr). One human stylist session is typically €100–€400. Ongoing human styling adds up fast; an AI subscription doesn't.
+
+Will the AI judge me?
+
+No. No scores, no ratings, no leaderboards. Camera frames are processed in memory and not stored — even the AI forgets the session unless you save the summary.
+
+What about other AI stylist apps?
+
+Whering, Acloset, Indyx, Style DNA, Beauty AI, Aiuta, TryDrobe, FashionAdvice.ai and Lookastic all solve adjacent problems (closet management, photo feedback, colour analysis). None are live-voice + live-camera. LiveStylist is.
+
+## Try LiveStylist
+
+The free trial gives you one full 5-minute live session — no card required. Make up your own mind. Download the app, or read more about how a live session actually works.
+
+Related: About LiveStylist · Pricing · Use cases · All comparisons
 
 ---
 
