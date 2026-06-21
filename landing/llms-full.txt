@@ -124,7 +124,7 @@ Outfit picks, makeup tips, hair ideas, colour coordination, occasion dressing (d
 
 Is my camera data private?
 
-Yes. Camera frames are processed in real time and not permanently stored. Everything in transit uses TLS. Generated preview images auto-delete after 24 hours. See our Privacy Policy for the full story.
+Yes. Camera frames and voice audio are processed in real time and not permanently stored. Everything in transit uses TLS. Generated preview images auto-delete after 24 hours. See our Privacy Policy for the full story.
 
 What devices is it available on?
 

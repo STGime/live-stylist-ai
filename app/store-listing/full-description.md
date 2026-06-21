@@ -22,7 +22,7 @@ Your first session is free. After that, ongoing styling sessions (up to 30 per c
 
 - Your data lives on EU servers (Scaleway, France) — fully GDPR-compliant.
 - No tracking, no ads, no third-party analytics.
-- Your camera frames are processed in real time and never stored.
+- Your camera frames and voice are processed in real time and never stored.
 - Delete your account from inside the app — everything wiped, server included.
 
 ## Community & safety
