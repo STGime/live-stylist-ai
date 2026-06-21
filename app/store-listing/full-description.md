@@ -25,6 +25,16 @@ Your first session is free. After that, ongoing styling sessions (up to 30 per c
 - Your camera frames are processed in real time and never stored.
 - Delete your account from inside the app — everything wiped, server included.
 
+## Community & safety
+
+LiveStylist's Feed surfaces session summaries from friends you've followed. If you ever see something that doesn't belong:
+
+- **Report** any feed item or follow request from inside the app (tap the ⋯ menu or long-press). Every report goes to a human reviewer; offending content is removed and accounts can be suspended.
+- **Block** any user to remove them from your feed and prevent future follow requests.
+- **24-hour SLA** on report reviews.
+
+Full Community Guidelines: https://livestylist.app/community-guidelines.html
+
 ## Pricing
 
 - **Free trial** — 1 full session at signup, no credit card needed.
@@ -35,6 +45,7 @@ Subscriptions auto-renew until cancelled. Manage or cancel anytime from your dev
 
 - Terms of Use (EULA): https://livestylist.app/terms.html
 - Privacy Policy: https://livestylist.app/privacy.html
+- Community Guidelines: https://livestylist.app/community-guidelines.html
 
 ## Languages
 
