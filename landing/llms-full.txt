@@ -750,11 +750,11 @@ Related: About LiveStylist · Pricing · Use cases · All comparisons
 
 # Privacy Policy | LiveStylist — AI Style Assistant
 URL: https://livestylist.app/privacy.html
-LastModified: 2026-06-19
+LastModified: 2026-06-21
 
 # Privacy Policy
 
-Last updated: June 19, 2026
+Last updated: June 21, 2026
 
 ## 1. Information We Collect
 
@@ -815,6 +815,8 @@ Google Cloud Run (US): Hosts our backend API and orchestrates the calls above. T
 RevenueCat: Subscription management and entitlement checking (only if you purchase Premium). Receives an anonymous subscriber identifier.
 
 Apple App Store / Google Play Store: Payment processing for subscriptions. We never see your payment details.
+
+All sub-processors listed above are contractually or commercially bound to data-protection standards equivalent to LiveStylist's own — no third party may use the personal data we forward to them for advertising, profile building, or AI model training, and none retain camera frames or microphone audio.
 
 ## 5. Data Retention
 
