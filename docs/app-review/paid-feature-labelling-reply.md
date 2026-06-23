@@ -1,62 +1,71 @@
 # App Review Reply — Paid feature labelling (Guideline 2.3.2)
 
-Submission ID `d009d9c8-a01d-46cb-a289-39b4950c0555` (1.0 build 16, rejected 2026-06-17).
+Submission resubmitted after initial rejection on 2026-06-17. This is the **second-round reply** — Apple flagged §2.3.2 again because the first fix didn't go far enough. This round we restructure the description so every feature is unambiguously inside either the Free trial or the Premium subscription, and we remove a feature reference that didn't exist in the shipped app.
 
-The §2.3.2 fix is a metadata edit, not a code change — Apple's complaint was that the App Description in the previous submission referenced paid features without flagging them as Premium-only. The corrected description lives in the repo at `app/store-listing/full-description.md` and is the source we paste into the App Store Connect "Description" field for the next submission.
+The corrected description lives at `app/store-listing/full-description.md` in the repo.
 
-Use the text below as a short reviewer reply alongside (or instead of) re-pasting the description into App Store Connect.
+---
+
+## What we changed in this round (vs. the previous submission)
+
+1. **Removed the "Outfit matching with real products" bullet.** That feature is deferred for v1 (the UI block is commented out in `app/src/screens/HomeScreen.tsx`, marker `PRODUCT_SUGGESTIONS_DEFERRED`). Listing a feature that isn't accessible in the shipped app was an inaccurate-metadata issue on its own.
+2. **Split "What it does" into two explicit subsections** — "What's included in the FREE trial" and "What's included in PREMIUM (paid subscription)" — so a reviewer reading the description top-to-bottom never sees a feature without knowing which tier it belongs to.
+3. **Labelled every Premium feature with `(Premium)`** in the bullet headline itself, not as a parenthetical aside at the bottom.
+4. **Restated the free-vs-paid scope** at the end of "How it works" so the reviewer doesn't have to back-reference.
+5. **Tightened "Why it works"** to make the Premium-only image-preview generation explicit there too.
+
+There is no remaining text in the App Description, Subtitle, Promotional Text, Keywords, or Release Notes that implies a paid feature is included for free.
 
 ---
 
 ## Reviewer reply (paste this into the §2.3.2 reply box)
 
-Thanks for the feedback. We updated the app description to clearly identify which features require a Premium subscription. Specifically:
+Thanks for the further feedback. We've restructured the entire description so every feature is unambiguously inside either the Free trial or the Premium subscription. Specifically:
 
-1. **Up-front disclosure**, immediately under the tagline:
-   > Free to try (1 full session). Ongoing styling, image previews, and persistent style memory require a Premium subscription — see Pricing below.
-2. **Inline "(Premium)" labels** on every paid feature bullet in the "What it does" section. Previously, "Generates style previews on the fly" and "Remembers your sessions" were presented without any qualifier; they now read "Generates style previews on the fly (Premium)" and "Remembers your sessions (Premium)" respectively.
-3. **Restated free vs. paid scope** at the end of the "How it works" section: "Your first session is free. After that, ongoing styling sessions (up to 30 per calendar month), image-preview generation, and persistent style memory across sessions require a Premium subscription."
-4. **Pricing section** lists each paid tier explicitly with length, price, and auto-renew disclosure (Premium Monthly €14.99/month, Premium Annual €119.99/year), plus standard Apple auto-renew fineprint.
-5. **Functional links** to the Terms of Use (EULA), Privacy Policy, and Community Guidelines are included at the end of the Pricing section.
+1. **Removed a feature reference that wasn't in the shipped app.** The previous description mentioned outfit matching with real products. That feature is deferred and not accessible in this build, so the reference has been removed entirely.
+2. **Split features under two explicit subheadings** — "What's included in the FREE trial" and "What's included in PREMIUM (paid subscription)" — so the boundary between free and paid is structural, not implied. Each Premium bullet is also labelled "(Premium)" in its headline.
+3. **Made repeat-use explicit.** The Free trial is exactly one lifetime 5-minute session. Live voice and live camera analysis are available in that one free session and then again in every Premium session — both are now explicitly listed under Premium with the "(Premium, after the free trial)" qualifier so the reader cannot conclude they are unlimited at the free tier.
+4. **Reinforced the boundary at the end of "How it works"** with: "Your first session is free. Every session after that — and every Premium feature listed above — requires the Premium subscription described in the Pricing section below."
+5. **Pricing section unchanged from the previous round** — still lists Premium Monthly €14.99/month and Premium Annual €119.99/year explicitly with length, price, and auto-renew disclosure, plus functional links to the Terms of Use (EULA), Privacy Policy and Community Guidelines.
 
-The corrected description is what we have submitted in this build. There is no metadata text remaining that implies a paid feature is included for free.
-
----
-
-## Where the corrected text lives
-
-- Source of truth: `app/store-listing/full-description.md` in the repo.
-- The same wording should appear in the App Store Connect "Description" field for the resubmitted build.
-- Shorter surfaces aligned at the same time: `short-description.txt`, `release-notes.md` (the latter already said "Free trial (1 session), then €14.99/mo" pre-fix, so no change needed there).
+There is no remaining text in any metadata field that implies a paid feature is included for free.
 
 ---
 
 ## Verbatim quotes from the corrected description
 
-**Up-front disclosure (immediately after the tagline):**
+**Free-trial section:**
 
-> Free to try (1 full session). Ongoing styling, image previews, and persistent style memory require a Premium subscription — see Pricing below.
+> ## What's included in the FREE trial
+>
+> - **One full 5-minute live styling session**, no credit card. That's it. The free trial is a single lifetime session per account; after it ends, ongoing use requires Premium (see Pricing).
+>
+> During that one free session you get:
+>
+> - Live voice conversation with the AI stylist (real-time spoken back-and-forth).
+> - Live camera analysis — the stylist sees your hair, makeup and outfit in real time.
 
-**"What it does" bullets that are now Premium-labelled:**
+**Premium section:**
 
-> - **Generates style previews on the fly (Premium).** Want to see yourself with a fringe? Navy frames? A bold lip? She'll show you a quick preview image right there.
-> - **Remembers your sessions (Premium).** Past advice carries forward. "Last time I noticed your eyes pop in green — let's lean into that today."
+> ## What's included in PREMIUM (paid subscription)
+>
+> Premium is an auto-renewing subscription (Premium Monthly €14.99 / Premium Annual €119.99 — see Pricing below). Every Premium feature listed here requires an active subscription:
+>
+> - **Up to 30 live styling sessions per calendar month (Premium).**
+> - **Live voice conversation in every session (Premium, after the free trial).**
+> - **Live camera analysis in every session (Premium, after the free trial).**
+> - **Style preview image generation (Premium).**
+> - **Persistent style memory across sessions (Premium).**
+> - **Session history and social features (Premium).**
 
-**Free-vs-paid restatement under "How it works":**
+**Boundary restatement under "How it works":**
 
-> Your first session is free. After that, ongoing styling sessions (up to 30 per calendar month), image-preview generation, and persistent style memory across sessions require a Premium subscription.
-
-**Pricing section:**
-
-> - **Free trial** — 1 full session at signup, no credit card needed.
-> - **Premium Monthly** — €14.99 per month (1 month, auto-renewing). Up to 30 styling sessions per calendar month, full preview generation, persistent style memory.
-> - **Premium Annual** — €119.99 per year (12 months, auto-renewing). Same Premium features, billed annually.
+> Your first session is free. Every session after that — and every Premium feature listed above — requires the Premium subscription described in the Pricing section below.
 
 ---
 
-## Internal checklist before submitting
+## Internal checklist before re-submitting
 
-- [ ] Paste the corrected `app/store-listing/full-description.md` text into the App Store Connect "Description" field for the new build.
-- [ ] Confirm the App Store Connect "Promotional Text" / "What's New" / Subtitle don't independently imply any Premium feature is free.
+- [ ] Replace the App Store Connect "Description" field with the full text of the updated `app/store-listing/full-description.md` — do **not** paraphrase or trim. The previous round mixed an ad-hoc edit ("Premium unlocks 1 session per day") into the App Store Connect Description that contradicted the actual monthly cap; use the repo file verbatim instead so app, paywall, and metadata all say "up to 30 sessions per calendar month".
+- [ ] Confirm the Subtitle, Promotional Text, and Keywords don't independently imply any Premium feature is free. (Current Subtitle: "Real-time AI style advice" — fine. Keywords are a comma list — fine. Confirm Promotional Text if you use one.)
 - [ ] Paste the reviewer reply above into the §2.3.2 reply box.
-- [ ] (Optional) confirm the marketing site (https://livestylist.app/#pricing) is consistent with the App Description, so the App Review reviewer cross-checking sees the same vocabulary.
