@@ -261,8 +261,10 @@ export default function SessionSummaryScreen({ route, navigation }: Props) {
           </BubbleButton>
           {sessionsLeft <= 0 && (
             <View style={{ marginTop: 12 }}>
-              <BubbleButton variant="dark" onPress={() => {}}>
-                Go Premium — 5x sessions
+              <BubbleButton
+                variant="dark"
+                onPress={() => navigation.navigate('Paywall', { reason: 'trial_used' })}>
+                Go Premium — 30 sessions/month
               </BubbleButton>
             </View>
           )}

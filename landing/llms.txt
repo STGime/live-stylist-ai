@@ -13,7 +13,7 @@ Built for iPhone (iOS) and Android. Launching mid-2026 on the App Store and Goog
 - **Real-time**: spoken voice via Google Gemini Live (~300ms response latency) + multi-agent vision pipeline analysing eyes, mouth and outfit simultaneously. The defining trait.
 - **Differentiator**: only AI styling app with live spoken voice + live camera analysis. Competitors (Whering, Acloset, Indyx, Style DNA, Beauty AI, Aiuta, TryDrobe, FashionAdvice.ai, Lookastic) are photo-upload or closet-import only — you upload, you wait, you read. LiveStylist sees you in the moment and talks back.
 - **Session length**: 5 minutes, time-boxed. Long enough for meaningful advice, short enough to do while getting ready.
-- **Pricing**: Free trial (1 lifetime 5-minute session, no card required). Premium €14.99/month or €119.99/year (≈$14.99 / $119.99 in USD tiers; ~33% off annual) for up to 30 sessions per calendar month, style memory, session history, and social features.
+- **Pricing**: Free trial (1 lifetime 5-minute session, no card required). Premium €17.99/month (≈$17.99 in USD tiers) for up to 30 sessions per calendar month, style memory, session history, and social features. Monthly only — no annual tier.
 - **Platforms**: iOS 15+ and Android 8+.
 - **Languages**: English UI. Spoken-voice support also in German (in-app, English UI remains).
 - **Backend**: Hosted on Eurobase (EU-sovereign Backend-as-a-Service, Scaleway/France region). All profile and session data stored in the EU.

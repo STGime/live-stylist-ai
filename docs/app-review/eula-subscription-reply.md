@@ -12,15 +12,17 @@ The wording is the giveaway. Apple is asking for a **screen recording** confirmi
 
 ### In the app
 
-`app/src/screens/PaywallScreen.tsx` displays for every subscription package:
+`app/src/screens/PaywallScreen.tsx` displays for the Premium Monthly package:
 
-- **Title** — "Monthly" or "Annual" (PackageRow `pkgTitle`).
-- **Length** — "1 month • auto-renews" or "12 months • auto-renews" (PackageRow `pkgLength`, added in PR #58 specifically to satisfy this guideline).
-- **Price** — `product.priceString` from RevenueCat, locale-aware (e.g. €14.99 / $14.99).
+- **Title** — "Monthly" (PackageRow `pkgTitle`).
+- **Length** — "1 month • auto-renews" (PackageRow `pkgLength`, added in PR #58 specifically to satisfy this guideline).
+- **Price** — `product.priceString` from RevenueCat, locale-aware (€17.99 / $17.99).
 - **Functional Privacy Policy link** — tappable, opens https://livestylist.app/privacy.html.
 - **Functional Terms of Use (EULA) link** — tappable, opens https://livestylist.app/terms.html.
 - **Functional Community Guidelines link** — tappable, opens https://livestylist.app/community-guidelines.html.
 - **Auto-renew disclosure**: "Subscriptions auto-renew until cancelled. Manage in your device's subscription settings."
+
+Premium is monthly only — there is no annual tier in this submission. The PaywallScreen `PackageRow` component still has conditional rendering for an `ANNUAL` package type, so if an annual tier is added later it will render correctly with title "Annual", length "12 months • auto-renews", and the existing "Save ~33%" saving label.
 
 ### In App Store metadata
 
@@ -46,10 +48,10 @@ Plus the full auto-renew fineprint required by 3.1.2(c):
 Record one ~30-second screen capture demonstrating the subscription compliance in the app. The reviewer will mainly want to see the paywall meet the four required items:
 
 1. Open the app, tap **Start Session** until the paywall appears (or navigate to the tier badge → tap Free → paywall).
-2. Slowly pan over the package rows so the recording captures:
-   - "Monthly" / "Annual" titles
-   - "1 month • auto-renews" / "12 months • auto-renews" length labels
-   - Price strings (€14.99, €119.99)
+2. Slowly pan over the package row so the recording captures:
+   - "Monthly" title
+   - "1 month • auto-renews" length label
+   - Price string (€17.99)
 3. Scroll to the fineprint at the bottom of the paywall.
 4. Tap each link — Terms, Privacy, Community Guidelines — and let the page open in Safari briefly so the recording captures the live URLs.
 5. (Optional) Return to App Store Connect in the recording and pan over the App Description showing the Terms / Privacy / Community Guidelines block.
@@ -62,7 +64,7 @@ Save as MP4 and attach via the App Store Connect reply UI.
 
 Thanks for the additional review. All of the required information for auto-renewable subscriptions is in place — in the app and in the App Store metadata. We've attached a screen recording showing:
 
-1. The paywall screen lists, for each package: **title** ("Monthly", "Annual"), **length** ("1 month • auto-renews", "12 months • auto-renews"), and **price** (locale-aware, currently €14.99 / €119.99 in the recording).
+1. The paywall screen lists, for the Premium Monthly package: **title** ("Monthly"), **length** ("1 month • auto-renews"), and **price** (locale-aware, €17.99 in the recording). Premium is monthly only in this submission.
 2. The paywall fineprint contains **functional tappable links** to the **Privacy Policy** (https://livestylist.app/privacy.html), the **Terms of Use / EULA** (https://livestylist.app/terms.html), and the **Community Guidelines** (https://livestylist.app/community-guidelines.html). The recording shows each link opening in Safari.
 3. The auto-renew disclosure ("Subscriptions auto-renew until cancelled. Manage in your device's subscription settings.") is displayed below the package rows on the paywall.
 4. In App Store Connect, the App Description contains a functional **Terms of Use (EULA) link** to https://livestylist.app/terms.html alongside the Privacy Policy link, near the Pricing section. The Privacy Policy URL field is also populated with the same URL.
