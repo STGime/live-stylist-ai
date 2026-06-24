@@ -13,7 +13,7 @@ During that one free session you get:
 
 ## What's included in PREMIUM (paid subscription)
 
-Premium is an auto-renewing subscription (Premium Monthly €14.99 / Premium Annual €119.99 — see Pricing below). Every Premium feature listed here requires an active subscription:
+Premium is an auto-renewing monthly subscription (€17.99/month — see Pricing below). Every Premium feature listed here requires an active subscription:
 
 - **Up to 30 live styling sessions per calendar month (Premium).** The free trial is exactly one lifetime session; ongoing daily styling needs Premium.
 - **Live voice conversation in every session (Premium, after the free trial).** Same live voice experience, available repeatedly.
@@ -48,8 +48,7 @@ Full Community Guidelines: https://livestylist.app/community-guidelines.html
 ## Pricing
 
 - **Free trial** — 1 full session at signup, no credit card needed.
-- **Premium Monthly** — €14.99 per month (1 month, auto-renewing). Up to 30 styling sessions per calendar month, full preview generation, persistent style memory.
-- **Premium Annual** — €119.99 per year (12 months, auto-renewing). Same Premium features, billed annually.
+- **Premium Monthly** — €17.99 per month (1 month, auto-renewing). Up to 30 styling sessions per calendar month, full preview generation, persistent style memory.
 
 Subscriptions auto-renew until cancelled. Manage or cancel anytime from your device's subscription settings. Payment is charged to your Apple ID account at confirmation of purchase. Your account will be charged for renewal within 24 hours prior to the end of the current period, at the price disclosed in the App Store. Free trial sessions are limited to 1 lifetime session per account.
 

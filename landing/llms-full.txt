@@ -84,9 +84,9 @@ Most popular
 
 ### Premium
 
-$14.99/mo
+€17.99/mo
 
-or $119.99/year — save ~33%
+Auto-renewing monthly subscription
 
 30 sessions per month
 
@@ -116,7 +116,7 @@ The selfie camera streams frames to our backend, where multiple vision agents lo
 
 Is LiveStylist free?
 
-You get one free 5-minute session at signup, no card required. After that, Premium is $14.99/month or $119.99/year (~33% off) for 30 sessions a month, style memory and session history.
+You get one free 5-minute session at signup, no card required. After that, Premium is €17.99/month for up to 30 sessions, style memory and session history.
 
 What can it help me with?
 
@@ -618,7 +618,7 @@ Five minutes, every time, by design. We tried longer sessions in early builds �
 
 ## What it costs
 
-One free 5-minute session at signup, no card. After that, Premium is €14.99/month or €119.99/year. The annual saves you roughly 33% and is paid as one App Store / Google Play transaction. Full pricing.
+One free 5-minute session at signup, no card. After that, Premium is €17.99/month, billed via the App Store or Google Play. Full pricing.
 
 ## Common questions
 
@@ -680,7 +680,7 @@ A live AI stylist is the right choice when you need fast, frequent, low-stakes a
 
 ## Cost
 
-A live AI stylist subscription runs around €15/month — LiveStylist Premium is €14.99/month or €119.99/year. That gives you up to thirty live styling sessions a calendar month, each one five minutes of focused real-time advice. A one-off session with a human personal shopper at a department store typically costs nothing to €100, but only if you spend on clothes during the appointment. An independent fashion stylist for an hour of pure consulting starts around €100–€200 and can easily climb to €400+ for a full wardrobe edit. For ongoing styling — what to wear to the gala, the wedding, the new role — the human relationship can run into thousands a year.
+A live AI stylist subscription runs around €18/month — LiveStylist Premium is €17.99/month, monthly only. That gives you up to thirty live styling sessions a calendar month, each one five minutes of focused real-time advice. A one-off session with a human personal shopper at a department store typically costs nothing to €100, but only if you spend on clothes during the appointment. An independent fashion stylist for an hour of pure consulting starts around €100–€200 and can easily climb to €400+ for a full wardrobe edit. For ongoing styling — what to wear to the gala, the wedding, the new role — the human relationship can run into thousands a year.
 
 If you want frequent, casual advice without the per-session anxiety, the maths overwhelmingly favours AI. If you want one big intervention every few years, a human is still affordable.
 
@@ -704,7 +704,7 @@ Privacy-wise, LiveStylist's posture is unusually strict: no email or login requi
 
 ## The honest side-by-side
 
-Live AI stylist (LiveStylist) Human stylist Cost€14.99/mo or €119.99/yr€100–€400 per session Speed5 minutes, on demandDays to weeks of scheduling Availability24/7, your phoneOffice hours, in person Sees you in real timeYes (live camera + voice)Yes (in person) Touches the fabricNoYes Reads body languageLimited (visual cues only)Yes Remembers youYes (style memory across sessions)Yes (if you stick with one) Embarrassment-freeYes (no human, no fitting room)No, especially first session Best forDaily decisions, frequent adviceWardrobe overhaul, big events PrivacyFrames in memory only, EU-sovereign storage, no biometric templateWhatever the human remembers
+Live AI stylist (LiveStylist) Human stylist Cost€17.99/mo€100–€400 per session Speed5 minutes, on demandDays to weeks of scheduling Availability24/7, your phoneOffice hours, in person Sees you in real timeYes (live camera + voice)Yes (in person) Touches the fabricNoYes Reads body languageLimited (visual cues only)Yes Remembers youYes (style memory across sessions)Yes (if you stick with one) Embarrassment-freeYes (no human, no fitting room)No, especially first session Best forDaily decisions, frequent adviceWardrobe overhaul, big events PrivacyFrames in memory only, EU-sovereign storage, no biometric templateWhatever the human remembers
 
 ## Where AI stylists actually differ from each other
 
@@ -730,7 +730,7 @@ For day-to-day outfit decisions, yes — and faster, cheaper, more available. Fo
 
 How much does an AI stylist cost compared to a human?
 
-Roughly €15/month for LiveStylist Premium (€14.99/mo or €119.99/yr). One human stylist session is typically €100–€400. Ongoing human styling adds up fast; an AI subscription doesn't.
+Roughly €18/month for LiveStylist Premium (€17.99/mo, monthly only). One human stylist session is typically €100–€400. Ongoing human styling adds up fast; an AI subscription doesn't.
 
 Will the AI judge me?
 
@@ -898,13 +898,11 @@ Create multiple accounts to circumvent usage limits
 
 ## 5. Subscriptions & Payments
 
-Premium subscriptions are billed monthly or annually through the Apple App Store or Google Play Store. Subscription terms, cancellation policies, and refund procedures are subject to the respective store's policies.
+Premium subscriptions are billed monthly through the Apple App Store or Google Play Store. Subscription terms, cancellation policies, and refund procedures are subject to the respective store's policies.
 
 Free Trial: 1 lifetime trial session at signup, 5 minutes long
 
-Premium Monthly: $14.99 / month — daily styling sessions, 5 minutes per session, soft cap of 30 sessions per calendar month
-
-Premium Annual: $119.99 / year — same as monthly, ~33% discount
+Premium Monthly: €17.99 / month — daily styling sessions, 5 minutes per session, soft cap of 30 sessions per calendar month
 
 ## 6. AI-Generated Content
 

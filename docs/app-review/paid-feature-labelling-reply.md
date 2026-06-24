@@ -26,7 +26,7 @@ Thanks for the further feedback. We've restructured the entire description so ev
 2. **Split features under two explicit subheadings** — "What's included in the FREE trial" and "What's included in PREMIUM (paid subscription)" — so the boundary between free and paid is structural, not implied. Each Premium bullet is also labelled "(Premium)" in its headline.
 3. **Made repeat-use explicit.** The Free trial is exactly one lifetime 5-minute session. Live voice and live camera analysis are available in that one free session and then again in every Premium session — both are now explicitly listed under Premium with the "(Premium, after the free trial)" qualifier so the reader cannot conclude they are unlimited at the free tier.
 4. **Reinforced the boundary at the end of "How it works"** with: "Your first session is free. Every session after that — and every Premium feature listed above — requires the Premium subscription described in the Pricing section below."
-5. **Pricing section unchanged from the previous round** — still lists Premium Monthly €14.99/month and Premium Annual €119.99/year explicitly with length, price, and auto-renew disclosure, plus functional links to the Terms of Use (EULA), Privacy Policy and Community Guidelines.
+5. **Pricing section** — Premium Monthly €17.99/month explicitly with length, price, and auto-renew disclosure, plus functional links to the Terms of Use (EULA), Privacy Policy and Community Guidelines. Monthly only — no annual tier.
 
 There is no remaining text in any metadata field that implies a paid feature is included for free.
 
@@ -49,7 +49,7 @@ There is no remaining text in any metadata field that implies a paid feature is 
 
 > ## What's included in PREMIUM (paid subscription)
 >
-> Premium is an auto-renewing subscription (Premium Monthly €14.99 / Premium Annual €119.99 — see Pricing below). Every Premium feature listed here requires an active subscription:
+> Premium is an auto-renewing monthly subscription (€17.99/month — see Pricing below). Every Premium feature listed here requires an active subscription:
 >
 > - **Up to 30 live styling sessions per calendar month (Premium).**
 > - **Live voice conversation in every session (Premium, after the free trial).**
