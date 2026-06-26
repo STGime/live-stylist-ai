@@ -1,10 +1,10 @@
 # App Review Reply — EULA + subscription metadata (Guideline 3.1.2(c))
 
-Apple's second-round message reads:
+**Round 3.** Apple's wording (2026-06-23 re-review of 1.0 (18)) is the same as round 2:
 
-> The submission still did not include all the required information for apps offering auto-renewable subscriptions. The following information needs to be included in the App Store metadata: a functional link to the Terms of Use (EULA). […] Once the app and metadata includes all of the required information, or if they already do, reply to this message with a screen recording to confirm.
+> Once the app and metadata includes all of the required information, or if they already do, reply to this message with a screen recording to confirm. **Include this information in the Notes field of the App Review Information section in App Store Connect for future submissions.**
 
-The wording is the giveaway. Apple is asking for a **screen recording** confirming the in-app and metadata details are in place. The fix is already shipped (PR #58, issue #56); this round is about demonstrating it.
+Translation: the fix is in place; Apple is asking you to (a) attach the screen recording and (b) populate the App Review Information → Notes field so future reviewers don't have to repeat this loop. Both are manual App Store Connect actions, not code.
 
 ---
 
@@ -43,20 +43,24 @@ Plus the full auto-renew fineprint required by 3.1.2(c):
 
 ---
 
-## Screen recording to attach to the reply
+## Screen recording
 
-Record one ~30-second screen capture demonstrating the subscription compliance in the app. The reviewer will mainly want to see the paywall meet the four required items:
+You already have one: `livestylist_promo/ScreenRecording_06-25-2026_compressed.mp4` (2.2 MB H.264, 720×1565). It shows the paywall displaying €17.99 monthly + the three links (Terms, Privacy, Community Guidelines) opening from the subscription page. Attach this directly to the §3.1.2(c) reply in App Store Connect.
 
-1. Open the app, tap **Start Session** until the paywall appears (or navigate to the tier badge → tap Free → paywall).
-2. Slowly pan over the package row so the recording captures:
-   - "Monthly" title
-   - "1 month • auto-renews" length label
-   - Price string (€17.99)
-3. Scroll to the fineprint at the bottom of the paywall.
-4. Tap each link — Terms, Privacy, Community Guidelines — and let the page open in Safari briefly so the recording captures the live URLs.
-5. (Optional) Return to App Store Connect in the recording and pan over the App Description showing the Terms / Privacy / Community Guidelines block.
+If a fresh take is ever needed, the four required items to capture in any future recording are:
 
-Save as MP4 and attach via the App Store Connect reply UI.
+1. **Title** of the auto-renewing subscription — "Monthly" on the PaywallScreen package row.
+2. **Length** — "1 month • auto-renews" beneath the title.
+3. **Price** — the price string from RevenueCat (locale-aware; €17.99 or local equivalent).
+4. **Functional links** — Privacy Policy and Terms of Use (EULA) opening in Safari from the paywall fineprint.
+
+## App Review Information → Notes field (NEW this round)
+
+Apple explicitly asked for this. In App Store Connect → App Review Information → Notes field, paste:
+
+> LiveStylist offers a single auto-renewable subscription: **Premium Monthly, €17.99/month, 1 month length, auto-renewing**. The in-app paywall (PaywallScreen) displays the title ("Monthly"), length ("1 month • auto-renews"), price (locale-aware via RevenueCat), and functional tappable links to the Privacy Policy (https://livestylist.app/privacy.html), Terms of Use / EULA (https://livestylist.app/terms.html), and Community Guidelines (https://livestylist.app/community-guidelines.html). The same Privacy Policy and Terms of Use (EULA) links are also present in the App Description, alongside the Pricing section. The Privacy Policy URL field in App Store Connect points at https://livestylist.app/privacy.html.
+
+This stays in Notes across future submissions so reviewers don't have to re-verify the same compliance items.
 
 ---
 
@@ -75,9 +79,9 @@ We've also added this information to the App Review Information **Notes field** 
 
 ## Internal checklist before re-submitting
 
-- [ ] Verify https://livestylist.app/terms.html is reachable (status 200, no redirect chain).
-- [ ] Verify the App Store Connect Privacy Policy URL field still points at https://livestylist.app/privacy.html.
-- [ ] Confirm the App Description in App Store Connect contains the three legal URLs (Terms / Privacy / Community Guidelines) at the bottom of the Pricing section — paste from `app/store-listing/full-description.md`.
-- [ ] Record the screen capture above on a build where in-app purchase is configured (TestFlight prod or a Sandbox account).
-- [ ] Add the same compliance summary (paywall shows title/length/price + Terms + Privacy + EULA in App Description) to the App Review Information → Notes field for future submissions, as Apple's reply requested.
-- [ ] Paste the reviewer reply above into the §3.1.2(c) reply box and attach the MP4.
+- [ ] Confirm https://livestylist.app/terms.html and https://livestylist.app/privacy.html return 200 (no redirect chain that the reviewer's user-agent might fail).
+- [ ] Confirm App Store Connect Privacy Policy URL field still points at https://livestylist.app/privacy.html.
+- [ ] Paste `app/store-listing/full-description.md` verbatim into the App Store Connect Description field (this also satisfies §3.1.2(c) since the EULA URL is in the description).
+- [ ] **Paste the Notes-field text above into App Review Information → Notes.** This is the explicit Apple-requested action from this round; without it, the next submission will get the same flag.
+- [ ] Attach `livestylist_promo/ScreenRecording_06-25-2026_compressed.mp4` to the §3.1.2(c) reply box.
+- [ ] Paste the reviewer reply above into the §3.1.2(c) reply box alongside the video.

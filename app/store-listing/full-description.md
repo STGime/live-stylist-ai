@@ -1,6 +1,8 @@
 # LiveStylist — Your AI Stylist, Live
 
-Hold up your phone. Talk. LiveStylist sees what you're wearing and gives you real-time, personal style advice — like having a stylist friend in your pocket.
+>>> PAID SUBSCRIPTION REQUIRED FOR ONGOING USE. New users receive 1 free 5-minute trial session at signup (no credit card needed). After the trial session ends, ALL features described below — including live voice conversation, live camera analysis, style previews, and style memory — require an active Premium subscription (€17.99/month, auto-renewing). Detailed pricing and free-vs-paid breakdown below. <<<
+
+Hold up your phone. Talk. LiveStylist sees what you're wearing and gives you real-time, personal style advice — like having a stylist friend in your pocket. The free trial gives you one 5-minute session to experience this; everything beyond that single trial session requires the Premium subscription described under "Pricing" below.
 
 ## What's included in the FREE trial
 
@@ -22,11 +24,11 @@ Premium is an auto-renewing monthly subscription (€17.99/month — see Pricing
 - **Persistent style memory across sessions (Premium).** Past advice carries forward; the stylist remembers what worked.
 - **Session history and social features (Premium).** Follow friends, see their session summaries.
 
-## How it works
+## How it works (each session, free trial or Premium)
 
 Pick an occasion (work, casual, date night, event…), tap **Start Session**, point your camera at yourself, and have a conversation. Five minutes per session. No rambling — just focused style advice when you need it.
 
-**Your first session is free.** Every session after that — and every Premium feature listed above — requires the Premium subscription described in the Pricing section below.
+**Your one free trial session is available at signup.** Every session after that — and every Premium feature listed above — requires the Premium subscription described in the Pricing section below (€17.99/month, auto-renewing). There is no way to use the app beyond a single 5-minute session without subscribing.
 
 ## Privacy first
 
@@ -60,8 +62,8 @@ Subscriptions auto-renew until cancelled. Manage or cancel anytime from your dev
 
 The stylist speaks English and German fluently. UI in English (more languages coming).
 
-## Why it works
+## Why it works (Premium subscription required to access beyond the free trial)
 
 Most "AI stylist" apps are static chatbots. LiveStylist is built on Google Gemini Live for real-time voice and, for Premium subscribers, Gemini's image-generation models for instant style previews. The combination is what makes the difference: she actually responds to *you*, in the moment, not to a static photo and a typed prompt.
 
-Ready when you are.
+Ready when you are — try your free trial session, then continue with Premium (€17.99/month).
